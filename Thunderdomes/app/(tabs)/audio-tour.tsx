@@ -63,7 +63,10 @@ export default function AudioTourScreen() {
     await updateProgress();
 
     // Set up interval for periodic updates
-    scanningIntervalRef.current = setInterval(updateProgress, PROGRESS_UPDATE_INTERVAL);
+    scanningIntervalRef.current = setInterval(
+      updateProgress,
+      PROGRESS_UPDATE_INTERVAL
+    ) as unknown as NodeJS.Timeout;
   };
 
   const stopProgressTracking = async () => {
