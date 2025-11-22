@@ -1,0 +1,24 @@
+[dotenv@17.2.3] injecting env (2) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+=== Scavenger Hunt AI Test (GitHub Models) ===
+
+1. Starting new game...
+✓ Selected: Jade Plant (Crassula ovata)
+
+2. Getting plant description...
+✓ Description: Look for a succulent with glossy, round leaves that resemble small coins, growing on thick, sturdy branches. Its vibrant green foliage may blush red at the edges under sunlight. Originating from South Africa, this plant brings abundance and good luck. Seek it where the sun shines warmly!
+
+3. Getting hint...
+✓ Hint: If you're on the lookout for the Jade Plant (Crassula ovata), head to a sunny spot in a warm, dry environment—it's right at home in desert-like settings! Look for its thick, oval-shaped leaves that are a luscious green, often with a hint of red on the edges when they're sunny and happy! 🌵✨
+
+4. Testing vision verification...
+   Sending image to vision API...
+Raw vision API response: {
+  "isMatch": false,
+  "confidence": "low",
+  "feedback": "The image does not display features characteristic of a Jade Plant (Crassula ovata). The leaves of a Jade Plant are typically thick, fleshy, and oval-shaped with a glossy finish. In this case, the plant appears to have thinner leaves that are not as fleshy, and their shape does not match the round, plump leaves of a Jade Plant. Additionally, the overall growth habit and structure seem different from the typical upright form of Crassula ovata."
+}
+✓ Vision API Response:
+   - Match: false
+   - Feedback: The image does not display features characteristic of a Jade Plant (Crassula ovata). The leaves of a Jade Plant are typically thick, fleshy, and oval-shaped with a glossy finish. In this case, the plant appears to have thinner leaves that are not as fleshy, and their shape does not match the round, plump leaves of a Jade Plant. Additionally, the overall growth habit and structure seem different from the typical upright form of Crassula ovata.
+
+=== Test Complete ===

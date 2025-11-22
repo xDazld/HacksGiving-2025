@@ -1,0 +1,31 @@
+[dotenv@17.2.3] injecting env (1) from ..\.env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+=== Scavenger Hunt AI Test (GitHub Models) ===
+
+1. Starting new game...
+✓ Selected: Corpse Flower (Amorphophallus titanum)
+
+2. Getting plant description...
+✓ Description: Seek the giant with a towering bloom,  
+Its scent of decay, like a sunken tomb.  
+With a dark maroon spathe and golden spadix,  
+It hails from Sumatra’s tropical mix.  
+Rare and foul, it draws a crowd—  
+Find the plant both strange and proud!  
+
+3. Getting hint...
+✓ Hint: To track down the elusive **Corpse Flower** (*Amorphophallus titanum*), head to the *Tropical* dome or greenhouse—it thrives in humid, rainforest-like settings. Follow your nose, as its infamous "rotting flesh" scent is a hard-to-miss dead giveaway! 🪴👃
+
+4. Testing vision verification...
+   Sending image to vision API...
+Raw vision API response: ```json
+{
+  "isMatch": false,
+  "confidence": "low",
+  "feedback": "The image provided is completely black, making it impossible to identify any plant features. Without visual information, I cannot determine if this is a Corpse Flower or another plant."
+}
+```
+✓ Vision API Response:
+   - Match: false
+   - Feedback: The image provided is completely black, making it impossible to identify any plant features. Without visual information, I cannot determine if this is a Corpse Flower or another plant.
+
+=== Test Complete ===
