@@ -41,7 +41,7 @@ export interface CafeTour {
 }
 
 export interface BeaconData {
-  id: number;
+  id: string;
   rssi: number;
   name: string;
 }

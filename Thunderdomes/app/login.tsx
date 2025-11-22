@@ -18,7 +18,9 @@ export default function LoginScreen() {
   const { login } = useAuth();
 
   const handleScanBarcode = async () => {
-    if (!permission) {
+    // Check if we have permission
+    if (!permission?.granted) {
+      // Request permission
       const result = await requestPermission();
       if (!result.granted) {
         Alert.alert('Permission Required', 'Camera permission is required to scan barcodes.');
@@ -26,11 +28,7 @@ export default function LoginScreen() {
       }
     }
 
-    if (!permission?.granted) {
-      Alert.alert('Permission Required', 'Camera permission is required to scan barcodes.');
-      return;
-    }
-
+    // At this point, we have permission
     setShowCamera(true);
   };
 

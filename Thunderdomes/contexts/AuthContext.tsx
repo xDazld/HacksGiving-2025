@@ -8,6 +8,7 @@ interface AuthContextType {
   login: (age: number, barcode: string) => Promise<boolean>;
   logout: () => Promise<void>;
   markTicketAsUsed: () => Promise<void>;
+  scanNewTicket: (barcode: string) => Promise<boolean>;
   isLoading: boolean;
 }
 
@@ -87,6 +88,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const scanNewTicket = async (barcode: string): Promise<boolean> => {
+    if (!user) return false;
+
+    try {
+      // Validate barcode with API
+      const isValid = await validateBarcode(barcode);
+      if (!isValid) {
+        return false;
+      }
+
+      // Keep the same age, update barcode and reset ticket status
+      const updatedUser: User = {
+        ...user,
+        barcode,
+        hasUsedTicket: false,
+      };
+
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updatedUser));
+      setUser(updatedUser);
+      return true;
+    } catch (error) {
+      console.error('Failed to scan new ticket:', error);
+      return false;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -94,6 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         logout,
         markTicketAsUsed,
+        scanNewTicket,
         isLoading,
       }}>
       {children}

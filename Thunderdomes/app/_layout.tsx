@@ -7,10 +7,6 @@ import 'react-native-reanimated';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
-
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
   const { user, isLoading } = useAuth();
@@ -20,8 +16,15 @@ function RootLayoutNav() {
   useEffect(() => {
     if (isLoading) return;
 
-    const inAuthGroup = segments[0] === '(tabs)';
-    const onLoginPage = segments[0] === 'login';
+    const currentSegment = segments[0];
+    const inAuthGroup = currentSegment === '(tabs)';
+    const onLoginPage = currentSegment === 'login';
+    const onIndexPage = currentSegment === 'index';
+
+    // If on index page, let it handle the redirect
+    if (onIndexPage) {
+      return;
+    }
 
     if (!user && inAuthGroup) {
       // Redirect to login if not authenticated and trying to access tabs
@@ -30,11 +33,12 @@ function RootLayoutNav() {
       // Redirect to tabs if authenticated and on login page
       router.replace('/(tabs)/audio-tour');
     }
-  }, [user, segments, isLoading]);
+  }, [user, segments, isLoading, router]);
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
+        <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack>

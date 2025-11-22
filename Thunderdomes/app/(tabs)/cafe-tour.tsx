@@ -9,7 +9,7 @@ import { SessionGuard } from '@/components/SessionGuard';
 import { useAuth } from '@/contexts/AuthContext';
 import { fetchCafeTours, calculateProgress } from '@/services/api';
 import { startScanning, stopScanning, formatBeaconDataForAPI } from '@/services/bleService';
-import { CafeTour } from '@/types';
+import { CafeTour, BeaconData } from '@/types';
 
 const PROGRESS_UPDATE_INTERVAL = 3000; // Update progress every 3 seconds
 
@@ -46,27 +46,32 @@ export default function CafeTourScreen() {
     }
   };
 
+  const latestBeaconsRef = useRef<BeaconData[]>([]);
+
   const startProgressTracking = async () => {
-    // Start BLE scanning and update progress periodically
-    const updateProgress = async () => {
+    // Start BLE scanning
+    try {
+      await startScanning((beacons) => {
+        latestBeaconsRef.current = beacons;
+      });
+    } catch (error) {
+      console.error('Failed to start scanning:', error);
+    }
+
+    // Set up interval for periodic updates
+    scanningIntervalRef.current = setInterval(async () => {
       try {
-        const beacons = await startScanning();
-        const formattedData = formatBeaconDataForAPI(beacons);
-        const progressData = await calculateProgress(formattedData);
-        setProgress(progressData.progress);
+        const beacons = latestBeaconsRef.current;
+        // Only calculate progress if we have beacons
+        if (beacons.length > 0) {
+          const formattedData = formatBeaconDataForAPI(beacons);
+          const progressData = await calculateProgress(formattedData);
+          setProgress(progressData.progress);
+        }
       } catch (error) {
         console.error('Failed to update progress:', error);
       }
-    };
-
-    // Initial update
-    await updateProgress();
-
-    // Set up interval for periodic updates
-    scanningIntervalRef.current = setInterval(
-      updateProgress,
-      PROGRESS_UPDATE_INTERVAL
-    ) as unknown as NodeJS.Timeout;
+    }, PROGRESS_UPDATE_INTERVAL) as unknown as NodeJS.Timeout;
   };
 
   const stopProgressTracking = async () => {
@@ -87,14 +92,20 @@ export default function CafeTourScreen() {
   const handleComplete = async () => {
     Alert.alert(
       'Tour Complete!',
-      'Thank you for visiting Mitchell Park Domes. You will now be logged out.',
+      'Thank you for visiting Mitchell Park Domes! Would you like to scan a new ticket to start another activity?',
       [
         {
-          text: 'OK',
+          text: 'No, Thanks',
+          style: 'cancel',
           onPress: async () => {
             await stopProgressTracking();
-            await logout();
-            router.replace('/login');
+          },
+        },
+        {
+          text: 'Scan New Ticket',
+          onPress: async () => {
+            await stopProgressTracking();
+            router.push('/(tabs)/settings');
           },
         },
       ],
