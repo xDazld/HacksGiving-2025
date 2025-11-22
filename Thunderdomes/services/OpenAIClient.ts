@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 
 // Default configuration for GitHub Models
 const DEFAULT_BASE_URL = "https://models.github.ai/inference";
-const DEFAULT_MODEL = "gpt-4o"; 
+const DEFAULT_MODEL = "gpt-4o-mini"; 
 
 export interface OpenAIConfig {
   baseUrl: string;
