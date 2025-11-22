@@ -73,3 +73,13 @@ yarn-error.log
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# Expo
+.expo/
+dist/
+web-build/
+
+# Environment variables
+.env
+.env.local
+.env.*.local

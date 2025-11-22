@@ -1,4 +1,38 @@
 {
-  "name": "hacksgiving_2025_thunderdomes",
-  "displayName": "hacksgiving_2025_thunderdomes"
+  "expo": {
+    "name": "Thunderdomes",
+    "slug": "thunderdomes",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.thunderdomes.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.thunderdomes.app",
+      "permissions": ["CAMERA"]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Thunderdomes to access your camera for barcode scanning."
+        }
+      ]
+    ]
+  }
 }
