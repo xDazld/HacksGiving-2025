@@ -14,4 +14,5 @@ dependencies = [
 dev = [
     "black>=25.11.0",
     "pytest>=9.0.1",
+    "pytest-playwright>=0.3.0",
 ]
