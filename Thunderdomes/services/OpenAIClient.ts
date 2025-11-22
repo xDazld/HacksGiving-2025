@@ -1,8 +1,8 @@
-import OpenAI from 'openai';
+import OpenAI from "openai";
 
 // Default configuration for GitHub Models
 const DEFAULT_BASE_URL = "https://models.github.ai/inference";
-const DEFAULT_MODEL = "gpt-4o-mini"; 
+const DEFAULT_MODEL = "gpt-4o-mini";
 
 export interface OpenAIConfig {
   baseUrl: string;
@@ -12,7 +12,8 @@ export interface OpenAIConfig {
 
 export const DEFAULT_CONFIG: OpenAIConfig = {
   baseUrl: DEFAULT_BASE_URL,
-  apiKey: process.env.GITHUB_TOKEN, // Will be loaded from .env in Node context
+  // Don't access process.env here at module level to avoid issues in some RN environments
+  apiKey: undefined,
   model: DEFAULT_MODEL,
 };
 
@@ -22,22 +23,31 @@ export class OpenAIClient {
 
   constructor(config: Partial<OpenAIConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
-    
+
+    // In Expo, use EXPO_PUBLIC_ prefix for client-side env vars
+    // Fallback to GITHUB_TOKEN for Node.js testing environment
     if (!this.config.apiKey) {
-      console.warn("No API key provided for OpenAIClient. Ensure GITHUB_TOKEN is set.");
+      this.config.apiKey =
+        process.env.EXPO_PUBLIC_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
+    }
+
+    if (!this.config.apiKey) {
+      console.warn(
+        "No API key provided for OpenAIClient. Ensure EXPO_PUBLIC_GITHUB_TOKEN is set in .env"
+      );
     }
 
     this.client = new OpenAI({
       baseURL: this.config.baseUrl,
       apiKey: this.config.apiKey || "dummy-key", // SDK requires a key, even if invalid
-      dangerouslyAllowBrowser: true // Required for React Native if not using a proxy
+      dangerouslyAllowBrowser: true, // Required for React Native if not using a proxy
     });
   }
 
   async chatCompletion(
-    messages: any[], 
+    messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[],
     maxTokens: number = 256,
-    responseFormat?: { type: 'json_object' | 'text' }
+    responseFormat?: { type: "json_object" | "text" }
   ): Promise<string> {
     try {
       const response = await this.client.chat.completions.create({
@@ -50,7 +60,7 @@ export class OpenAIClient {
 
       return response.choices[0].message.content || "";
     } catch (error) {
-      console.error('Chat Completion Error:', error);
+      console.error("Chat Completion Error:", error);
       throw error;
     }
   }
@@ -79,7 +89,7 @@ export class OpenAIClient {
 
       return response.choices[0].message.content || "";
     } catch (error) {
-      console.error('Vision Request Error:', error);
+      console.error("Vision Request Error:", error);
       throw error;
     }
   }

@@ -1,5 +1,5 @@
-import { OpenAIClient } from './OpenAIClient';
-import { Plant, PLANTS } from '../data/plants';
+import { OpenAIClient } from "./OpenAIClient";
+import { Plant, PLANTS } from "../data/plants";
 
 export class ScavengerHuntService {
   private client: OpenAIClient;
@@ -16,7 +16,8 @@ export class ScavengerHuntService {
    * @returns The selected Plant object or null if all plants found
    */
   startGame(foundPlantIds: string[]): Plant | null {
-    const availablePlants = this.plants.filter(p => !foundPlantIds.includes(p.id));
+    const foundSet = new Set(foundPlantIds);
+    const availablePlants = this.plants.filter((p) => !foundSet.has(p.id));
     if (availablePlants.length === 0) {
       return null;
     }
@@ -37,8 +38,11 @@ export class ScavengerHuntService {
     Keep it under 50 words.`;
 
     const messages = [
-      { role: 'system', content: 'You are a helpful and creative botanical guide.' },
-      { role: 'user', content: prompt }
+      {
+        role: "system" as const,
+        content: "You are a helpful and creative botanical guide.",
+      },
+      { role: "user" as const, content: prompt },
     ];
 
     return this.client.chatCompletion(messages);
@@ -55,8 +59,11 @@ export class ScavengerHuntService {
     Keep it short and fun.`;
 
     const messages = [
-      { role: 'system', content: 'You are a helpful botanical guide.' },
-      { role: 'user', content: prompt }
+      {
+        role: "system" as const,
+        content: "You are a helpful botanical guide.",
+      },
+      { role: "user" as const, content: prompt },
     ];
 
     return this.client.chatCompletion(messages);
@@ -68,7 +75,10 @@ export class ScavengerHuntService {
    * @param plant The target plant
    * @returns Object with isMatch boolean and feedback string
    */
-  async verifyFind(imageBase64: string, plant: Plant): Promise<{ isMatch: boolean; feedback: string }> {
+  async verifyFind(
+    imageBase64: string,
+    plant: Plant
+  ): Promise<{ isMatch: boolean; feedback: string }> {
     const prompt = `You are a plant identification expert. Analyze this image and determine if it shows a "${plant.commonName}" (${plant.scientificName}).
 
 IMPORTANT: You must respond with a valid JSON object in this exact format:
@@ -81,56 +91,69 @@ IMPORTANT: You must respond with a valid JSON object in this exact format:
 Be specific in your feedback. If it's not the correct plant, explain what plant features you see and why they don't match.`;
 
     let response: string;
-    
+
     try {
       response = await this.client.visionRequest(imageBase64, prompt);
-      console.log('Raw vision API response:', response);
+      console.log("Raw vision API response:", response);
     } catch (networkError) {
       // Network error - couldn't reach the API
-      console.error('Network error reaching vision API:', networkError);
+      console.error("Network error reaching vision API:", networkError);
       throw new Error(`Vision API unavailable: ${networkError}`);
     }
 
     // Try to parse the JSON response
     try {
       // Clean up markdown code blocks if present
-      const cleanResponse = response.replace(/```json\n?|\n?```/g, '').trim();
+      const cleanResponse = response.replace(/```json\n?|\n?```/g, "").trim();
       const parsed = JSON.parse(cleanResponse);
-      
+
       // Validate the schema
-      if (typeof parsed.isMatch !== 'boolean') {
-        console.warn('Response missing valid isMatch field, attempting to infer from text');
+      if (typeof parsed.isMatch !== "boolean") {
+        console.warn(
+          "Response missing valid isMatch field, attempting to infer from text"
+        );
         // Try to infer from the response text
-        const inferredMatch = response.toLowerCase().includes('true') || 
-                             response.toLowerCase().includes('"ismatch": true');
+        const inferredMatch =
+          response.toLowerCase().includes("true") ||
+          response.toLowerCase().includes('"ismatch": true');
         return {
           isMatch: inferredMatch,
-          feedback: parsed.feedback || response
+          feedback: parsed.feedback || response,
         };
       }
-      
+
       return {
         isMatch: parsed.isMatch,
-        feedback: parsed.feedback || response
+        feedback: parsed.feedback || response,
       };
     } catch (parseError) {
       // JSON parsing failed - model didn't return valid JSON
-      console.warn('Failed to parse JSON from vision response:', parseError);
-      console.warn('Response was:', response);
-      
+      console.warn("Failed to parse JSON from vision response:", parseError);
+      console.warn("Response was:", response);
+
       // Attempt to extract boolean from text response
       const lowerResponse = response.toLowerCase();
       let isMatch = false;
-      
-      if (lowerResponse.includes('"ismatch": true') || lowerResponse.includes('"ismatch":true')) {
+
+      if (
+        lowerResponse.includes('"ismatch": true') ||
+        lowerResponse.includes('"ismatch":true')
+      ) {
         isMatch = true;
-      } else if (lowerResponse.includes('yes') || lowerResponse.includes('correct') || lowerResponse.includes('matches')) {
+      } else if (
+        lowerResponse.includes("yes") ||
+        lowerResponse.includes("correct") ||
+        lowerResponse.includes("matches")
+      ) {
         isMatch = true;
       }
-      
+
       return {
         isMatch,
-        feedback: `Model returned non-JSON response: ${response.substring(0, 200)}...`
+        feedback: `Model returned non-JSON response: ${response.substring(
+          0,
+          200
+        )}...`,
       };
     }
   }
