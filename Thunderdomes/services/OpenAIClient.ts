@@ -27,20 +27,31 @@ export class OpenAIClient {
     this.config = { ...DEFAULT_CONFIG, ...config };
   }
 
-  async chatCompletion(messages: any[], maxTokens: number = 256): Promise<string> {
+  async chatCompletion(
+    messages: any[], 
+    maxTokens: number = 256,
+    responseFormat?: { type: 'json_object' | 'text' }
+  ): Promise<string> {
     try {
+      const requestBody: any = {
+        model: this.config.model,
+        messages: messages,
+        max_tokens: maxTokens,
+        stream: false,
+      };
+
+      // Add response_format if specified
+      if (responseFormat) {
+        requestBody.response_format = responseFormat;
+      }
+
       const response = await fetch(`${this.config.baseUrl}/chat/completions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${this.config.apiKey}`,
         },
-        body: JSON.stringify({
-          model: this.config.model,
-          messages: messages,
-          max_tokens: maxTokens,
-          stream: false,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
