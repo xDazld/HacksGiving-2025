@@ -5,12 +5,12 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
-import { SessionGuard } from '@/components/SessionGuard';
 import { useAuth } from '@/contexts/AuthContext';
 import { OpenAIClient } from '@/services/OpenAIClient';
 import { ScavengerHuntService } from '@/services/ScavengerHuntService';
@@ -19,7 +19,7 @@ import { Plant } from '@/data/plants';
 type GameStatus = 'initial' | 'playing' | 'verifying' | 'success' | 'completed';
 
 export default function ScavengerHuntScreen() {
-  const { logout } = useAuth();
+  const { user } = useAuth();
   const [status, setStatus] = useState<GameStatus>('initial');
   const [currentPlant, setCurrentPlant] = useState<Plant | null>(null);
   const [foundPlantIds, setFoundPlantIds] = useState<string[]>([]);
@@ -151,25 +151,68 @@ export default function ScavengerHuntScreen() {
     );
   }
 
+  const handleStartWithValidation = () => {
+    if (!user) {
+      Alert.alert('Error', 'You must be logged in to start an activity.');
+      return;
+    }
+
+    if (user.hasUsedTicket) {
+      Alert.alert(
+        'Ticket Already Used',
+        'You have already used your ticket for one tour or scavenger hunt. Please scan a new ticket to continue.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    Alert.alert(
+      'Start Activity',
+      'Starting Dome Detective will use your ticket. After completing this activity, you can scan a new ticket to start another. Continue?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Start',
+          onPress: startNewRound,
+        },
+      ],
+    );
+  };
+
   if (status === 'initial') {
     return (
-      <SessionGuard activityName="Scavenger Hunt" onStart={startNewRound}>
-        <ThemedView style={styles.container}>
-          <ThemedText type="title" style={styles.title}>
-            Botanical Scavenger Hunt
-          </ThemedText>
-          <ThemedText style={styles.description}>
-            Explore the domes and find the hidden plants! I'll give you a
-            riddle, and you have to snap a photo of the plant to verify it.
-          </ThemedText>
-          <TouchableOpacity
-            style={styles.primaryButton}
-            onPress={startNewRound}
-          >
-            <ThemedText style={styles.buttonText}>Start Hunt</ThemedText>
-          </TouchableOpacity>
-        </ThemedView>
-      </SessionGuard>
+      <ThemedView style={styles.initialContainer} lightColor="#F5F1E3" darkColor="#F5F1E3">
+        <ThemedText 
+          type="title" 
+          style={styles.initialTitle}
+          lightColor="#2C2416"
+          darkColor="#2C2416"
+        >
+          Dome Detective
+        </ThemedText>
+        <ThemedText 
+          style={styles.initialDescription}
+          lightColor="#2C2416"
+          darkColor="#2C2416"
+        >
+          Identify plants using clues and your sleuthing skills... Are you
+          ready to be a detective?
+        </ThemedText>
+        <Image
+          source={require('@/assets/images/DomeDetectiveEntry.png')}
+          style={styles.detectiveImage}
+          resizeMode="contain"
+        />
+        <TouchableOpacity
+          style={styles.letsGoButton}
+          onPress={handleStartWithValidation}
+        >
+          <ThemedText style={styles.letsGoButtonText}>Let's Go!</ThemedText>
+        </TouchableOpacity>
+      </ThemedView>
     );
   }
 
@@ -263,6 +306,50 @@ const styles = StyleSheet.create({
     padding: 20,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  initialContainer: {
+    flex: 1,
+    padding: 20,
+    paddingTop: 60,
+    paddingBottom: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F5F1E3',
+  },
+  initialTitle: {
+    textAlign: 'center',
+    marginBottom: 15,
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: '#2C2416',
+  },
+  initialDescription: {
+    textAlign: 'center',
+    marginBottom: 30,
+    fontSize: 18,
+    lineHeight: 26,
+    color: '#2C2416',
+    paddingHorizontal: 20,
+  },
+  detectiveImage: {
+    width: '100%',
+    height: 275,
+  },
+  letsGoButton: {
+    backgroundColor: '#5A6A5D',
+    paddingVertical: 16,
+    paddingHorizontal: 50,
+    borderRadius: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  letsGoButtonText: {
+    color: '#F5F1E3',
+    fontSize: 22,
+    fontWeight: 'bold',
   },
   centeredContainer: {
     flex: 1,
