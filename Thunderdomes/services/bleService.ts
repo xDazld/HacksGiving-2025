@@ -1,112 +1,271 @@
 import { BeaconData, BeaconAPIFormat } from '@/types';
+import { Platform, PermissionsAndroid } from 'react-native';
 
-// TODO: Import BLE library when implementing
-// import { BleManager } from 'react-native-ble-plx';
+// Conditionally import BLE only on native platforms
+let BleManager: any;
+let State: any;
+let manager: any = null;
+let bleAvailable = false;
+
+if (Platform.OS !== 'web') {
+  try {
+    const BLE = require('react-native-ble-plx');
+    BleManager = BLE.BleManager;
+    State = BLE.State;
+    bleAvailable = true;
+    // Note: Manager will be initialized lazily when needed
+  } catch (error) {
+    console.error('Failed to load react-native-ble-plx:', error);
+    bleAvailable = false;
+  }
+}
+
+// Mock State for platforms without BLE
+if (!bleAvailable) {
+  State = {
+    PoweredOn: 'PoweredOn',
+    PoweredOff: 'PoweredOff',
+    Unknown: 'Unknown',
+  };
+}
 
 let isInitialized = false;
 let isScanning = false;
-// TODO: Initialize BLE manager when implementing
-// let manager: BleManager | null = null;
+let stateSubscription: any = null;
+
+// Map to store detected devices
+const detectedDevices = new Map<string, BeaconData>();
 
 /**
- * Initializes the BLE service
- * TODO: Implement actual BLE initialization using react-native-ble-plx
- * 
- * Implementation should:
- * 1. Create a new BleManager instance
- * 2. Request necessary permissions (Bluetooth, Location)
- * 3. Check if Bluetooth is enabled
- * 4. Set up error handlers
+ * Lazily initialize the BLE manager
+ * Only creates the manager when it's actually needed
  */
-export async function initializeBLE(): Promise<boolean> {
-  // TODO: Implement actual BLE initialization
-  // Example implementation:
-  // try {
-  //   manager = new BleManager();
-  //   const state = await manager.state();
-  //   if (state === 'PoweredOn') {
-  //     isInitialized = true;
-  //     return true;
-  //   }
-  //   // Handle other states (PoweredOff, Unauthorized, etc.)
-  //   return false;
-  // } catch (error) {
-  //   console.error('Failed to initialize BLE:', error);
-  //   return false;
-  // }
+function ensureManagerInitialized(): boolean {
+  if (!bleAvailable || !BleManager) {
+    return false;
+  }
   
-  // Mock implementation for development
-  isInitialized = true;
+  if (manager === null) {
+    try {
+      manager = new BleManager();
+    } catch (error) {
+      console.error('Failed to create BLE Manager:', error);
+      bleAvailable = false;
+      return false;
+    }
+  }
+  
   return true;
 }
 
 /**
- * Starts scanning for BLE beacons
- * TODO: Implement actual BLE scanning using react-native-ble-plx
- * 
- * Implementation should:
- * 1. Start scanning for devices
- * 2. Filter devices matching the LocationContext_# pattern
- * 3. Extract RSSI values
- * 4. Return array of BeaconData
+ * Request Bluetooth and location permissions (Android specific)
  */
-export async function startScanning(): Promise<BeaconData[]> {
-  // TODO: Implement actual BLE scanning
-  // Example implementation:
-  // if (!manager || !isInitialized) {
-  //   await initializeBLE();
-  // }
-  // 
-  // return new Promise((resolve, reject) => {
-  //   const beacons: BeaconData[] = [];
-  //   
-  //   manager.startDeviceScan(null, null, (error, device) => {
-  //     if (error) {
-  //       reject(error);
-  //       return;
-  //     }
-  //     
-  //     if (device && device.name && device.name.startsWith('LocationContext_')) {
-  //       const match = device.name.match(/LocationContext_(\d+)/);
-  //       if (match) {
-  //         beacons.push({
-  //           id: parseInt(match[1], 10),
-  //           rssi: device.rssi || 0,
-  //           name: device.name,
-  //         });
-  //       }
-  //     }
-  //   });
-  //   
-  //   // Stop scanning after a timeout or when enough beacons are found
-  //   setTimeout(() => {
-  //     manager.stopDeviceScan();
-  //     resolve(beacons);
-  //   }, 5000);
-  // });
-  
-  // Mock implementation for development
+async function requestPermissions(): Promise<boolean> {
+  if (Platform.OS === 'android') {
+    const apiLevel = Platform.Version as number;
+
+    try {
+      if (apiLevel >= 31) {
+        // Android 12+ permissions
+        const granted = await PermissionsAndroid.requestMultiple([
+          PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
+          PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+        ]);
+        return granted['android.permission.BLUETOOTH_SCAN'] === PermissionsAndroid.RESULTS.GRANTED;
+      } else if (apiLevel >= 23) {
+        // Android 6.0 - 11 permissions
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+        );
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      }
+      return true;
+    } catch (error) {
+      console.error('Permission request failed:', error);
+      return false;
+    }
+  }
+  return true; // iOS handles permissions via Info.plist
+}
+
+/**
+ * Initializes the BLE service
+ * Sets up state monitoring and checks if BLE is ready
+ */
+export async function initializeBLE(): Promise<boolean> {
+  if (!ensureManagerInitialized()) {
+    console.warn('BLE not available on this platform');
+    return false;
+  }
+
+  try {
+    const state = await manager.state();
+    isInitialized = state === State.PoweredOn;
+    return isInitialized;
+  } catch (error) {
+    console.error('Failed to initialize BLE:', error);
+    return false;
+  }
+}
+
+/**
+ * Subscribe to BLE state changes
+ * @param callback Function called when BLE state changes
+ * @returns Unsubscribe function
+ */
+export function subscribeToBLEState(
+  callback: (state: string) => void
+): () => void {
+  if (!ensureManagerInitialized()) {
+    return () => {};
+  }
+
+  stateSubscription = manager.onStateChange((state: string) => {
+    callback(state);
+  }, true);
+
+  return () => {
+    if (stateSubscription) {
+      stateSubscription.remove();
+      stateSubscription = null;
+    }
+  };
+}
+
+/**
+ * Starts scanning for BLE beacons
+ * @param onDeviceFound Callback called when a device is detected
+ * @returns Promise that resolves when scanning starts or rejects on error
+ */
+export async function startScanning(
+  onDeviceFound: (devices: BeaconData[]) => void
+): Promise<void> {
+  if (!ensureManagerInitialized()) {
+    throw new Error('BLE scanning not available on this platform');
+  }
+
+  if (isScanning) {
+    console.warn('Scanning already in progress');
+    return;
+  }
+
+  // Request permissions first
+  const permissionsGranted = await requestPermissions();
+  if (!permissionsGranted) {
+    throw new Error('Permissions not granted. Cannot scan.');
+  }
+
+  // Check BLE state
+  const currentState = await manager.state();
+  if (currentState !== State.PoweredOn) {
+    throw new Error('Bluetooth must be powered on to scan.');
+  }
+
+  // Clear previous results
+  detectedDevices.clear();
   isScanning = true;
-  return [
-    { id: 1, rssi: -56, name: 'LocationContext_1' },
-    { id: 4, rssi: -130, name: 'LocationContext_4' },
-    { id: 6, rssi: -76, name: 'LocationContext_6' },
-  ];
+
+  // Start scanning with allowDuplicates to get continuous RSSI updates
+  manager.startDeviceScan(
+    null,
+    { allowDuplicates: true },
+    (error: any, device: any) => {
+      if (error) {
+        console.error('BLE Scan Error:', error.message);
+        isScanning = false;
+        throw error;
+      }
+
+      // Only process devices with RSSI values
+      if (device && device.rssi !== null) {
+        detectedDevices.set(device.id, {
+          id: device.id,
+          name: device.name || 'Unknown Device',
+          rssi: device.rssi,
+        });
+
+        // Notify callback with updated device list
+        onDeviceFound(Array.from(detectedDevices.values()));
+      }
+    }
+  );
 }
 
 /**
  * Stops scanning for BLE beacons
- * TODO: Implement actual BLE stop scanning using react-native-ble-plx
  */
 export async function stopScanning(): Promise<void> {
-  // TODO: Implement actual BLE stop scanning
-  // if (manager) {
-  //   manager.stopDeviceScan();
-  // }
-  // isScanning = false;
-  
-  // Mock implementation for development
+  if (!manager) {
+    return;
+  }
+
+  if (manager && isScanning) {
+    manager.stopDeviceScan();
+    isScanning = false;
+  }
+}
+
+/**
+ * Cleanup BLE resources
+ * Call this when the app is closing or BLE is no longer needed
+ */
+export function cleanupBLE(): void {
+  if (!manager) {
+    return;
+  }
+
+  if (stateSubscription) {
+    stateSubscription.remove();
+    stateSubscription = null;
+  }
+
+  if (manager) {
+    manager.stopDeviceScan();
+    manager.destroy();
+    manager = null;
+  }
+
+  isInitialized = false;
   isScanning = false;
+  detectedDevices.clear();
+}
+
+/**
+ * Get signal quality label based on RSSI value
+ * @param rssi RSSI value in dBm
+ */
+export function getSignalQuality(rssi: number | null): string {
+  if (rssi === null) return 'No Signal';
+  // These thresholds are common for indoor locationing
+  if (rssi > -60) return 'Excellent'; // Very close
+  if (rssi > -75) return 'Good';
+  if (rssi > -90) return 'Fair';
+  return 'Poor'; // Far away
+}
+
+/**
+ * Get the current BLE state
+ */
+export async function getBLEState(): Promise<string> {
+  if (!ensureManagerInitialized()) {
+    return State.Unknown;
+  }
+
+  try {
+    return await manager.state();
+  } catch (error) {
+    console.error('Failed to get BLE state:', error);
+    return State.Unknown;
+  }
+}
+
+/**
+ * Check if BLE is available on this platform
+ */
+export function isBLEAvailable(): boolean {
+  return bleAvailable && BleManager !== undefined;
 }
 
 /**
@@ -156,4 +315,3 @@ export function getScanningStatus(): boolean {
 export function getInitializationStatus(): boolean {
   return isInitialized;
 }
-
