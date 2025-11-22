@@ -28,7 +28,7 @@ def get_appwrite_service(settings: Settings = Depends(get_settings)) -> Appwrite
     return AppwriteService(settings)
 
 
-@router.get("/api", response_model=FastUI, response_model_exclude_none=True)
+@router.get("/api/admin", response_model=FastUI, response_model_exclude_none=True)
 async def admin_home(
     service: AppwriteService = Depends(get_appwrite_service),
 ) -> list[AnyComponent]:
@@ -99,7 +99,7 @@ async def admin_home(
     ]
 
 
-@router.get("/tours/api", response_model=FastUI, response_model_exclude_none=True)
+@router.get("/api/admin/tours", response_model=FastUI, response_model_exclude_none=True)
 async def tours_list(
     service: AppwriteService = Depends(get_appwrite_service),
 ) -> list[AnyComponent]:
@@ -114,6 +114,7 @@ async def tours_list(
                 c.Button(text="Create New Tour", on_click=GoToEvent(url="/admin/tours/new")),
                 c.Table(
                     data=tours,
+                    data_model=Tour,
                     columns=[
                         DisplayLookup(field="title", title="Title"),
                         DisplayLookup(field="description", title="Description"),
@@ -125,7 +126,7 @@ async def tours_list(
     ]
 
 
-@router.get("/scavenger-hunts/api", response_model=FastUI, response_model_exclude_none=True)
+@router.get("/api/admin/scavenger-hunts", response_model=FastUI, response_model_exclude_none=True)
 async def scavenger_hunts_list(
     service: AppwriteService = Depends(get_appwrite_service),
 ) -> list[AnyComponent]:
@@ -140,6 +141,7 @@ async def scavenger_hunts_list(
                 c.Button(text="Create New Hunt", on_click=GoToEvent(url="/admin/scavenger-hunts/new")),
                 c.Table(
                     data=hunts,
+                    data_model=ScavengerHunt,
                     columns=[
                         DisplayLookup(field="title", title="Title"),
                         DisplayLookup(field="description", title="Description"),
@@ -152,7 +154,7 @@ async def scavenger_hunts_list(
     ]
 
 
-@router.get("/plants/api", response_model=FastUI, response_model_exclude_none=True)
+@router.get("/api/admin/plants", response_model=FastUI, response_model_exclude_none=True)
 async def plants_list(
     service: AppwriteService = Depends(get_appwrite_service),
 ) -> list[AnyComponent]:
@@ -167,6 +169,7 @@ async def plants_list(
                 c.Button(text="Add New Plant", on_click=GoToEvent(url="/admin/plants/new")),
                 c.Table(
                     data=plants,
+                    data_model=Plant,
                     columns=[
                         DisplayLookup(field="common_name", title="Common Name"),
                         DisplayLookup(field="scientific_name", title="Scientific Name"),
@@ -180,7 +183,7 @@ async def plants_list(
     ]
 
 
-@router.get("/{path:path}")
+@router.get("/admin/{path:path}")
 async def html_landing() -> HTMLResponse:
     """Serve the FastUI HTML page for the admin interface"""
     return HTMLResponse(prebuilt_html(title="Milwaukee Domes Admin"))

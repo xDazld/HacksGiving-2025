@@ -143,9 +143,7 @@ class TestAuthentication:
     async def test_login_invalid_credentials(self):
         """Test login with invalid credentials"""
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.post(
-                "/api/v1/auth/login-json", json={"username": "wrong", "password": "wrongpass"}
-            )
+            response = await client.post("/api/v1/auth/login-json", json={"username": "wrong", "password": "wrongpass"})
 
         # Should fail without proper environment setup
         assert response.status_code in [401, 422, 500]

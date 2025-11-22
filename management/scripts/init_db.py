@@ -163,7 +163,9 @@ async def create_sample_scavenger_hunts():
                 ScavengerHuntItem(
                     id="1", name="Heart-Shaped Leaves", description="Find a plant with heart-shaped leaves"
                 ),
-                ScavengerHuntItem(id="2", name="Needle-Like Leaves", description="Find a plant with needle-like leaves"),
+                ScavengerHuntItem(
+                    id="2", name="Needle-Like Leaves", description="Find a plant with needle-like leaves"
+                ),
                 ScavengerHuntItem(
                     id="3", name="Compound Leaves", description="Find a plant with leaves made of smaller leaflets"
                 ),

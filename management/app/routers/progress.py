@@ -21,7 +21,7 @@ async def calculate_progress(
 ) -> ProgressResponse:
     """
     Calculate visitor progress based on BLE beacon data.
-    
+
     This endpoint processes beacon proximity data to determine how far
     a visitor has progressed through the dome exhibits.
     """
@@ -30,16 +30,16 @@ async def calculate_progress(
     # - Beacon locations and sequencing
     # - Signal strength thresholds
     # - Historical visitor paths
-    
+
     unique_beacons = len(set(beacon_data.ids))
     # Assume there are about 10 beacons total in the dome
     total_beacons = 10
     progress_percentage = min(100.0, (unique_beacons / total_beacons) * 100)
-    
+
     # Find the nearest beacon (highest RSSI)
     nearest_idx = beacon_data.rssi.index(max(beacon_data.rssi)) if beacon_data.rssi else 0
     nearest_location = beacon_data.ids[nearest_idx] if beacon_data.ids else None
-    
+
     return ProgressResponse(
         progress=progress_percentage,
         nearest_location=nearest_location,
@@ -54,16 +54,16 @@ async def validate_ticket(
 ) -> BarcodeValidationResponse:
     """
     Validate a ticket barcode.
-    
+
     This endpoint checks if a ticket barcode is valid and returns
     ticket details if found.
     """
     is_valid, ticket_data = await service.validate_ticket(request.barcode)
-    
+
     if not is_valid:
         message = ticket_data.get("message", "Invalid ticket") if ticket_data else "Invalid ticket"
         return BarcodeValidationResponse(valid=False, message=message)
-    
+
     return BarcodeValidationResponse(
         valid=True,
         ticket_type=ticket_data.get("ticket_type") if ticket_data else None,

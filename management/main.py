@@ -20,13 +20,13 @@ async def lifespan(app: FastAPI):
     """Application lifespan manager"""
     # Startup
     print(f"Starting {settings.app_name} v{settings.app_version}")
-    
+
     # Initialize database and collections automatically
     success = initialize_database(settings)
     if not success:
         print("⚠️  Database initialization encountered issues, but continuing...")
         print("    The application will still start with graceful error handling.")
-    
+
     yield
     # Shutdown
     print("Shutting down application")
@@ -59,8 +59,8 @@ app.include_router(cafe_tours.router, prefix=settings.api_prefix)
 app.include_router(plants.router, prefix=settings.api_prefix)
 app.include_router(progress.router, prefix=settings.api_prefix)
 
-# Include admin UI router
-app.include_router(admin_router, prefix="/admin")
+# Include admin UI router at root (it defines its own /admin and /api paths)
+app.include_router(admin_router)
 
 
 @app.get("/", response_class=HTMLResponse)

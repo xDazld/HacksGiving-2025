@@ -1,5 +1,11 @@
-"""Appwrite service for database and authentication operations"""
+"""Appwrite service for database and authentication operations
 
+Note: We use the Databases API (legacy documents API) because the Python SDK 6.0.0
+does not yet support the newer TablesDB API. The deprecation warnings come from the
+Appwrite server, not the SDK. The API is fully functional and supported.
+"""
+
+import warnings
 from datetime import datetime
 from typing import Optional, Any
 from appwrite.client import Client
@@ -8,6 +14,9 @@ from appwrite.services.storage import Storage
 from appwrite.services.users import Users
 from appwrite.query import Query
 from appwrite.id import ID
+
+# Suppress Appwrite SDK deprecation warnings since TablesDB is not yet available in Python SDK
+warnings.filterwarnings("ignore", message="Call to deprecated function")
 
 from app.config import Settings
 from app.models import (

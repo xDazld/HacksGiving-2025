@@ -19,7 +19,7 @@ class TestHomePage:
         """Test that the home page loads successfully"""
         page.goto(base_url)
         expect(page).to_have_title("Milwaukee Domes Management")
-        
+
         # Check for main heading
         heading = page.locator("h1")
         expect(heading).to_contain_text("Milwaukee Domes Management")
@@ -27,11 +27,11 @@ class TestHomePage:
     def test_home_page_has_links(self, page: Page, base_url: str):
         """Test that home page has expected links"""
         page.goto(base_url)
-        
+
         # Check for admin dashboard link
         admin_link = page.get_by_role("link", name="Admin Dashboard")
         expect(admin_link).to_be_visible()
-        
+
         # Check for API docs link
         docs_link = page.get_by_role("link", name="API Documentation")
         expect(docs_link).to_be_visible()
@@ -44,10 +44,10 @@ class TestAPIDocumentation:
         """Test that Swagger API docs load"""
         response = page.goto(f"{base_url}/docs")
         assert response is not None and response.status == 200
-        
+
         # Wait for Swagger UI to load
         page.wait_for_selector(".swagger-ui")
-        
+
         # Check for API title
         title = page.locator(".title")
         expect(title).to_contain_text("Milwaukee Domes Management")
@@ -71,7 +71,7 @@ class TestHealthEndpoint:
         """Test that health endpoint returns valid JSON"""
         response = page.goto(f"{base_url}/health")
         assert response is not None and response.status == 200
-        
+
         # Get the JSON content
         content = page.content()
         assert "healthy" in content.lower()
@@ -83,30 +83,30 @@ class TestAdminInterface:
     def test_admin_dashboard_loads(self, page: Page, base_url: str):
         """Test that admin dashboard loads"""
         page.goto(f"{base_url}/admin")
-        
+
         # FastUI should render the page
         page.wait_for_load_state("networkidle")
-        
+
         # Check that the page has loaded
         expect(page).not_to_have_title("404")
 
     def test_admin_tours_page(self, page: Page, base_url: str):
         """Test tours management page"""
         page.goto(f"{base_url}/admin/tours")
-        
+
         # Wait for page to load
         page.wait_for_load_state("networkidle")
-        
+
         # Page should load without errors
         expect(page).not_to_have_title("404")
 
     def test_admin_plants_page(self, page: Page, base_url: str):
         """Test plants management page"""
         page.goto(f"{base_url}/admin/plants")
-        
+
         # Wait for page to load
         page.wait_for_load_state("networkidle")
-        
+
         # Page should load without errors
         expect(page).not_to_have_title("404")
 

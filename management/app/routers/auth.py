@@ -12,9 +12,7 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
 @router.post("/login", response_model=Token)
-async def login(
-    form_data: OAuth2PasswordRequestForm = Depends(), settings: Settings = Depends(get_settings)
-) -> Token:
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), settings: Settings = Depends(get_settings)) -> Token:
     """Authenticate and return access token"""
     user = await authenticate_user(form_data.username, form_data.password, settings)
     if not user:
@@ -25,7 +23,9 @@ async def login(
         )
 
     access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
-    access_token = create_access_token(data={"sub": user.username}, settings=settings, expires_delta=access_token_expires)
+    access_token = create_access_token(
+        data={"sub": user.username}, settings=settings, expires_delta=access_token_expires
+    )
 
     return Token(access_token=access_token, token_type="bearer")
 
@@ -41,6 +41,8 @@ async def login_json(request: LoginRequest, settings: Settings = Depends(get_set
         )
 
     access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
-    access_token = create_access_token(data={"sub": user.username}, settings=settings, expires_delta=access_token_expires)
+    access_token = create_access_token(
+        data={"sub": user.username}, settings=settings, expires_delta=access_token_expires
+    )
 
     return Token(access_token=access_token, token_type="bearer")
