@@ -36,7 +36,7 @@ export default function TabNavigator() {
         component={ScavengerHuntScreen}
         options={{
           tabBarLabel: 'Scavenger Hunt',
-          tabBarIcon: ({ color, size }) => (
+          tabBarIcon: ({ color }) => (
             <TabIcon icon="🔍" color={color} />
           ),
           headerTitle: 'Scavenger Hunt',
@@ -47,7 +47,7 @@ export default function TabNavigator() {
         component={CafeTourScreen}
         options={{
           tabBarLabel: 'Café Tour',
-          tabBarIcon: ({ color, size }) => (
+          tabBarIcon: ({ color }) => (
             <TabIcon icon="☕" color={color} />
           ),
           headerTitle: 'Café Tour',
@@ -58,7 +58,7 @@ export default function TabNavigator() {
         component={AudioTourScreen}
         options={{
           tabBarLabel: 'Audio Tour',
-          tabBarIcon: ({ color, size }) => (
+          tabBarIcon: ({ color }) => (
             <TabIcon icon="🎧" color={color} />
           ),
           headerTitle: 'Audio Tour',
