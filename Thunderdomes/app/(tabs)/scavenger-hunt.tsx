@@ -10,9 +10,9 @@ import {
   View,
 } from 'react-native';
 import { router } from 'expo-router';
-import * as ImagePicker from 'expo-image-picker';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
+import { PlantCameraModal } from '@/components/PlantCameraModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { OpenAIClient } from '@/services/OpenAIClient';
 import { ScavengerHuntService } from '@/services/ScavengerHuntService';
@@ -32,6 +32,7 @@ export default function ScavengerHuntScreen() {
   const [loadingMessage, setLoadingMessage] = useState('');
   const [showWrongModal, setShowWrongModal] = useState(false);
   const [wrongAnswerFeedback, setWrongAnswerFeedback] = useState('');
+  const [showCameraModal, setShowCameraModal] = useState(false);
 
   // Initialize service
   const serviceRef = useRef<ScavengerHuntService | null>(null);
@@ -88,22 +89,13 @@ export default function ScavengerHuntScreen() {
     }
   };
 
-  const handleFoundIt = async () => {
-    try {
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.5,
-        base64: true,
-      });
+  const handleFoundIt = () => {
+    setShowCameraModal(true);
+  };
 
-      if (!result.canceled && result.assets[0].base64) {
-        verifyImage(result.assets[0].base64);
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Failed to launch camera.');
-    }
+  const handlePhotoTaken = (base64Image: string) => {
+    setShowCameraModal(false);
+    verifyImage(base64Image);
   };
 
   const verifyImage = async (base64Image: string) => {
@@ -252,6 +244,15 @@ export default function ScavengerHuntScreen() {
           <ThemedText style={styles.secondaryButtonText}>Exit</ThemedText>
         </TouchableOpacity>
       </ThemedView>
+    );
+  }
+
+  if (showCameraModal) {
+    return (
+      <PlantCameraModal
+        onPhotoTaken={handlePhotoTaken}
+        onClose={() => setShowCameraModal(false)}
+      />
     );
   }
 
