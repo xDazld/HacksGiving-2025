@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, TouchableOpacity, Alert, Modal, ActivityIndicator } from 'react-native';
+import { StyleSheet, TouchableOpacity, Alert, Modal, ActivityIndicator, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
@@ -60,63 +60,78 @@ export default function SettingsScreen() {
     }
   };
 
+  const handleBLEDebugging = () => {
+    // @ts-ignore - Dynamic route
+    router.push('/developer/ble-scanner');
+  };
+
   return (
     <>
       <ThemedView style={styles.container}>
-        <ThemedView style={styles.content}>
-          <ThemedText type="title" style={styles.title}>
-            Settings
-          </ThemedText>
-
-          <ThemedView style={styles.infoContainer}>
-            <ThemedText style={styles.label}>Age:</ThemedText>
-            <ThemedText style={styles.value}>{user?.age || 'N/A'}</ThemedText>
-          </ThemedView>
-
-          <ThemedView style={styles.infoContainer}>
-            <ThemedText style={styles.label}>Ticket Status:</ThemedText>
-            <ThemedText style={[
-              styles.value,
-              { color: user?.hasUsedTicket ? '#f44336' : '#4caf50' }
-            ]}>
-              {user?.hasUsedTicket ? 'Used' : 'Active'}
+        <ScrollView style={styles.scrollView}>
+          <ThemedView style={styles.content}>
+            <ThemedText type="title" style={styles.title}>
+              Settings
             </ThemedText>
-          </ThemedView>
 
-          {user?.hasUsedTicket && (
-            <ThemedView style={styles.warningContainer}>
-              <ThemedText style={styles.warningText}>
-                Your ticket has been used. Scan a new ticket below to start another activity.
+            <ThemedView style={styles.infoContainer}>
+              <ThemedText style={styles.label}>Age:</ThemedText>
+              <ThemedText style={styles.value}>{user?.age || 'N/A'}</ThemedText>
+            </ThemedView>
+
+            <ThemedView style={styles.infoContainer}>
+              <ThemedText style={styles.label}>Ticket Status:</ThemedText>
+              <ThemedText style={[
+                styles.value,
+                { color: user?.hasUsedTicket ? '#f44336' : '#4caf50' }
+              ]}>
+                {user?.hasUsedTicket ? 'Used' : 'Active'}
               </ThemedText>
             </ThemedView>
-          )}
 
-          {user?.hasUsedTicket && (
-            <>
-              {isScanning ? (
-                <ActivityIndicator size="large" style={{ marginTop: 20 }} />
-              ) : (
-                <TouchableOpacity style={styles.scanButton} onPress={handleScanNewTicket}>
-                  <ThemedText style={styles.scanButtonText}>Scan New Ticket</ThemedText>
-                </TouchableOpacity>
-              )}
-            </>
-          )}
+            {user?.hasUsedTicket && (
+              <ThemedView style={styles.warningContainer}>
+                <ThemedText style={styles.warningText}>
+                  Your ticket has been used. Scan a new ticket below to start another activity.
+                </ThemedText>
+              </ThemedView>
+            )}
 
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <ThemedText style={styles.logoutButtonText}>Logout</ThemedText>
-          </TouchableOpacity>
+            {user?.hasUsedTicket && (
+              <>
+                {isScanning ? (
+                  <ActivityIndicator size="large" style={{ marginTop: 20 }} />
+                ) : (
+                  <TouchableOpacity style={styles.scanButton} onPress={handleScanNewTicket}>
+                    <ThemedText style={styles.scanButtonText}>Scan New Ticket</ThemedText>
+                  </TouchableOpacity>
+                )}
+              </>
+            )}
 
-          <ThemedView style={styles.infoSection}>
-            <ThemedText style={styles.infoTitle}>About</ThemedText>
-            <ThemedText style={styles.infoText}>
-              Mitchell Park Domes Experience App
-            </ThemedText>
-            <ThemedText style={styles.infoText}>
-              Version 1.0.0
-            </ThemedText>
+            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+              <ThemedText style={styles.logoutButtonText}>Logout</ThemedText>
+            </TouchableOpacity>
+
+            {/* Developer Section */}
+            <ThemedView style={styles.developerSection}>
+              <ThemedText style={styles.developerTitle}>Developer Tools</ThemedText>
+              <TouchableOpacity style={styles.debugButton} onPress={handleBLEDebugging}>
+                <ThemedText style={styles.debugButtonText}>BLE Debugging</ThemedText>
+              </TouchableOpacity>
+            </ThemedView>
+
+            <ThemedView style={styles.infoSection}>
+              <ThemedText style={styles.infoTitle}>About</ThemedText>
+              <ThemedText style={styles.infoText}>
+                Mitchell Park Domes Experience App
+              </ThemedText>
+              <ThemedText style={styles.infoText}>
+                Version 1.0.0
+              </ThemedText>
+            </ThemedView>
           </ThemedView>
-        </ThemedView>
+        </ScrollView>
       </ThemedView>
 
       <Modal visible={showScanner} animationType="slide" onRequestClose={() => setShowScanner(false)}>
@@ -131,6 +146,9 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  scrollView: {
     flex: 1,
   },
   content: {
@@ -195,8 +213,30 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
   },
+  developerSection: {
+    marginTop: 30,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+  },
+  developerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 15,
+  },
+  debugButton: {
+    backgroundColor: '#9c27b0',
+    borderRadius: 8,
+    padding: 15,
+    alignItems: 'center',
+  },
+  debugButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   infoSection: {
-    marginTop: 40,
+    marginTop: 30,
     paddingTop: 20,
     borderTopWidth: 1,
     borderTopColor: '#e0e0e0',

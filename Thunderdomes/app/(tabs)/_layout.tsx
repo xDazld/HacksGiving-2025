@@ -17,30 +17,23 @@ export default function TabLayout() {
         tabBarButton: HapticTab,
       }}>
       <Tabs.Screen
-        name="scanner"
-        options={{
-          title: 'Scanner',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="antenna.radiowaves.left.and.right" color={color} />,
-        }}
-      />
-      <Tabs.Screen
         name="audio-tour"
         options={{
-          title: 'Audio Tours',
+          title: 'Botanical Tails',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="music.note" color={color} />,
         }}
       />
       <Tabs.Screen
         name="scavenger-hunt"
         options={{
-          title: 'Scavenger Hunt',
+          title: 'Dome Detective',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="magnifyingglass" color={color} />,
         }}
       />
       <Tabs.Screen
         name="cafe-tour"
         options={{
-          title: 'Cafe Tour',
+          title: 'Sip & Seek',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="cup.and.saucer.fill" color={color} />,
         }}
       />
