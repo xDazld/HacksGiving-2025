@@ -106,7 +106,7 @@ export default function AudioTourScreen() {
       setSelectedTour(tours[0]);
       setHasStarted(true);
       // Kick off plant story generation
-      void generateAndSpeakPlantStory();
+      void generateAndSpeakPlantStory().catch(console.error);
     }
   };
 
