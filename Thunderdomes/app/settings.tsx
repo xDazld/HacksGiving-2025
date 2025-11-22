@@ -33,6 +33,8 @@ export default function SettingsScreen() {
   };
 
   const handleScanNewTicket = () => {
+    if (isScanning) return;
+    setIsScanning(true);
     setShowScanner(true);
   };
 

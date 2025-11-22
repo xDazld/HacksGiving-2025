@@ -20,12 +20,13 @@ const RSSI_MIN = -100;
 const RSSI_MAX = -40;
 
 interface BeaconSample {
-  index: number;
+  id: string; // string ID of the beacon
+  index: number; // numeric index parsed from name, if needed
   name: string;
   samples: { rssi: number; timestamp: number }[];
 }
 
-type BeaconSampleMap = Record<number, BeaconSample>;
+type BeaconSampleMap = Record<string, BeaconSample>;
 
 const parseLocationContextIndex = (name: string): number | null => {
   const match = name.match(/^LocationContext_(\d+)$/);
