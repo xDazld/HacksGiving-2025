@@ -17,7 +17,7 @@ export function CustomBottomNav() {
       name: 'audio-tour',
       path: '/(tabs)/audio-tour',
       icon: BotanicalTalesIcon,
-      label: 'Botanical Tails',
+      label: 'Botanical Tales',
     },
     {
       name: 'scavenger-hunt',
