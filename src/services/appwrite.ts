@@ -1,11 +1,13 @@
 import { Client, Account, Databases } from 'react-native-appwrite';
 
 // Appwrite configuration
-// These should be replaced with your actual Appwrite project values
+// IMPORTANT: For production, use environment variables instead of hardcoded values
+// Example: process.env.APPWRITE_PROJECT_ID
+// See .env.example for configuration template
 export const APPWRITE_CONFIG = {
   endpoint: 'https://cloud.appwrite.io/v1', // Your Appwrite endpoint
-  projectId: 'YOUR_PROJECT_ID', // Your project ID
-  databaseId: 'YOUR_DATABASE_ID', // Your database ID (optional)
+  projectId: 'YOUR_PROJECT_ID', // Replace with your project ID from Appwrite dashboard
+  databaseId: 'YOUR_DATABASE_ID', // Your database ID (optional, for future features)
   userCollectionId: 'YOUR_USER_COLLECTION_ID', // Your user collection ID (optional)
 };
 

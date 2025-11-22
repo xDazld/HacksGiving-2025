@@ -8,6 +8,13 @@ export interface UserData {
   age?: number;
 }
 
+export interface UserPreferences {
+  age?: number;
+  barcodeData?: string;
+  scanTimestamp?: string;
+  [key: string]: any; // Allow additional custom fields
+}
+
 /**
  * Authentication service using Appwrite
  */
@@ -83,7 +90,7 @@ class AuthService {
   /**
    * Update user preferences (e.g., age, barcode validation)
    */
-  async updatePreferences(prefs: Record<string, any>): Promise<Models.User<Models.Preferences>> {
+  async updatePreferences(prefs: UserPreferences): Promise<Models.User<Models.Preferences>> {
     try {
       const user = await account.updatePrefs(prefs);
       return user;
@@ -95,15 +102,27 @@ class AuthService {
 
   /**
    * Validate a barcode/ticket against stored data
-   * This is a placeholder - you would implement actual validation logic
+   * 
+   * IMPORTANT: This is a placeholder implementation for demonstration.
+   * In production, you should:
+   * 1. Query your Appwrite database for the barcode
+   * 2. Check if it's valid, not expired, and not already used
+   * 3. Verify against a secure backend API
+   * 4. Consider rate limiting to prevent brute force attacks
+   * 
+   * Example production implementation:
+   * ```typescript
+   * const response = await databases.listDocuments(
+   *   APPWRITE_CONFIG.databaseId!,
+   *   'tickets',
+   *   [Query.equal('barcode', barcodeData), Query.equal('used', false)]
+   * );
+   * return response.documents.length > 0;
+   * ```
    */
   async validateBarcode(barcodeData: string): Promise<boolean> {
-    // In a real implementation, you would:
-    // 1. Query your database for the barcode
-    // 2. Check if it's valid and not already used
-    // 3. Return true/false based on validation
-    
-    // For now, we'll just check if it's not empty
+    // Basic validation: check if barcode is not empty
+    // TODO: Implement actual validation against your ticket database
     return barcodeData.length > 0;
   }
 }
