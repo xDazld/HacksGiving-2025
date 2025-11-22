@@ -1,0 +1,249 @@
+@startuml Mitchell Park Domes App Architecture
+
+!define COMPONENT_BG_COLOR #E3F2FD
+!define SERVICE_BG_COLOR #FFF3E0
+!define SCREEN_BG_COLOR #E8F5E9
+!define CONTEXT_BG_COLOR #F3E5F5
+
+title Mitchell Park Domes Mobile App Architecture
+
+package "Screens" <<Folder>> SCREEN_BG_COLOR {
+  class LoginScreen {
+    - age: string
+    - barcode: string
+    - showCamera: boolean
+    - useManualBarcode: boolean
+    + handleLogin()
+    + handleScanBarcode()
+    + handleAgeSubmit()
+  }
+  
+  class AudioTourScreen {
+    - tours: Tour[]
+    - selectedTour: Tour
+    - progress: number
+    - hasStarted: boolean
+    + loadTours()
+    + startProgressTracking()
+    + handleComplete()
+  }
+  
+  class ScavengerHuntScreen {
+    - hunts: ScavengerHunt[]
+    - selectedHunt: ScavengerHunt
+    - items: ScavengerHuntItem[]
+    - hasStarted: boolean
+    + loadHunts()
+    + handleToggleItem()
+    + handleComplete()
+  }
+  
+  class CafeTourScreen {
+    - tours: CafeTour[]
+    - selectedTour: CafeTour
+    - progress: number
+    - hasStarted: boolean
+    + loadTours()
+    + startProgressTracking()
+    + handleComplete()
+  }
+}
+
+package "Context" <<Folder>> CONTEXT_BG_COLOR {
+  class AuthContext {
+    - user: User | null
+    - isLoading: boolean
+    + login(age, barcode): Promise<boolean>
+    + logout(): Promise<void>
+    + markTicketAsUsed(): Promise<void>
+  }
+  
+  class AuthProvider {
+    + children: ReactNode
+    - loadUser()
+  }
+}
+
+package "Services" <<Folder>> SERVICE_BG_COLOR {
+  class APIService {
+    + fetchTours(): Promise<Tour[]>
+    + fetchScavengerHunts(): Promise<ScavengerHunt[]>
+    + fetchCafeTours(): Promise<CafeTour[]>
+    + calculateProgress(beaconData): Promise<ProgressData>
+    + validateBarcode(barcode): Promise<boolean>
+  }
+  
+  class BLEService {
+    + initializeBLE(): Promise<boolean>
+    + startScanning(): Promise<BeaconData[]>
+    + stopScanning(): Promise<void>
+    + getLocationContextBeacons(beacons): BeaconData[]
+    + formatBeaconDataForAPI(beacons): BeaconAPIFormat
+  }
+}
+
+package "Components" <<Folder>> COMPONENT_BG_COLOR {
+  class ProgressTracker {
+    + progress: number
+    - getMilestoneStatus()
+  }
+  
+  class TourContent {
+    + parts: TourPart[]
+    + currentProgress: number
+    - isPartUnlocked()
+  }
+  
+  class SessionGuard {
+    + children: ReactNode
+    + onStart: () => void
+    + activityName: string
+    - handleStart()
+  }
+}
+
+package "Types" <<Folder>> {
+  class User {
+    + age: number
+    + barcode: string
+    + isAuthenticated: boolean
+    + hasUsedTicket: boolean
+  }
+  
+  class Tour {
+    + id: string
+    + title: string
+    + description: string
+    + parts: TourPart[]
+  }
+  
+  class TourPart {
+    + id: string
+    + title: string
+    + content: string
+    + unlockProgress: number
+  }
+  
+  class ScavengerHunt {
+    + id: string
+    + title: string
+    + description: string
+    + items: ScavengerHuntItem[]
+  }
+  
+  class ScavengerHuntItem {
+    + id: string
+    + name: string
+    + description: string
+    + completed: boolean
+  }
+  
+  class CafeTour {
+    + id: string
+    + title: string
+    + description: string
+    + parts: TourPart[]
+  }
+  
+  class BeaconData {
+    + id: number
+    + rssi: number
+    + name: string
+  }
+  
+  class BeaconAPIFormat {
+    + ids: number[]
+    + rssi: number[]
+  }
+  
+  class ProgressData {
+    + progress: number
+  }
+}
+
+package "Storage" <<Database>> {
+  class AsyncStorage {
+    + getItem(key): Promise<string>
+    + setItem(key, value): Promise<void>
+    + removeItem(key): Promise<void>
+  }
+}
+
+' Relationships
+
+' Screens use Context
+LoginScreen ..> AuthContext : uses
+AudioTourScreen ..> AuthContext : uses
+ScavengerHuntScreen ..> AuthContext : uses
+CafeTourScreen ..> AuthContext : uses
+
+' Screens use Services
+LoginScreen ..> APIService : validateBarcode
+AudioTourScreen ..> APIService : fetchTours\ncalculateProgress
+AudioTourScreen ..> BLEService : track location
+ScavengerHuntScreen ..> APIService : fetchScavengerHunts
+CafeTourScreen ..> APIService : fetchCafeTours\ncalculateProgress
+CafeTourScreen ..> BLEService : track location
+
+' Screens use Components
+AudioTourScreen *-- ProgressTracker
+AudioTourScreen *-- TourContent
+AudioTourScreen *-- SessionGuard
+ScavengerHuntScreen *-- SessionGuard
+CafeTourScreen *-- ProgressTracker
+CafeTourScreen *-- TourContent
+CafeTourScreen *-- SessionGuard
+
+' Context uses Storage
+AuthContext ..> AsyncStorage : persist session
+
+' Context uses Services
+AuthContext ..> APIService : validateBarcode
+
+' Components use Context
+SessionGuard ..> AuthContext : check ticket status
+
+' Services use Types
+APIService ..> Tour : returns
+APIService ..> ScavengerHunt : returns
+APIService ..> CafeTour : returns
+APIService ..> ProgressData : returns
+APIService ..> BeaconAPIFormat : accepts
+BLEService ..> BeaconData : returns
+BLEService ..> BeaconAPIFormat : formats
+
+' Context uses Types
+AuthContext ..> User : manages
+
+' Screens use Types
+AudioTourScreen ..> Tour : displays
+ScavengerHuntScreen ..> ScavengerHunt : displays
+CafeTourScreen ..> CafeTour : displays
+
+note right of BLEService
+  BLE Service is currently stubbed.
+  Uses LocationContext_# beacon pattern.
+  Returns mock data for development.
+  TODO: Implement with react-native-ble-plx
+end note
+
+note right of APIService
+  All API calls return mock data.
+  TODO: Replace with actual API endpoints.
+  Format for progress: [[ids], [rssi]]
+end note
+
+note right of SessionGuard
+  Enforces "one tour per ticket" rule.
+  Marks ticket as used when activity starts.
+  Prevents multiple activities per session.
+end note
+
+note bottom of AuthContext
+  Persists user session to AsyncStorage.
+  Validates barcode on login.
+  Auto-logout after tour completion.
+end note
+
+@enduml
+
