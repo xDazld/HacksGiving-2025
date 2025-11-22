@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, View, TouchableOpacity, Alert } from 'react-native';
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { CameraView, useCameraPermissions, Camera } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { ThemedView } from './themed-view';
 import { ThemedText } from './themed-text';
@@ -12,7 +12,7 @@ interface PlantCameraModalProps {
 
 export function PlantCameraModal({ onPhotoTaken, onClose }: PlantCameraModalProps) {
   const [permission, requestPermission] = useCameraPermissions();
-  const cameraRef = useRef<CameraView>(null);
+  const cameraRef = useRef<any>(null);
   const [isCapturing, setIsCapturing] = useState(false);
 
   useEffect(() => {
@@ -29,12 +29,35 @@ export function PlantCameraModal({ onPhotoTaken, onClose }: PlantCameraModalProp
   }, [permission, requestPermission, onClose]);
 
   const handleTakePicture = async () => {
-    if (isCapturing) return;
+    if (isCapturing || !cameraRef.current) return;
 
     setIsCapturing(true);
     try {
-      // Try using ImagePicker to take the photo
-      // Note: This will open the native camera UI, but it's the most reliable way
+      // Try to use CameraView's takePictureAsync method directly
+      // Note: CameraView in expo-camera v17 is primarily for barcode scanning
+      // and may not support takePictureAsync. If it doesn't, we'll fall back to ImagePicker
+      const camera = cameraRef.current as any;
+      
+      if (camera && typeof camera.takePictureAsync === 'function') {
+        try {
+          const photo = await camera.takePictureAsync({
+            quality: 0.5,
+            base64: true,
+            skipProcessing: false,
+          });
+
+          if (photo?.base64) {
+            onPhotoTaken(photo.base64);
+            onClose();
+            return;
+          }
+        } catch (takePictureError) {
+          console.log('CameraView takePictureAsync not available, using ImagePicker fallback');
+        }
+      }
+      
+      // Fallback: Use ImagePicker (this will open native camera UI)
+      // Unfortunately, expo-camera v17's CameraView doesn't support taking pictures directly
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: false,
@@ -46,7 +69,6 @@ export function PlantCameraModal({ onPhotoTaken, onClose }: PlantCameraModalProp
         onPhotoTaken(result.assets[0].base64);
         onClose();
       } else {
-        // User cancelled
         setIsCapturing(false);
       }
     } catch (error) {
