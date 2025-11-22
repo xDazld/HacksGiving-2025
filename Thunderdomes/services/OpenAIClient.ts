@@ -65,7 +65,11 @@ export class OpenAIClient {
     }
   }
 
-  async visionRequest(imageBase64: string, prompt: string): Promise<string> {
+  async visionRequest(
+    imageBase64: string,
+    prompt: string,
+    responseFormat?: { type: "json_object" | "text" }
+  ): Promise<string> {
     try {
       const response = await this.client.chat.completions.create({
         model: this.config.model, // GPT-4o supports vision
@@ -84,10 +88,14 @@ export class OpenAIClient {
           },
         ],
         max_tokens: 512,
+        response_format: responseFormat,
         temperature: 1.0,
       });
 
-      return response.choices[0].message.content || "";
+      if (response.choices && response.choices.length > 0) {
+        return response.choices[0].message.content || "";
+      }
+      return "";
     } catch (error) {
       console.error("Vision Request Error:", error);
       throw error;

@@ -93,7 +93,9 @@ Be specific in your feedback. If it's not the correct plant, explain what plant 
     let response: string;
 
     try {
-      response = await this.client.visionRequest(imageBase64, prompt);
+      response = await this.client.visionRequest(imageBase64, prompt, {
+        type: "json_object",
+      });
       console.log("Raw vision API response:", response);
     } catch (networkError) {
       // Network error - couldn't reach the API
@@ -101,59 +103,22 @@ Be specific in your feedback. If it's not the correct plant, explain what plant 
       throw new Error(`Vision API unavailable: ${networkError}`);
     }
 
-    // Try to parse the JSON response
+    // Parse the JSON response
     try {
-      // Clean up markdown code blocks if present
-      const cleanResponse = response.replace(/```json\n?|\n?```/g, "").trim();
-      const parsed = JSON.parse(cleanResponse);
-
-      // Validate the schema
-      if (typeof parsed.isMatch !== "boolean") {
-        console.warn(
-          "Response missing valid isMatch field, attempting to infer from text"
-        );
-        // Try to infer from the response text
-        const inferredMatch =
-          response.toLowerCase().includes("true") ||
-          response.toLowerCase().includes('"ismatch": true');
-        return {
-          isMatch: inferredMatch,
-          feedback: parsed.feedback || response,
-        };
-      }
+      const parsed = JSON.parse(response);
 
       return {
         isMatch: parsed.isMatch,
-        feedback: parsed.feedback || response,
+        feedback: parsed.feedback || "No feedback provided",
       };
     } catch (parseError) {
-      // JSON parsing failed - model didn't return valid JSON
+      // JSON parsing failed - should be rare with JSON mode
       console.warn("Failed to parse JSON from vision response:", parseError);
       console.warn("Response was:", response);
 
-      // Attempt to extract boolean from text response
-      const lowerResponse = response.toLowerCase();
-      let isMatch = false;
-
-      if (
-        lowerResponse.includes('"ismatch": true') ||
-        lowerResponse.includes('"ismatch":true')
-      ) {
-        isMatch = true;
-      } else if (
-        lowerResponse.includes("yes") ||
-        lowerResponse.includes("correct") ||
-        lowerResponse.includes("matches")
-      ) {
-        isMatch = true;
-      }
-
       return {
-        isMatch,
-        feedback: `Model returned non-JSON response: ${response.substring(
-          0,
-          200
-        )}...`,
+        isMatch: false,
+        feedback: "Error processing image verification result.",
       };
     }
   }
