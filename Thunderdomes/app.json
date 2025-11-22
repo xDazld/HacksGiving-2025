@@ -11,7 +11,8 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSCameraUsageDescription": "Allow Thunderdomes to access your camera to scan ticket barcodes.",
+        "NSCameraUsageDescription": "Allow Thunderdomes to access your camera to scan ticket barcodes and take photos for the scavenger hunt.",
+        "NSPhotoLibraryUsageDescription": "Allow Thunderdomes to access your photo library to select images for the scavenger hunt.",
         "NSBluetoothAlwaysUsageDescription": "Allow Thunderdomes to access Bluetooth to track your location in the domes.",
         "NSBluetoothPeripheralUsageDescription": "Allow Thunderdomes to access Bluetooth to track your location in the domes."
       }
@@ -32,7 +33,10 @@
         "android.permission.BLUETOOTH_CONNECT",
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_IMAGES"
       ],
       "package": "com.anonymous.Thunderdomes"
     },
@@ -58,6 +62,13 @@
         "expo-camera",
         {
           "cameraPermission": "Allow Thunderdomes to access your camera to scan ticket barcodes."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Thunderdomes to access your photos for the scavenger hunt.",
+          "cameraPermission": "Allow Thunderdomes to access your camera to take photos for the scavenger hunt."
         }
       ]
     ],
