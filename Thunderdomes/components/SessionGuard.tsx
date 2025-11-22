@@ -53,6 +53,7 @@ export function SessionGuard({ children, onStart, activityName }: SessionGuardPr
   };
 
   const handleScanNewTicket = () => {
+    if (isScanning) return;
     setShowScanner(true);
   };
 
