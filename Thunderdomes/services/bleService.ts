@@ -1,14 +1,16 @@
 import { BeaconData, BeaconAPIFormat } from '@/types';
 import { Platform, PermissionsAndroid } from 'react-native';
+import type { BleManager as BleManagerType, Device, BleError, Subscription } from 'react-native-ble-plx';
 
 // Conditionally import BLE only on native platforms
-let BleManager: any;
-let State: any;
-let manager: any = null;
+let BleManager: { new (): BleManagerType } | unknown;
+let State: { [key: string]: string } | unknown;
+let manager: BleManagerType | null = null;
 let bleAvailable = false;
 
 if (Platform.OS !== 'web') {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const BLE = require('react-native-ble-plx');
     BleManager = BLE.BleManager;
     State = BLE.State;
@@ -31,7 +33,7 @@ if (!bleAvailable) {
 
 let isInitialized = false;
 let isScanning = false;
-let stateSubscription: any = null;
+let stateSubscription: Subscription | null = null;
 
 // Map to store detected devices
 const detectedDevices = new Map<string, BeaconData>();
@@ -46,8 +48,10 @@ function ensureManagerInitialized(): boolean {
   }
   
   if (manager === null) {
+
+    const BleManagerClass = BleManager as { new (): BleManagerType };
     try {
-      manager = new BleManager();
+      manager = new BleManagerClass();
     } catch (error) {
       console.error('Failed to create BLE Manager:', error);
       bleAvailable = false;
@@ -95,14 +99,14 @@ async function requestPermissions(): Promise<boolean> {
  * Sets up state monitoring and checks if BLE is ready
  */
 export async function initializeBLE(): Promise<boolean> {
-  if (!ensureManagerInitialized()) {
+  if (!ensureManagerInitialized() || !manager) {
     console.warn('BLE not available on this platform');
     return false;
   }
 
   try {
     const state = await manager.state();
-    isInitialized = state === State.PoweredOn;
+    isInitialized = state === (State as { [key: string]: string }).PoweredOn;
     return isInitialized;
   } catch (error) {
     console.error('Failed to initialize BLE:', error);
@@ -118,7 +122,7 @@ export async function initializeBLE(): Promise<boolean> {
 export function subscribeToBLEState(
   callback: (state: string) => void
 ): () => void {
-  if (!ensureManagerInitialized()) {
+  if (!ensureManagerInitialized() || !manager) {
     return () => {};
   }
 
@@ -142,7 +146,7 @@ export function subscribeToBLEState(
 export async function startScanning(
   onDeviceFound: (devices: BeaconData[]) => void
 ): Promise<void> {
-  if (!ensureManagerInitialized()) {
+  if (!ensureManagerInitialized() || !manager) {
     throw new Error('BLE scanning not available on this platform');
   }
 
@@ -159,7 +163,7 @@ export async function startScanning(
 
   // Check BLE state
   const currentState = await manager.state();
-  if (currentState !== State.PoweredOn) {
+  if (currentState !== (State as { [key: string]: string }).PoweredOn) {
     throw new Error('Bluetooth must be powered on to scan.');
   }
 
@@ -171,10 +175,10 @@ export async function startScanning(
   manager.startDeviceScan(
     null,
     { allowDuplicates: true },
-    (error: any, device: any) => {
+    (error: BleError | null, device: Device | null) => {
       if (error) {
         console.error('BLE Scan Error:', error.message);
-        isScanning = false;
+        stopScanning();
         throw error;
       }
 
@@ -250,14 +254,14 @@ export function getSignalQuality(rssi: number | null): string {
  */
 export async function getBLEState(): Promise<string> {
   if (!ensureManagerInitialized()) {
-    return State.Unknown;
+    return (State as { [key: string]: string }).Unknown;
   }
 
   try {
     return await manager.state();
   } catch (error) {
     console.error('Failed to get BLE state:', error);
-    return State.Unknown;
+    return (State as { [key: string]: string }).Unknown;
   }
 }
 
