@@ -1,30 +1,37 @@
-// import { Platform } from 'react-native'; // Removed for Node.js compatibility
+import OpenAI from 'openai';
 
-// Default configuration based on user provided info and SSH tunnel
-const DEFAULT_BASE_URL = 'http://127.0.0.1:8033/v1';
-const DEFAULT_VISION_URL = 'http://127.0.0.1:8034/v1'; // Port 8034 for Vision API
+// Default configuration for GitHub Models
+const DEFAULT_BASE_URL = "https://models.github.ai/inference";
+const DEFAULT_MODEL = "gpt-4o"; 
 
 export interface OpenAIConfig {
   baseUrl: string;
-  visionUrl?: string;
   apiKey?: string;
   model: string;
-  visionModel: string;
 }
 
 export const DEFAULT_CONFIG: OpenAIConfig = {
   baseUrl: DEFAULT_BASE_URL,
-  visionUrl: DEFAULT_VISION_URL,
-  apiKey: 'not_used',
-  model: 'meta/llama-3.3-70b-instruct',
-  visionModel: 'meta/llama-3.2-90b-vision-instruct',
+  apiKey: process.env.GITHUB_TOKEN, // Will be loaded from .env in Node context
+  model: DEFAULT_MODEL,
 };
 
 export class OpenAIClient {
+  private client: OpenAI;
   private config: OpenAIConfig;
 
   constructor(config: Partial<OpenAIConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
+    
+    if (!this.config.apiKey) {
+      console.warn("No API key provided for OpenAIClient. Ensure GITHUB_TOKEN is set.");
+    }
+
+    this.client = new OpenAI({
+      baseURL: this.config.baseUrl,
+      apiKey: this.config.apiKey || "dummy-key", // SDK requires a key, even if invalid
+      dangerouslyAllowBrowser: true // Required for React Native if not using a proxy
+    });
   }
 
   async chatCompletion(
@@ -33,34 +40,15 @@ export class OpenAIClient {
     responseFormat?: { type: 'json_object' | 'text' }
   ): Promise<string> {
     try {
-      const requestBody: any = {
+      const response = await this.client.chat.completions.create({
         model: this.config.model,
         messages: messages,
         max_tokens: maxTokens,
-        stream: false,
-      };
-
-      // Add response_format if specified
-      if (responseFormat) {
-        requestBody.response_format = responseFormat;
-      }
-
-      const response = await fetch(`${this.config.baseUrl}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.config.apiKey}`,
-        },
-        body: JSON.stringify(requestBody),
+        response_format: responseFormat,
+        temperature: 1.0,
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`API Error: ${response.status} - ${errorText}`);
-      }
-
-      const data = await response.json();
-      return data.choices[0].message.content;
+      return response.choices[0].message.content || "";
     } catch (error) {
       console.error('Chat Completion Error:', error);
       throw error;
@@ -69,40 +57,27 @@ export class OpenAIClient {
 
   async visionRequest(imageBase64: string, prompt: string): Promise<string> {
     try {
-      const url = this.config.visionUrl || this.config.baseUrl;
-      // Ensure we hit the chat/completions endpoint
-      const endpoint = url.endsWith('/chat/completions') ? url : `${url}/chat/completions`;
-
-      // MSOE HPC uses HTML img tag format, not OpenAI's vision format
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.config.apiKey}`,
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({
-          model: this.config.visionModel,
-          messages: [
-            {
-              role: 'user',
-              content: `${prompt} <img src="data:image/png;base64,${imageBase64}" />`
-            }
-          ],
-          max_tokens: 512,
-          temperature: 1.0,
-          top_p: 1.0,
-          stream: false,
-        }),
+      const response = await this.client.chat.completions.create({
+        model: this.config.model, // GPT-4o supports vision
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: prompt },
+              {
+                type: "image_url",
+                image_url: {
+                  url: `data:image/jpeg;base64,${imageBase64}`,
+                },
+              },
+            ],
+          },
+        ],
+        max_tokens: 512,
+        temperature: 1.0,
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Vision API Error: ${response.status} - ${errorText}`);
-      }
-
-      const data = await response.json();
-      return data.choices[0].message.content;
+      return response.choices[0].message.content || "";
     } catch (error) {
       console.error('Vision Request Error:', error);
       throw error;

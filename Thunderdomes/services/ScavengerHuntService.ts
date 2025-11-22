@@ -93,7 +93,9 @@ Be specific in your feedback. If it's not the correct plant, explain what plant 
 
     // Try to parse the JSON response
     try {
-      const parsed = JSON.parse(response);
+      // Clean up markdown code blocks if present
+      const cleanResponse = response.replace(/```json\n?|\n?```/g, '').trim();
+      const parsed = JSON.parse(cleanResponse);
       
       // Validate the schema
       if (typeof parsed.isMatch !== 'boolean') {
