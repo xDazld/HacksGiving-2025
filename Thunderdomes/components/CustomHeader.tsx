@@ -17,9 +17,11 @@ export function CustomHeader() {
         {/* Center Logo Placeholder */}
         <View style={styles.logoContainer}>
             {/* Placeholder for Logo - Replace with <Image source={require('...')} /> */}
-            <View style={styles.logoPlaceholder}>
-                <IconSymbol name="leaf.fill" size={30} color="#fff" />
-            </View>
+            <Image 
+              source={require('@/assets/images/DomesLogo.png')} 
+              style={{ width: 100, height: 40 }}
+              resizeMode="contain"
+            />
         </View>
 
         {/* Right Settings Button */}
@@ -27,7 +29,11 @@ export function CustomHeader() {
           style={styles.settingsButton} 
           onPress={() => router.push('/settings')}
         >
-          <IconSymbol name="gear" size={24} color="#FFFFFF" />
+          <Image 
+              source={require('@/assets/images/Settings.png')} 
+              style={{ width: 100, height: 40 }}
+              resizeMode="contain"
+            />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -54,6 +60,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 10,
   },
   logoPlaceholder: {
     width: 100,
