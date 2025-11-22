@@ -24,7 +24,7 @@ export function BarcodeScannerModal({ onBarcodeScanned, onClose }: BarcodeScanne
       }
     };
     checkPermission();
-  }, []);
+  }, [permission, requestPermission, onClose]);
 
   const handleBarcodeScanned = ({ data }: { data: string }) => {
     if (hasScanned) return; // Prevent multiple scans
