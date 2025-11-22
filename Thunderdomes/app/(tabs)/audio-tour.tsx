@@ -25,7 +25,6 @@ import {
   parsePlantsCsv,
   pickRandomPlant,
   generatePlantStory,
-  PlantRecord,
   getSamplePlant,
 } from '@/utils/plantData';
 
