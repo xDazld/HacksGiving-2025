@@ -1,7 +1,7 @@
 # Thunderdomes Expo App - Setup Instructions
 
 ## Overview
-This is a React Native app built with Expo for the Milwaukee Domes "Thunderdomes" experience.
+This is a React Native app built with Expo for the Milwaukee Domes "Thunderdomes" experience, with **Appwrite** integration for authentication and data storage.
 
 ## What's Included
 
@@ -9,7 +9,9 @@ This is a React Native app built with Expo for the Milwaukee Domes "Thunderdomes
 - Age input field for validation
 - Barcode scanner button that opens the camera
 - Uses `expo-camera` for scanning QR codes, EAN, and Code 128/39 barcodes
-- Simple validation flow that authenticates users after successful scan
+- **Appwrite anonymous authentication** for ticket validation
+- Stores user preferences (age, barcode data) in Appwrite
+- Loading indicators during authentication
 
 ### 2. Main Navigation
 Bottom tab navigation with three main sections:
@@ -28,9 +30,20 @@ Bottom tab navigation with three main sections:
 
 ### 3. Navigation Flow
 - App starts with Login screen
-- After successful barcode scan (with age entered), user is authenticated
+- User enters age and scans ticket barcode
+- **Appwrite validates and creates anonymous session**
 - Tab navigation appears with access to all three tour pages
 - Users can switch between tabs freely after login
+- Session persists across app restarts
+
+### 4. Appwrite Integration (`src/services/`)
+- **appwrite.ts**: Appwrite client configuration
+- **authService.ts**: Authentication service with methods for:
+  - Anonymous login (for ticket scanning)
+  - User account creation and login
+  - Session management
+  - Preference storage
+  - Barcode validation
 
 ## Getting Started
 
@@ -39,6 +52,24 @@ Bottom tab navigation with three main sections:
 - npm or yarn
 - Expo CLI (install with: `npm install -g expo-cli`)
 - For testing: Expo Go app on iOS/Android
+- **Appwrite account** (free at [cloud.appwrite.io](https://cloud.appwrite.io))
+
+### Appwrite Setup (Required!)
+
+**Before running the app**, you need to configure Appwrite:
+
+1. **Create an Appwrite account** at [cloud.appwrite.io](https://cloud.appwrite.io)
+2. **Create a new project** called "Thunderdomes"
+3. **Get your Project ID** from Settings
+4. **Enable Anonymous Sessions**:
+   - Go to Auth → Settings
+   - Enable "Anonymous Sessions"
+   - Save changes
+5. **Configure the app**:
+   - Open `src/services/appwrite.ts`
+   - Replace `YOUR_PROJECT_ID` with your actual Project ID
+
+See [APPWRITE_SETUP.md](./APPWRITE_SETUP.md) for detailed instructions.
 
 ### Installation
 
@@ -47,7 +78,9 @@ Bottom tab navigation with three main sections:
 npm install
 ```
 
-2. Start the development server:
+2. Configure Appwrite (see above)
+
+3. Start the development server:
 ```bash
 npm start
 ```

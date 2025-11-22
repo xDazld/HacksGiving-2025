@@ -8,8 +8,10 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { Camera, CameraView } from 'expo-camera';
+import authService from '../services/authService';
 
 interface LoginScreenProps {
   onLogin: () => void;
@@ -19,6 +21,7 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
   const [age, setAge] = useState('');
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [scanning, setScanning] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const requestCameraPermission = async () => {
     const { status } = await Camera.requestCameraPermissionsAsync();
@@ -38,31 +41,128 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
     }
   };
 
-  const handleBarcodeScanned = ({ type, data }: { type: string; data: string }) => {
+  const handleBarcodeScanned = async ({ type, data }: { type: string; data: string }) => {
     setScanning(false);
-    
-    // Simple validation - in a real app, this would verify against a backend
-    if (data && data.length > 0) {
-      Alert.alert(
-        'Barcode Scanned',
-        `Barcode validated successfully!`,
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              if (age && parseInt(age) > 0) {
+    setLoading(true);
+
+    try {
+      // Validate age input
+      if (!age || parseInt(age) <= 0) {
+        Alert.alert('Error', 'Please enter your age before scanning.');
+        setLoading(false);
+        return;
+      }
+
+      // Validate barcode with Appwrite
+      const isValid = await authService.validateBarcode(data);
+      
+      if (isValid) {
+        // Create an anonymous session for the user
+        await authService.loginAnonymous();
+        
+        // Store user age in preferences
+        await authService.updatePreferences({
+          age: parseInt(age),
+          barcodeData: data,
+          scanTimestamp: new Date().toISOString(),
+        });
+
+        Alert.alert(
+          'Success',
+          'Ticket validated successfully! Welcome to Thunderdomes.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                setLoading(false);
                 onLogin();
-              } else {
-                Alert.alert('Error', 'Please enter your age before continuing.');
-              }
+              },
             },
-          },
-        ]
+          ]
+        );
+      } else {
+        Alert.alert('Error', 'Invalid ticket. Please try again.');
+        setLoading(false);
+      }
+    } catch (error: any) {
+      console.error('Authentication error:', error);
+      Alert.alert(
+        'Error',
+        error.message || 'Failed to validate ticket. Please try again.'
       );
-    } else {
-      Alert.alert('Error', 'Invalid barcode. Please try again.');
+      setLoading(false);
     }
   };
+
+  if (scanning) {
+    return (
+      <View style={styles.container}>
+        <CameraView
+          style={styles.camera}
+          barcodeScannerSettings={{
+            barcodeTypes: ['qr', 'ean13', 'ean8', 'code128', 'code39'],
+          }}
+          onBarcodeScanned={handleBarcodeScanned}
+        >
+          <View style={styles.scannerOverlay}>
+            <Text style={styles.scannerText}>Position barcode within frame</Text>
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={() => setScanning(false)}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </CameraView>
+      </View>
+    );
+  }
+
+  return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.container}
+    >
+      <View style={styles.content}>
+        <Text style={styles.title}>Welcome to Thunderdomes</Text>
+        <Text style={styles.subtitle}>Milwaukee Domes Experience</Text>
+
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Age</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter your age"
+            value={age}
+            onChangeText={setAge}
+            keyboardType="numeric"
+            maxLength={3}
+            editable={!loading}
+          />
+        </View>
+
+        <TouchableOpacity
+          style={[styles.scanButton, loading && styles.scanButtonDisabled]}
+          onPress={handleScanBarcode}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.scanButtonText}>📷 Scan Ticket to Enter</Text>
+          )}
+        </TouchableOpacity>
+
+        <Text style={styles.instructionText}>
+          Please enter your age and scan your ticket barcode to access the tours.
+        </Text>
+
+        <Text style={styles.poweredByText}>
+          Powered by Appwrite
+        </Text>
+      </View>
+    </KeyboardAvoidingView>
+  );
+}
 
   if (scanning) {
     return (
@@ -175,6 +275,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
+  scanButtonDisabled: {
+    backgroundColor: '#95a5a6',
+  },
   scanButtonText: {
     color: '#fff',
     fontSize: 18,
@@ -185,6 +288,13 @@ const styles = StyleSheet.create({
     color: '#7f8c8d',
     textAlign: 'center',
     paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  poweredByText: {
+    fontSize: 12,
+    color: '#95a5a6',
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
   camera: {
     flex: 1,
