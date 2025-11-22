@@ -10,10 +10,13 @@
     "test": "jest"
   },
   "dependencies": {
+    "@react-native/new-app-screen": "0.82.1",
+    "expo": "^54.0.25",
     "react": "19.1.1",
     "react-native": "0.82.1",
-    "@react-native/new-app-screen": "0.82.1",
-    "react-native-safe-area-context": "^5.5.2"
+    "react-native-appwrite": "^0.18.0",
+    "react-native-safe-area-context": "^5.5.2",
+    "react-native-url-polyfill": "^3.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
