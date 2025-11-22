@@ -19,7 +19,7 @@ function RootLayoutNav() {
     const currentSegment = segments[0];
     const inAuthGroup = currentSegment === '(tabs)';
     const onLoginPage = currentSegment === 'login';
-    const onIndexPage = currentSegment === 'index' || segments.length === 0;
+    const onIndexPage = currentSegment === 'index';
 
     // If on index page, let it handle the redirect
     if (onIndexPage) {
