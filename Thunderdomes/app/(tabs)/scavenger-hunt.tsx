@@ -6,6 +6,8 @@ import {
   Alert,
   ActivityIndicator,
   Image,
+  Modal,
+  View,
 } from 'react-native';
 import { router } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -28,6 +30,8 @@ export default function ScavengerHuntScreen() {
   const [feedback, setFeedback] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
+  const [showWrongModal, setShowWrongModal] = useState(false);
+  const [wrongAnswerFeedback, setWrongAnswerFeedback] = useState('');
 
   // Initialize service
   const serviceRef = useRef<ScavengerHuntService | null>(null);
@@ -106,7 +110,8 @@ export default function ScavengerHuntScreen() {
     if (!serviceRef.current || !currentPlant) return;
 
     setStatus('verifying');
-    setLoadingMessage('Analyzing your find...');
+    setIsLoading(true);
+    setLoadingMessage('Checking your guess...');
 
     try {
       const result = await serviceRef.current.verifyFind(
@@ -119,13 +124,16 @@ export default function ScavengerHuntScreen() {
         setFoundPlantIds(prev => [...prev, currentPlant.id]);
         setStatus('success');
       } else {
-        Alert.alert('Not quite...', result.feedback);
+        setWrongAnswerFeedback(result.feedback);
+        setShowWrongModal(true);
         setStatus('playing');
       }
     } catch (error) {
       console.error('Verification error:', error);
       Alert.alert('Error', 'Failed to verify image. Please try again.');
       setStatus('playing');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -144,9 +152,15 @@ export default function ScavengerHuntScreen() {
 
   if (isLoading) {
     return (
-      <ThemedView style={styles.centeredContainer}>
-        <ActivityIndicator size="large" color="#4caf50" />
-        <ThemedText style={styles.loadingText}>{loadingMessage}</ThemedText>
+      <ThemedView style={styles.centeredContainer} lightColor="#F5F1E3" darkColor="#2C2416">
+        <ActivityIndicator size="large" color="#5A6A5D" />
+        <ThemedText 
+          style={styles.loadingText}
+          lightColor="#2C2416"
+          darkColor="#F5F1E3"
+        >
+          {loadingMessage}
+        </ThemedText>
       </ThemedView>
     );
   }
@@ -233,7 +247,7 @@ export default function ScavengerHuntScreen() {
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.secondaryButton, { marginTop: 10 }]}
-          onPress={() => router.push('/(tabs)/settings')}
+          onPress={() => router.push('/settings')}
         >
           <ThemedText style={styles.secondaryButtonText}>Exit</ThemedText>
         </TouchableOpacity>
@@ -242,61 +256,111 @@ export default function ScavengerHuntScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContainer}>
-      <ThemedView style={styles.header}>
-        <ThemedText type="subtitle">
-          Plants Found: {foundPlantIds.length}
+    <>
+      <ThemedView style={styles.playingContainer} lightColor="#F5F1E3" darkColor="#F5F1E3">
+        <ThemedText 
+          type="title" 
+          style={styles.playingTitle}
+          lightColor="#2C2416"
+          darkColor="#2C2416"
+        >
+          Dome Detective
         </ThemedText>
+
+        {status === 'success' ? (
+          <ScrollView style={styles.successScrollContainer} contentContainerStyle={styles.successContent}>
+            <ThemedText type="title" style={styles.successTitle}>
+              Correct!
+            </ThemedText>
+            <ThemedText style={styles.plantName}>
+              It was the {currentPlant?.commonName}
+            </ThemedText>
+            <ThemedText style={styles.scientificName}>
+              ({currentPlant?.scientificName})
+            </ThemedText>
+            <ThemedText style={styles.feedbackText}>{feedback}</ThemedText>
+
+            <TouchableOpacity
+              style={styles.primaryButton}
+              onPress={handleNextPlant}
+            >
+              <ThemedText style={styles.buttonText}>Next Plant</ThemedText>
+            </TouchableOpacity>
+          </ScrollView>
+        ) : (
+          <>
+            <ScrollView style={styles.riddleScrollContainer} contentContainerStyle={styles.riddleContent}>
+              <ThemedText 
+                style={styles.riddleText}
+                lightColor="#2C2416"
+                darkColor="#2C2416"
+              >
+                {riddle}
+              </ThemedText>
+            </ScrollView>
+
+            {hint && (
+              <View style={styles.hintBox}>
+                <ThemedText 
+                  style={styles.hintText}
+                  lightColor="#2C2416"
+                  darkColor="#2C2416"
+                >
+                  {hint}
+                </ThemedText>
+              </View>
+            )}
+
+            <View style={styles.buttonContainer}>
+              {!hint && (
+                <TouchableOpacity 
+                  style={styles.getHintButton} 
+                  onPress={handleGetHint}
+                >
+                  <ThemedText style={styles.getHintButtonText}>
+                    Get Another Hint ❓
+                  </ThemedText>
+                </TouchableOpacity>
+              )}
+
+              <TouchableOpacity 
+                style={styles.foundItButton} 
+                onPress={handleFoundIt}
+              >
+                <ThemedText style={styles.foundItButtonText}>
+                  I Think I Found It!
+                </ThemedText>
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
       </ThemedView>
 
-      {status === 'success' ? (
-        <ThemedView style={styles.card}>
-          <ThemedText type="title" style={styles.successTitle}>
-            Correct!
-          </ThemedText>
-          <ThemedText style={styles.plantName}>
-            It was the {currentPlant?.commonName}
-          </ThemedText>
-          <ThemedText style={styles.scientificName}>
-            ({currentPlant?.scientificName})
-          </ThemedText>
-          <ThemedText style={styles.feedbackText}>{feedback}</ThemedText>
-
-          <TouchableOpacity
-            style={styles.primaryButton}
-            onPress={handleNextPlant}
-          >
-            <ThemedText style={styles.buttonText}>Next Plant</ThemedText>
-          </TouchableOpacity>
-        </ThemedView>
-      ) : (
-        <ThemedView style={styles.card}>
-          <ThemedText type="subtitle" style={styles.riddleLabel}>
-            Riddle:
-          </ThemedText>
-          <ThemedText style={styles.riddleText}>{riddle}</ThemedText>
-
-          {hint ? (
-            <ThemedView style={styles.hintContainer}>
-              <ThemedText type="defaultSemiBold">Hint:</ThemedText>
-              <ThemedText style={styles.hintText}>{hint}</ThemedText>
-            </ThemedView>
-          ) : (
-            <TouchableOpacity style={styles.hintButton} onPress={handleGetHint}>
-              <ThemedText style={styles.hintButtonText}>
-                Need a Hint?
-              </ThemedText>
-            </TouchableOpacity>
-          )}
-
-          <TouchableOpacity style={styles.cameraButton} onPress={handleFoundIt}>
-            <ThemedText style={styles.cameraButtonText}>
-              📷 Found It!
+      {/* Wrong Answer Modal */}
+      <Modal
+        visible={showWrongModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowWrongModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <ThemedText type="title" style={styles.modalTitle}>
+              Not Quite...
             </ThemedText>
-          </TouchableOpacity>
-        </ThemedView>
-      )}
-    </ScrollView>
+            <ThemedText style={styles.modalText}>
+              {wrongAnswerFeedback}
+            </ThemedText>
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={() => setShowWrongModal(false)}
+            >
+              <ThemedText style={styles.modalButtonText}>Try Again</ThemedText>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </>
   );
 }
 
@@ -351,18 +415,96 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: 'bold',
   },
+  playingContainer: {
+    flex: 1,
+    backgroundColor: '#F5F1E3',
+    paddingTop: 60,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+  },
+  playingTitle: {
+    textAlign: 'center',
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#2C2416',
+    marginBottom: 20,
+  },
+  riddleScrollContainer: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    marginBottom: 15,
+    borderWidth: 2,
+    borderColor: '#D4C5A0',
+  },
+  riddleContent: {
+    padding: 20,
+  },
+  riddleText: {
+    fontSize: 18,
+    lineHeight: 28,
+    color: '#2C2416',
+  },
+  hintBox: {
+    backgroundColor: '#E8DCC4',
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 15,
+    borderWidth: 2,
+    borderColor: '#D4C5A0',
+  },
+  hintText: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: '#2C2416',
+  },
+  buttonContainer: {
+    gap: 12,
+  },
+  getHintButton: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#8BB4D0',
+    borderRadius: 25,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  getHintButtonText: {
+    color: '#8BB4D0',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  foundItButton: {
+    backgroundColor: '#5A6A5D',
+    borderRadius: 25,
+    paddingVertical: 14,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  foundItButtonText: {
+    color: '#F5F1E3',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  successScrollContainer: {
+    flex: 1,
+  },
+  successContent: {
+    padding: 20,
+  },
   centeredContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  scrollContainer: {
-    flexGrow: 1,
-    padding: 20,
-  },
   loadingText: {
     marginTop: 20,
-    fontSize: 16,
+    fontSize: 18,
+    fontWeight: '600',
   },
   title: {
     textAlign: 'center',
@@ -380,75 +522,16 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     color: '#4caf50',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginBottom: 20,
-  },
-  card: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  riddleLabel: {
-    marginBottom: 10,
-    color: '#81c784',
-  },
-  riddleText: {
-    fontSize: 18,
-    lineHeight: 28,
-    marginBottom: 30,
-    fontStyle: 'italic',
-  },
-  hintContainer: {
-    backgroundColor: 'rgba(255, 235, 59, 0.1)',
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 20,
-    borderLeftWidth: 4,
-    borderLeftColor: '#fdd835',
-  },
-  hintText: {
-    marginTop: 5,
-    fontSize: 16,
-  },
-  hintButton: {
-    alignSelf: 'flex-start',
-    marginBottom: 30,
-  },
-  hintButtonText: {
-    color: '#81c784',
-    textDecorationLine: 'underline',
-    fontSize: 16,
-  },
-  cameraButton: {
-    backgroundColor: '#4caf50',
-    paddingVertical: 16,
-    borderRadius: 30,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  cameraButtonText: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
   primaryButton: {
-    backgroundColor: '#4caf50',
-    paddingVertical: 12,
+    backgroundColor: '#5A6A5D',
+    paddingVertical: 14,
     paddingHorizontal: 30,
     borderRadius: 25,
-    minWidth: 200,
     alignItems: 'center',
+    marginTop: 20,
   },
   buttonText: {
-    color: '#fff',
+    color: '#F5F1E3',
     fontSize: 18,
     fontWeight: '600',
   },
@@ -468,28 +551,73 @@ const styles = StyleSheet.create({
     color: '#4caf50',
     textAlign: 'center',
     marginBottom: 10,
+    fontSize: 32,
   },
   plantName: {
     fontSize: 24,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 5,
-    color: '#fff',
+    color: '#2C2416',
   },
   scientificName: {
     fontSize: 16,
     fontStyle: 'italic',
     textAlign: 'center',
     marginBottom: 20,
-    color: '#aaa',
+    color: '#666',
   },
   feedbackText: {
     fontSize: 16,
     lineHeight: 24,
     textAlign: 'center',
-    marginBottom: 30,
+    marginBottom: 10,
     backgroundColor: 'rgba(76, 175, 80, 0.1)',
     padding: 15,
     borderRadius: 8,
+    color: '#2C2416',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: '#F5F1E3',
+    borderRadius: 20,
+    padding: 30,
+    width: '100%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  modalTitle: {
+    color: '#C75B4B',
+    textAlign: 'center',
+    marginBottom: 15,
+    fontSize: 28,
+  },
+  modalText: {
+    fontSize: 16,
+    lineHeight: 24,
+    textAlign: 'center',
+    marginBottom: 25,
+    color: '#2C2416',
+  },
+  modalButton: {
+    backgroundColor: '#5A6A5D',
+    borderRadius: 25,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    color: '#F5F1E3',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 });
