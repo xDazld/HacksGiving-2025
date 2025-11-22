@@ -87,14 +87,20 @@ export default function AudioTourScreen() {
   const handleComplete = async () => {
     Alert.alert(
       'Tour Complete!',
-      'Thank you for visiting Mitchell Park Domes. You will now be logged out.',
+      'Thank you for visiting Mitchell Park Domes! Would you like to scan a new ticket to start another activity?',
       [
         {
-          text: 'OK',
+          text: 'No, Thanks',
+          style: 'cancel',
           onPress: async () => {
             await stopProgressTracking();
-            await logout();
-            router.replace('/login');
+          },
+        },
+        {
+          text: 'Scan New Ticket',
+          onPress: async () => {
+            await stopProgressTracking();
+            router.push('/(tabs)/settings');
           },
         },
       ],

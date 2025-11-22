@@ -61,13 +61,16 @@ export default function ScavengerHuntScreen() {
 
     Alert.alert(
       'Scavenger Hunt Complete!',
-      'Congratulations! You found all the items. Thank you for visiting Mitchell Park Domes. You will now be logged out.',
+      'Congratulations! You found all the items. Thank you for visiting Mitchell Park Domes. Would you like to scan a new ticket to start another activity?',
       [
         {
-          text: 'OK',
-          onPress: async () => {
-            await logout();
-            router.replace('/login');
+          text: 'No, Thanks',
+          style: 'cancel',
+        },
+        {
+          text: 'Scan New Ticket',
+          onPress: () => {
+            router.push('/(tabs)/settings');
           },
         },
       ],

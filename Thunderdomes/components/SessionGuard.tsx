@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { StyleSheet, Alert, TouchableOpacity } from 'react-native';
+import { StyleSheet, Alert, TouchableOpacity, Modal, ActivityIndicator } from 'react-native';
+import { router } from 'expo-router';
 import { ThemedView } from './themed-view';
 import { ThemedText } from './themed-text';
+import { BarcodeScannerModal } from './BarcodeScannerModal';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface SessionGuardProps {
@@ -11,8 +13,10 @@ interface SessionGuardProps {
 }
 
 export function SessionGuard({ children, onStart, activityName }: SessionGuardProps) {
-  const { user, markTicketAsUsed } = useAuth();
+  const { user, markTicketAsUsed, scanNewTicket } = useAuth();
   const [hasStarted, setHasStarted] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
 
   const handleStart = () => {
     if (!user) {
@@ -30,7 +34,7 @@ export function SessionGuard({ children, onStart, activityName }: SessionGuardPr
 
     Alert.alert(
       'Start Activity',
-      `Starting ${activityName} will use your ticket. After completing this activity, you will be logged out. Continue?`,
+      `Starting ${activityName} will use your ticket. After completing this activity, you can scan a new ticket to start another. Continue?`,
       [
         {
           text: 'Cancel',
@@ -48,8 +52,76 @@ export function SessionGuard({ children, onStart, activityName }: SessionGuardPr
     );
   };
 
+  const handleScanNewTicket = () => {
+    setShowScanner(true);
+  };
+
+  const handleBarcodeScanned = async (barcode: string) => {
+    setShowScanner(false);
+    setIsScanning(true);
+
+    try {
+      const success = await scanNewTicket(barcode);
+      if (success) {
+        Alert.alert(
+          'Success!',
+          'Your new ticket has been validated. You can now start a new activity.',
+        );
+      } else {
+        Alert.alert(
+          'Invalid Ticket',
+          'The scanned barcode is not valid. Please try again with a valid ticket.',
+        );
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to validate ticket. Please try again.');
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
   if (hasStarted) {
     return <>{children}</>;
+  }
+
+  // Show different screen if ticket has been used
+  if (user?.hasUsedTicket) {
+    return (
+      <>
+        <ThemedView style={styles.container}>
+          <ThemedView style={styles.content}>
+            <ThemedText type="title" style={styles.title}>
+              Ticket Already Used
+            </ThemedText>
+            <ThemedText style={styles.description}>
+              You have already used your ticket for one activity. To start another {activityName.toLowerCase()}, scan a new ticket.
+            </ThemedText>
+            {isScanning ? (
+              <ActivityIndicator size="large" style={{ marginTop: 20 }} />
+            ) : (
+              <>
+                <TouchableOpacity style={styles.button} onPress={handleScanNewTicket}>
+                  <ThemedText style={styles.buttonText}>Scan New Ticket</ThemedText>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.button, styles.secondaryButton]} 
+                  onPress={() => router.push('/(tabs)/settings')}
+                >
+                  <ThemedText style={styles.buttonText}>Go to Settings</ThemedText>
+                </TouchableOpacity>
+              </>
+            )}
+          </ThemedView>
+        </ThemedView>
+
+        <Modal visible={showScanner} animationType="slide" onRequestClose={() => setShowScanner(false)}>
+          <BarcodeScannerModal
+            onBarcodeScanned={handleBarcodeScanned}
+            onClose={() => setShowScanner(false)}
+          />
+        </Modal>
+      </>
+    );
   }
 
   return (
@@ -59,7 +131,7 @@ export function SessionGuard({ children, onStart, activityName }: SessionGuardPr
           Ready to Start?
         </ThemedText>
         <ThemedText style={styles.description}>
-          Your ticket includes one {activityName.toLowerCase()}. After you complete it, you'll be logged out and will need to scan a new ticket for another activity.
+          Your ticket includes one {activityName.toLowerCase()}. After you complete it, you can scan a new ticket to start another activity.
         </ThemedText>
         <TouchableOpacity style={styles.button} onPress={handleStart}>
           <ThemedText style={styles.buttonText}>Start {activityName}</ThemedText>
@@ -95,6 +167,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 30,
     paddingVertical: 15,
     borderRadius: 8,
+    marginBottom: 15,
+  },
+  secondaryButton: {
+    backgroundColor: '#666',
   },
   buttonText: {
     color: '#fff',
