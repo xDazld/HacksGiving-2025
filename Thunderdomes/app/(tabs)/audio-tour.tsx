@@ -6,6 +6,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import * as Speech from 'expo-speech';
 import { router } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
@@ -111,11 +112,17 @@ export default function AudioTourScreen() {
   };
 
   function speakIfAvailable(text: string) {
-    // Web Speech API (web only)
+    // Use Web Speech on web; expo-speech on native
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       const utterance = new SpeechSynthesisUtterance(text);
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(utterance);
+      return;
+    }
+    try {
+      Speech.speak(text, { language: 'en-US' });
+    } catch {
+      // no-op
     }
   }
 
