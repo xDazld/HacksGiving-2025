@@ -80,26 +80,55 @@ IMPORTANT: You must respond with a valid JSON object in this exact format:
 
 Be specific in your feedback. If it's not the correct plant, explain what plant features you see and why they don't match.`;
 
+    let response: string;
+    
     try {
-      const response = await this.client.visionRequest(imageBase64, prompt);
-      
-      // Parse the JSON response
+      response = await this.client.visionRequest(imageBase64, prompt);
+      console.log('Raw vision API response:', response);
+    } catch (networkError) {
+      // Network error - couldn't reach the API
+      console.error('Network error reaching vision API:', networkError);
+      throw new Error(`Vision API unavailable: ${networkError}`);
+    }
+
+    // Try to parse the JSON response
+    try {
       const parsed = JSON.parse(response);
       
+      // Validate the schema
+      if (typeof parsed.isMatch !== 'boolean') {
+        console.warn('Response missing valid isMatch field, attempting to infer from text');
+        // Try to infer from the response text
+        const inferredMatch = response.toLowerCase().includes('true') || 
+                             response.toLowerCase().includes('"ismatch": true');
+        return {
+          isMatch: inferredMatch,
+          feedback: parsed.feedback || response
+        };
+      }
+      
       return {
-        isMatch: parsed.isMatch === true,
+        isMatch: parsed.isMatch,
         feedback: parsed.feedback || response
       };
-    } catch (error) {
-      // Fallback: if JSON parsing fails, try to extract boolean from text
-      console.warn('Failed to parse JSON response, falling back to text parsing:', error);
-      const responseText = typeof error === 'string' ? error : String(error);
-      const isMatch = responseText.toLowerCase().includes('true') || 
-                      responseText.toLowerCase().includes('"ismatch": true');
+    } catch (parseError) {
+      // JSON parsing failed - model didn't return valid JSON
+      console.warn('Failed to parse JSON from vision response:', parseError);
+      console.warn('Response was:', response);
+      
+      // Attempt to extract boolean from text response
+      const lowerResponse = response.toLowerCase();
+      let isMatch = false;
+      
+      if (lowerResponse.includes('"ismatch": true') || lowerResponse.includes('"ismatch":true')) {
+        isMatch = true;
+      } else if (lowerResponse.includes('yes') || lowerResponse.includes('correct') || lowerResponse.includes('matches')) {
+        isMatch = true;
+      }
       
       return {
         isMatch,
-        feedback: 'Unable to parse structured response. Please try again.'
+        feedback: `Model returned non-JSON response: ${response.substring(0, 200)}...`
       };
     }
   }

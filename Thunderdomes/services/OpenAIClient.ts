@@ -73,27 +73,21 @@ export class OpenAIClient {
       // Ensure we hit the chat/completions endpoint
       const endpoint = url.endsWith('/chat/completions') ? url : `${url}/chat/completions`;
 
+      // MSOE HPC uses HTML img tag format, not OpenAI's vision format
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${this.config.apiKey}`,
+          'Accept': 'application/json',
         },
         body: JSON.stringify({
           model: this.config.visionModel,
           messages: [
             {
               role: 'user',
-              content: [
-                { type: 'text', text: prompt },
-                {
-                  type: 'image_url',
-                  image_url: {
-                    url: `data:image/jpeg;base64,${imageBase64}`,
-                  },
-                },
-              ],
-            },
+              content: `${prompt} <img src="data:image/png;base64,${imageBase64}" />`
+            }
           ],
           max_tokens: 512,
           temperature: 1.0,
