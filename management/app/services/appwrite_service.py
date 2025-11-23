@@ -17,7 +17,7 @@ from appwrite.query import Query
 from appwrite.id import ID
 
 # Suppress Appwrite SDK deprecation warnings since TablesDB is not yet available in Python SDK
-warnings.filterwarnings("ignore", message="Call to deprecated function")
+warnings.filterwarnings("ignore", message="Call to deprecated function", module="appwrite")
 
 from app.config import Settings
 from app.models import (

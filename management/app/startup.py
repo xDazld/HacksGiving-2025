@@ -1,10 +1,10 @@
 """Application startup tasks - database initialization"""
 
 import sys
-from typing import Any
+
 from appwrite.client import Client
 from appwrite.services.databases import Databases
-from appwrite.id import ID
+
 from appwrite.exception import AppwriteException
 
 from app.config import Settings

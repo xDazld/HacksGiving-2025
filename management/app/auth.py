@@ -37,12 +37,19 @@ def create_access_token(data: dict, settings: Settings, expires_delta: Optional[
     return encoded_jwt
 
 
+# Module-level cache for admin hashed password
+_admin_hashed_password_cache = {}
+
 def get_user(username: str, settings: Settings) -> Optional[UserInDB]:
     """Get user from database (currently only supports admin user from settings)"""
     if username == settings.admin_username:
+        # Cache the hashed password for the admin user per settings instance
+        cache_key = id(settings)
+        if cache_key not in _admin_hashed_password_cache:
+            _admin_hashed_password_cache[cache_key] = get_password_hash(settings.admin_password)
         return UserInDB(
             username=settings.admin_username,
-            hashed_password=get_password_hash(settings.admin_password),
+            hashed_password=_admin_hashed_password_cache[cache_key],
             disabled=False,
         )
     return None

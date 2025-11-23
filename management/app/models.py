@@ -1,7 +1,7 @@
 """Pydantic models for API requests and responses"""
 
 from datetime import datetime
-from typing import Optional, Any
+from typing import Optional
 from pydantic import BaseModel, Field, ConfigDict
 
 

@@ -1,11 +1,11 @@
 """Admin interface using FastUI"""
 
 from typing import Annotated
-from fastapi import APIRouter, Depends, Form as FastAPIForm
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from fastapi.responses import HTMLResponse
 from fastui import FastUI, AnyComponent, prebuilt_html, components as c
-from fastui.components.display import DisplayMode, DisplayLookup
+from fastui.components.display import DisplayLookup
 from fastui.events import GoToEvent, BackEvent
 from fastui.forms import fastui_form
 
@@ -20,7 +20,7 @@ from app.models import (
     AnalyticsOverview,
 )
 from app.services import AppwriteService
-from app.auth import get_current_active_user, User
+# from app.auth import get_current_active_user, User  # Removed unused imports
 
 router = APIRouter()
 
@@ -268,7 +268,7 @@ async def tour_create(
     try:
         # Convert form to TourCreate with empty parts list
         tour_data = TourCreate(title=form.title, description=form.description, parts=[])
-        tour = await service.create_tour(tour_data)
+        await service.create_tour(tour_data)
         return [c.FireEvent(event=GoToEvent(url="/admin/tours"))]
     except Exception as e:
         return [
@@ -312,7 +312,7 @@ async def scavenger_hunt_create(
         hunt_data = ScavengerHuntCreate(
             title=form.title, description=form.description, difficulty=form.difficulty, items=[]
         )
-        hunt = await service.create_scavenger_hunt(hunt_data)
+        await service.create_scavenger_hunt(hunt_data)
         return [c.FireEvent(event=GoToEvent(url="/admin/scavenger-hunts"))]
     except Exception as e:
         return [
@@ -361,7 +361,7 @@ async def plant_create(
             dome_location=form.dome_location or None,
             notes=form.notes or None,
         )
-        plant = await service.create_plant(plant_data)
+        await service.create_plant(plant_data)
         return [c.FireEvent(event=GoToEvent(url="/admin/plants"))]
     except Exception as e:
         return [
