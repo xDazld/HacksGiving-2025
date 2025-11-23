@@ -15,9 +15,10 @@
         "NSPhotoLibraryUsageDescription": "Allow Thunderdomes to access your photo library to select images for the scavenger hunt.",
         "NSBluetoothAlwaysUsageDescription": "Allow Thunderdomes to access Bluetooth to track your location in the domes.",
         "NSBluetoothPeripheralUsageDescription": "Allow Thunderdomes to access Bluetooth to track your location in the domes.",
-        "NSMicrophoneUsageDescription": "Allow Thunderdomes to access your microphone for voice chat."
+        "NSMicrophoneUsageDescription": "Allow Thunderdomes to access your microphone for voice chat.",
+        "ITSAppUsesNonExemptEncryption": false
       },
-      "bundleIdentifier": "com.anonymous.Thunderdomes"
+      "bundleIdentifier": "com.milwaukeedomes.thunderdomes"
     },
     "android": {
       "adaptiveIcon": {
@@ -40,7 +41,7 @@
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.READ_MEDIA_IMAGES"
       ],
-      "package": "com.anonymous.Thunderdomes"
+      "package": "com.milwaukeedomes.thunderdomes"
     },
     "web": {
       "output": "static",
