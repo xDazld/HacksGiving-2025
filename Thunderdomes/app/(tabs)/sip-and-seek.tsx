@@ -6,10 +6,10 @@ import {
   TouchableOpacity,
   Image,
   Alert,
-  SafeAreaView,
   Platform,
   Modal,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { router } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
@@ -53,6 +53,7 @@ const featuredBeverages: Beverage[] = [
 export default function SipAndSeekScreen() {
   const [showCamera, setShowCamera] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
+  const insets = useSafeAreaInsets();
 
   const handleScanPress = async () => {
     if (!permission?.granted) {
@@ -86,7 +87,7 @@ export default function SipAndSeekScreen() {
     >
       <View style={styles.fullScreenContainer}>
         {/* Header with Back Button */}
-        <SafeAreaView style={styles.cameraHeaderSafeArea}>
+        <View style={[styles.cameraHeaderSafeArea, { paddingTop: insets.top }]}>
           <View style={styles.cameraHeader}>
             {/* Back Button */}
             <TouchableOpacity 
@@ -117,7 +118,7 @@ export default function SipAndSeekScreen() {
               />
             </TouchableOpacity>
           </View>
-        </SafeAreaView>
+        </View>
 
         <CameraView
           style={styles.camera}
@@ -141,7 +142,7 @@ export default function SipAndSeekScreen() {
       <ScrollView style={styles.scrollView}>
         <ThemedView style={styles.content}>
           {/* Title */}
-          <ThemedText style={styles.title}>Sip & Seek</ThemedText>
+          <ThemedText type="title" style={styles.title}>Sip & Seek</ThemedText>
 
           {/* Description */}
           <ThemedText style={styles.description}>
@@ -150,7 +151,7 @@ export default function SipAndSeekScreen() {
           </ThemedText>
 
           {/* Featured Beverages Section */}
-          <ThemedText style={styles.sectionTitle}>Featured Beverages</ThemedText>
+          <ThemedText type="subtitle" style={styles.sectionTitle}>Featured Beverages</ThemedText>
 
           {/* Beverage Grid */}
           <View style={styles.beverageGrid}>
@@ -193,6 +194,7 @@ export default function SipAndSeekScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#fff',
   },
   fullScreenContainer: {
     flex: 1,
@@ -203,7 +205,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
-    paddingTop: 30,
+    paddingTop: 24,
     paddingBottom: 120,
   },
   title: {
@@ -211,6 +213,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 20,
+    marginTop: 0,
     paddingBottom: 5,
     color: '#333',
   },
@@ -306,7 +309,6 @@ const styles = StyleSheet.create({
   },
   cameraHeaderSafeArea: {
     backgroundColor: '#68A4D2',
-    paddingTop: Platform.OS === 'android' ? 35 : 0,
   },
   cameraHeader: {
     height: 60,

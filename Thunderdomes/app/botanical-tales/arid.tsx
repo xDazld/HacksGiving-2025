@@ -99,8 +99,8 @@ export default function AridDomeScreen() {
       <ScrollView style={styles.scrollView}>
         <ThemedView style={styles.content}>
           {/* Title */}
-          <ThemedText style={styles.title}>The Arid Dome</ThemedText>
-          <ThemedText style={styles.subtitle}>Select an audio tour</ThemedText>
+          <ThemedText type="title" style={styles.title}>The Arid Dome</ThemedText>
+          <ThemedText type="default" style={styles.subtitle}>Select an audio tour</ThemedText>
 
           {/* Audio Tour Cards */}
           <View style={styles.tourCards}>
@@ -132,6 +132,7 @@ export default function AridDomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#fff',
   },
   headerSafeArea: {
     backgroundColor: '#68A4D2',
@@ -181,7 +182,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
-    paddingTop: 30,
+    paddingTop: 24,
     paddingBottom: 40,
   },
   title: {
