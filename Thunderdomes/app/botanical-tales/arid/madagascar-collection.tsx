@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   ScrollView,
@@ -26,78 +26,10 @@ import {
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-interface AudioSegment {
-  id: number;
-  text: string;
-  startTime: number; // in seconds
-  endTime: number;
-}
-
-// Audio tour content with timestamps
-const audioSegments: AudioSegment[] = [
-  {
-    id: 1,
-    text: 'Welcome to the Madagascar Collection at the Mitchell Park Domes.',
-    startTime: 0,
-    endTime: 4,
-  },
-  {
-    id: 2,
-    text: 'These remarkable plants come from the island of Madagascar,',
-    startTime: 4,
-    endTime: 8,
-  },
-  {
-    id: 3,
-    text: 'a land of incredible biodiversity off the southeastern coast of Africa.',
-    startTime: 8,
-    endTime: 12,
-  },
-  {
-    id: 4,
-    text: 'Look closely at these vibrant pink and purple blooms.',
-    startTime: 12,
-    endTime: 16,
-  },
-  {
-    id: 5,
-    text: "They thrive along the island's coasts.",
-    startTime: 16,
-    endTime: 19,
-  },
-  {
-    id: 6,
-    text: 'As you look at them now, imagine the dry winds of Madagascar',
-    startTime: 19,
-    endTime: 23,
-  },
-  {
-    id: 7,
-    text: 'crossing over coral-sand soils,',
-    startTime: 23,
-    endTime: 26,
-  },
-  {
-    id: 8,
-    text: 'shaping a plant that learned to embrace',
-    startTime: 26,
-    endTime: 29,
-  },
-  {
-    id: 9,
-    text: 'the harshness of its environment.',
-    startTime: 29,
-    endTime: 32,
-  },
-];
-
 export default function MadagascarCollectionScreen() {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [currentSegmentId, setCurrentSegmentId] = useState<number | null>(1);
   const [plantStory, setPlantStory] = useState<string>('');
   const [isStoryLoading, setIsStoryLoading] = useState<boolean>(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // Generate a plant story when the screen loads
@@ -144,51 +76,13 @@ export default function MadagascarCollectionScreen() {
     }
   }
 
-  useEffect(() => {
-    // Find current segment based on time
-    const activeSegment = audioSegments.find(
-      segment =>
-        currentTime >= segment.startTime && currentTime < segment.endTime,
-    );
-    if (activeSegment) {
-      setCurrentSegmentId(activeSegment.id);
-    }
-  }, [currentTime]);
-
-  useEffect(() => {
-    if (isPlaying) {
-      // Simulate audio playback with a timer
-      intervalRef.current = setInterval(() => {
-        setCurrentTime(prev => {
-          const newTime = prev + 0.1;
-          // Loop back to start when finished
-          if (newTime >= 32) {
-            return 0;
-          }
-          return newTime;
-        });
-      }, 100) as unknown as NodeJS.Timeout;
-    } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    }
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-    };
-  }, [isPlaying]);
-
-  const handleBack = () => {
-    setIsPlaying(false);
-    router.back();
-  };
-
   const handlePlayPause = () => {
     setIsPlaying(!isPlaying);
+    // TODO: Implement actual audio playback
+  };
+
+  const handleBack = () => {
+    router.back();
   };
 
   return (
@@ -241,51 +135,6 @@ export default function MadagascarCollectionScreen() {
             />
           </View>
 
-          {/* Audio Transcript with 3-Line View and Fade Effects */}
-          <View style={styles.transcriptWrapper}>
-            <View style={styles.transcriptContainer}>
-              {/* Previous Line (if exists) */}
-              {currentSegmentId && currentSegmentId > 1 && (
-                <View style={styles.segmentContainer}>
-                  <ThemedText
-                    style={[styles.segmentText, styles.blurredSegmentText]}
-                  >
-                    {
-                      audioSegments.find(
-                        s => s.id === (currentSegmentId || 0) - 1,
-                      )?.text
-                    }
-                  </ThemedText>
-                </View>
-              )}
-
-              {/* Current Line */}
-              {currentSegmentId && (
-                <View style={styles.segmentContainer}>
-                  <ThemedText
-                    style={[styles.segmentText, styles.activeSegmentText]}
-                  >
-                    {audioSegments.find(s => s.id === currentSegmentId)?.text}
-                  </ThemedText>
-                </View>
-              )}
-
-              {/* Next Line (if exists) */}
-              {currentSegmentId && currentSegmentId < audioSegments.length && (
-                <View style={styles.segmentContainer}>
-                  <ThemedText
-                    style={[styles.segmentText, styles.blurredSegmentText]}
-                  >
-                    {
-                      audioSegments.find(s => s.id === currentSegmentId + 1)
-                        ?.text
-                    }
-                  </ThemedText>
-                </View>
-              )}
-            </View>
-          </View>
-
           {/* Featured Plant Story Section */}
           <View style={styles.storySection}>
             <ThemedText type="subtitle" style={styles.storyTitle}>
@@ -312,7 +161,7 @@ export default function MadagascarCollectionScreen() {
           activeOpacity={0.8}
         >
           <ThemedText style={styles.playIcon}>
-            {isPlaying ? '⏸' : '▶'}
+            {isPlaying ? '\u23f8' : '\u25b6'}
           </ThemedText>
         </TouchableOpacity>
       </View>
@@ -402,39 +251,6 @@ const styles = StyleSheet.create({
   tourImage: {
     width: '100%',
     height: '100%',
-  },
-  transcriptWrapper: {
-    position: 'relative',
-    height: SCREEN_HEIGHT * 0.35,
-    marginBottom: 30,
-  },
-  transcriptContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    paddingVertical: 10,
-  },
-
-  segmentContainer: {
-    marginVertical: 8,
-    paddingVertical: 4,
-  },
-  segmentText: {
-    fontSize: 16,
-    lineHeight: 24,
-    textAlign: 'center',
-    paddingHorizontal: 20,
-  },
-  activeSegmentText: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#333',
-    lineHeight: 28,
-  },
-  blurredSegmentText: {
-    fontSize: 14,
-    color: '#999',
-    opacity: 0.4,
-    lineHeight: 20,
   },
   playButton: {
     width: 70,
