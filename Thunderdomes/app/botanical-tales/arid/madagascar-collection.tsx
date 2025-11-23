@@ -133,10 +133,8 @@ export default function MadagascarCollectionScreen() {
   // Auto-calibrate after beacons are detected
   useEffect(() => {
     const calibrationStatus = isPositionSystemCalibrated();
-    console.log('🔍 Auto-cal check - Attempted:', autoCalibrationAttempted, 'Beacons:', beacons.length, 'Calibrated:', calibrationStatus);
     
     if (!autoCalibrationAttempted && beacons.length > 0 && !calibrationStatus) {
-      console.log('⏰ Waiting 500ms before auto-calibration...');
       // Wait 500ms to ensure all beacons are detected
       const timer = setTimeout(() => {
         performAutoCalibration();
@@ -149,23 +147,16 @@ export default function MadagascarCollectionScreen() {
   useEffect(() => {
     const calibrationStatus = isPositionSystemCalibrated();
     if (calibrationStatus && beacons.length > 0) {
-      const position = calculatePosition(beacons, 'trilateration', true);
-      console.log('🎯 Position calculated:', position ? `${position.progressPercentage.toFixed(1)}% progress` : 'null');
-    } else if (!calibrationStatus && beacons.length > 0) {
-      console.log('⏳ Beacons detected but not calibrated yet');
+      calculatePosition(beacons, 'trilateration', true);
     }
   }, [beacons]);
 
   // Monitor progress to unlock parts
   useEffect(() => {
-    console.log('📊 Progress update - Calibrated:', isCalibrated, 'Progress:', progress.toFixed(1), '% Unlocked parts:', unlockedParts);
-    
     if (isCalibrated && progress >= 33 && unlockedParts === 1) {
-      console.log('✅ Unlocked part 2 at 33% progress');
       setUnlockedParts(2);
     }
     if (isCalibrated && progress >= 66 && unlockedParts === 2) {
-      console.log('✅ Unlocked part 3 at 66% progress');
       setUnlockedParts(3);
     }
   }, [progress, isCalibrated, unlockedParts]);
@@ -173,7 +164,6 @@ export default function MadagascarCollectionScreen() {
   // Auto-continue when threshold is reached
   useEffect(() => {
     if (waitingForThreshold && isCalibrated && progress >= waitingForThreshold.threshold) {
-      console.log(`✅ Threshold ${waitingForThreshold.threshold}% reached, continuing with part ${waitingForThreshold.part + 1}`);
       const nextPart = waitingForThreshold.part;
       setWaitingForThreshold(null);
       continueWithUnlockedPart(nextPart);
@@ -198,14 +188,10 @@ export default function MadagascarCollectionScreen() {
 
       await startScanning((detectedBeacons: BeaconData[]) => {
         const filteredBeacons = getLocationContextBeacons(detectedBeacons);
-        if (filteredBeacons.length > 0) {
-          console.log('📡 Beacons updated:', filteredBeacons.length, 'LocationContext beacons');
-        }
         setBeacons(filteredBeacons);
       });
 
       setIsScanning(true);
-      console.log('✅ BLE scanning started');
     } catch (err: any) {
       console.error('❌ Failed to start BLE scanning:', err);
     }
@@ -215,11 +201,7 @@ export default function MadagascarCollectionScreen() {
    * Auto-calibrate position system (assumes user is at LocationContext_0)
    */
   function performAutoCalibration() {
-    console.log('🔧 Attempting auto-calibration...');
-    console.log('📍 Detected beacons:', beacons.map(b => `${b.name} (${b.rssi}dBm)`).join(', '));
-    
     if (beacons.length === 0) {
-      console.warn('⚠️ No beacons detected for auto-calibration');
       setAutoCalibrationAttempted(true);
       return;
     }
@@ -227,25 +209,15 @@ export default function MadagascarCollectionScreen() {
     // Check if LocationContext_0 is present
     const lc0 = beacons.find((b) => b.name === 'LocationContext_0');
     if (!lc0) {
-      console.warn('⚠️ LocationContext_0 not detected for auto-calibration');
-      console.warn('Available beacons:', beacons.map(b => b.name).join(', '));
       setAutoCalibrationAttempted(true);
       return;
     }
-
-    console.log('✓ LocationContext_0 found with RSSI:', lc0.rssi);
     
     const success = calibrate(beacons);
     
     if (success) {
-      console.log('✅ Auto-calibration complete with', beacons.length, 'beacons');
-      console.log('✓ Calibration status:', isPositionSystemCalibrated());
-      
       // Trigger an immediate position calculation
-      const initialPosition = calculatePosition(beacons, 'trilateration', true);
-      console.log('📍 Initial position:', initialPosition);
-    } else {
-      console.warn('⚠️ Auto-calibration failed');
+      calculatePosition(beacons, 'trilateration', true);
     }
     
     setAutoCalibrationAttempted(true);
@@ -283,16 +255,13 @@ export default function MadagascarCollectionScreen() {
       // Split story into 3 parts
       const parts = splitStoryIntoThreeParts(story);
       setStoryParts(parts);
-      console.log(`📖 Story split into ${parts.length} parts`);
 
       // Preload audio for first part only (will preload others on-demand)
       if (parts.length > 0 && parts[0]) {
-        console.log('🔄 Starting audio preload for Part 1...');
         setIsAudioLoading(true);
         try {
           await ttsService.current.preloadAudio(parts[0]);
           setIsAudioReady(true);
-          console.log('✅ Audio ready for playback (Part 1)');
         } catch (err) {
           console.error('⚠️ Audio preload failed:', err);
           setIsAudioReady(false);
@@ -311,7 +280,6 @@ export default function MadagascarCollectionScreen() {
       // Split fallback story into 3 parts
       const parts = splitStoryIntoThreeParts(story);
       setStoryParts(parts);
-      console.log(`📖 Fallback story split into ${parts.length} parts`);
 
       // Preload audio for first part
       if (parts.length > 0 && parts[0]) {
@@ -319,7 +287,6 @@ export default function MadagascarCollectionScreen() {
         try {
           await ttsService.current.preloadAudio(parts[0]);
           setIsAudioReady(true);
-          console.log('✅ Audio ready for playback (Part 1)');
         } catch (err) {
           console.error('⚠️ Audio preload failed:', err);
           setIsAudioReady(false);
@@ -348,7 +315,6 @@ export default function MadagascarCollectionScreen() {
     }
 
     try {
-      console.log(`🎵 Playing part ${partIndex + 1} of ${storyParts.length}`);
       setCurrentPlayingPart(partIndex);
       setIsAudioLoading(true);
       
@@ -383,7 +349,6 @@ export default function MadagascarCollectionScreen() {
     
     // Check if we've finished all parts
     if (nextPartIndex >= storyParts.length) {
-      console.log('✅ All parts completed!');
       setCurrentPlayingPart(-1);
       return;
     }
@@ -392,11 +357,9 @@ export default function MadagascarCollectionScreen() {
     const nextPartNumber = nextPartIndex + 1; // Convert 0-indexed to 1-indexed
     if (nextPartNumber <= unlockedParts) {
       // Next part is unlocked, play it immediately
-      console.log(`✅ Part ${nextPartNumber} is unlocked, continuing...`);
       await continueWithUnlockedPart(nextPartIndex);
     } else {
       // Next part is locked, play "continue exploring" message
-      console.log(`🔒 Part ${nextPartNumber} is locked, prompting user to explore`);
       const threshold = nextPartNumber === 2 ? 33 : 66;
       setWaitingForThreshold({ part: nextPartIndex, threshold });
       setCurrentPlayingPart(-1);
@@ -425,7 +388,6 @@ export default function MadagascarCollectionScreen() {
   const handlePlayPause = async () => {
     try {
       if (storyParts.length === 0) {
-        console.log('⚠️ No story parts to play');
         return;
       }
 
@@ -548,7 +510,7 @@ export default function MadagascarCollectionScreen() {
             {/* Position Status */}
             {isCalibrated && (
               <ThemedText style={styles.progressText}>
-                🎯 Your Progress: {progress.toFixed(0)}%
+                {progress.toFixed(0)}%
                 {waitingForThreshold && ` • Explore to ${waitingForThreshold.threshold}% to unlock next part`}
               </ThemedText>
             )}
@@ -798,11 +760,11 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   progressText: {
-    fontSize: 14,
+    fontSize: 11,
     textAlign: 'center',
     marginBottom: 12,
-    color: '#68A4D2',
-    fontWeight: '600',
+    color: '#999',
+    opacity: 0.7,
   },
   warningText: {
     fontSize: 13,
