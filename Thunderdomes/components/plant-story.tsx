@@ -6,35 +6,26 @@ import { Fonts } from '@/constants/theme';
 import {
   fetchPlantsCsvText,
   findPlant,
-  generatePlantStory,
   parsePlantsCsv,
   PlantRecord,
 } from '@/utils/plantData';
+import { PlantStoryService } from '@/services/PlantStoryService';
+import { OpenAIClient } from '@/services/OpenAIClient';
 
 type PlantStoryProps = {
   commonName?: string;
   scientificName?: string;
-  autoSpeak?: boolean;
   onStoryReady?: (story: string) => void;
 };
 
-function speakIfAvailable(text: string) {
-  // Web Speech API (web only)
-  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-    const utterance = new SpeechSynthesisUtterance(text);
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
-    return true;
-  }
-  return false;
-}
-
 export function PlantStory(props: PlantStoryProps) {
-  const { commonName, scientificName, autoSpeak, onStoryReady } = props;
+  const { commonName, scientificName, onStoryReady } = props;
   const [records, setRecords] = useState<PlantRecord[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [story, setStory] = useState<string>('');
-  const [query, setQuery] = useState<string>(commonName || scientificName || '');
+  const [query, setQuery] = useState<string>(
+    commonName || scientificName || '',
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -43,7 +34,7 @@ export function PlantStory(props: PlantStoryProps) {
       if (cancelled) return;
       if (!txt) {
         setError(
-          'Could not load Plants_Formatted.csv on web. Ensure it is served from project root.'
+          'Could not load Plants_Formatted.csv on web. Ensure it is served from project root.',
         );
         setRecords([]);
         return;
@@ -70,22 +61,21 @@ export function PlantStory(props: PlantStoryProps) {
 
   useEffect(() => {
     if (!selected) return;
-    const s = generatePlantStory(selected);
-    setStory(s);
-    onStoryReady?.(s);
-    if (autoSpeak) {
-      const usedSpeech = speakIfAvailable(s);
-      if (!usedSpeech) {
-        // Fallback: log to console if no speech available (native or unsupported web)
-        // eslint-disable-next-line no-console
-        console.log(s);
-      }
-    }
-  }, [selected, autoSpeak, onStoryReady]);
+    const client = new OpenAIClient();
+    const service = new PlantStoryService(client);
 
-  const onTell = useCallback(() => {
+    service.generateStory(selected).then(s => {
+      setStory(s);
+      onStoryReady?.(s);
+    });
+  }, [selected, onStoryReady]);
+
+  const onTell = useCallback(async () => {
     if (!records) return;
-    const found = findPlant(records, { commonName: query, scientificName: query });
+    const found = findPlant(records, {
+      commonName: query,
+      scientificName: query,
+    });
     if (!found) {
       const msg = `No plant found matching "${query}". Try a different name.`;
       setStory(msg);
@@ -93,13 +83,12 @@ export function PlantStory(props: PlantStoryProps) {
       console.log(msg);
       return;
     }
-    const s = generatePlantStory(found);
+
+    const client = new OpenAIClient();
+    const service = new PlantStoryService(client);
+    const s = await service.generateStory(found);
+
     setStory(s);
-    const usedSpeech = speakIfAvailable(s);
-    if (!usedSpeech) {
-      // eslint-disable-next-line no-console
-      console.log(s);
-    }
   }, [records, query]);
 
   return (
@@ -134,15 +123,6 @@ export function PlantStory(props: PlantStoryProps) {
           {story}
         </ThemedText>
       ) : null}
-      {Platform.OS === 'web' && typeof window !== 'undefined' && 'speechSynthesis' in window ? (
-        <ThemedText type="default" style={styles.caption}>
-          Audio is available in this browser via Web Speech API.
-        </ThemedText>
-      ) : (
-        <ThemedText type="default" style={styles.caption}>
-          Audio not available; story will be printed to the console.
-        </ThemedText>
-      )}
     </ThemedView>
   );
 }
@@ -187,5 +167,3 @@ const styles = StyleSheet.create({
 });
 
 export default PlantStory;
-
-

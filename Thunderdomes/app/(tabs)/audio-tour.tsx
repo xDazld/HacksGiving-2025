@@ -6,7 +6,8 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import * as Speech from 'expo-speech';
+import { OpenAIClient } from '@/services/OpenAIClient';
+import { PlantStoryService } from '@/services/PlantStoryService';
 import { router } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
@@ -25,8 +26,8 @@ import {
   fetchPlantsCsvText,
   parsePlantsCsv,
   pickRandomPlant,
-  generatePlantStory,
   getSamplePlant,
+  PlantRecord,
 } from '@/utils/plantData';
 
 const PROGRESS_UPDATE_INTERVAL = 3000; // Update progress every 3 seconds
@@ -111,21 +112,6 @@ export default function AudioTourScreen() {
     }
   };
 
-  function speakIfAvailable(text: string) {
-    // Use Web Speech on web; expo-speech on native
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(utterance);
-      return;
-    }
-    try {
-      Speech.speak(text, { language: 'en-US' });
-    } catch {
-      // no-op
-    }
-  }
-
   async function generateAndSpeakPlantStory() {
     try {
       setIsStoryLoading(true);
@@ -133,14 +119,18 @@ export default function AudioTourScreen() {
       const rows = parsePlantsCsv(csv);
       const pick =
         (pickRandomPlant(rows) as PlantRecord | undefined) || getSamplePlant();
-      const story = generatePlantStory(pick);
+
+      const client = new OpenAIClient();
+      const service = new PlantStoryService(client);
+      const story = await service.generateStory(pick);
+
       setPlantStory(story);
-      speakIfAvailable(story);
     } catch (e) {
       // Strong fallback: always show a sample story
-      const story = generatePlantStory(getSamplePlant());
+      const client = new OpenAIClient();
+      const service = new PlantStoryService(client);
+      const story = await service.generateStory(getSamplePlant());
       setPlantStory(story);
-      speakIfAvailable(story);
     } finally {
       setIsStoryLoading(false);
     }
@@ -162,7 +152,7 @@ export default function AudioTourScreen() {
           text: 'Scan New Ticket',
           onPress: async () => {
             await stopProgressTracking();
-            router.push('/(tabs)/settings');
+            router.push('/settings');
           },
         },
       ],
