@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 
 from app.config import get_settings
-from app.routers import auth, tours, scavenger_hunts, cafe_tours, plants, progress
+from app.routers import auth, cafe_tours, plants, progress
 from app.startup import initialize_database
 
 # Import admin UI router
@@ -53,8 +53,6 @@ app.add_middleware(
 
 # Include API routers
 app.include_router(auth.router, prefix=settings.api_prefix)
-app.include_router(tours.router, prefix=settings.api_prefix)
-app.include_router(scavenger_hunts.router, prefix=settings.api_prefix)
 app.include_router(cafe_tours.router, prefix=settings.api_prefix)
 app.include_router(plants.router, prefix=settings.api_prefix)
 app.include_router(progress.router, prefix=settings.api_prefix)
@@ -106,10 +104,9 @@ async def root():
         
         <h2>Quick Links</h2>
         <ul>
-            <li><a href="/admin/tours">Manage Tours</a></li>
-            <li><a href="/admin/scavenger-hunts">Manage Scavenger Hunts</a></li>
+            <li><a href="/admin/context-files">Manage Context Files</a></li>
             <li><a href="/admin/plants">Manage Plants</a></li>
-            <li><a href="/api/v1/tours">View Tours API</a></li>
+            <li><a href="/api/v1/cafe-tours">View Cafe Tours API</a></li>
         </ul>
         
         <p style="color: #666; margin-top: 50px; font-size: 0.9em;">

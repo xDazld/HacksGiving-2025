@@ -6,7 +6,7 @@ from pathlib import Path
 
 from app.config import get_settings
 from app.services import AppwriteService
-from app.models import PlantCreate, TourCreate, TourPart, ScavengerHuntCreate, ScavengerHuntItem
+from app.models import PlantCreate
 
 
 async def load_plants_from_csv():
@@ -54,131 +54,7 @@ async def load_plants_from_csv():
     print(f"✅ Successfully added {plants_added} plants!")
 
 
-async def create_sample_tours():
-    """Create sample tours"""
-    settings = get_settings()
-    service = AppwriteService(settings)
-
-    tours = [
-        TourCreate(
-            title="Tropical Dome Discovery",
-            description="Explore the lush tropical plants from around the world",
-            parts=[
-                TourPart(
-                    id="intro",
-                    title="Welcome to the Tropics",
-                    content="Welcome! You're about to journey through a tropical rainforest ecosystem.",
-                    unlock_progress=0,
-                ),
-                TourPart(
-                    id="palms",
-                    title="Palm Paradise",
-                    content="Notice the variety of palm trees, each adapted to different tropical environments.",
-                    unlock_progress=25,
-                ),
-                TourPart(
-                    id="orchids",
-                    title="Orchid Collection",
-                    content="Our orchids represent some of the most beautiful and diverse plants on Earth.",
-                    unlock_progress=50,
-                ),
-                TourPart(
-                    id="canopy",
-                    title="Canopy Layer",
-                    content="Look up! The canopy layer is home to many epiphytes and climbing plants.",
-                    unlock_progress=75,
-                ),
-            ],
-        ),
-        TourCreate(
-            title="Desert Dome Adventure",
-            description="Discover the resilient plants of the world's deserts",
-            parts=[
-                TourPart(
-                    id="intro",
-                    title="Desert Introduction",
-                    content="Welcome to the desert! These plants have amazing adaptations for survival.",
-                    unlock_progress=0,
-                ),
-                TourPart(
-                    id="cacti",
-                    title="Cactus Collection",
-                    content="Cacti store water in their thick stems and have spines instead of leaves.",
-                    unlock_progress=33,
-                ),
-                TourPart(
-                    id="succulents",
-                    title="Succulent Showcase",
-                    content="Succulents come in amazing shapes and colors, all designed to conserve water.",
-                    unlock_progress=66,
-                ),
-            ],
-        ),
-    ]
-
-    for tour in tours:
-        try:
-            await service.create_tour(tour)
-            print(f"✅ Created tour: {tour.title}")
-        except Exception as e:
-            print(f"❌ Error creating tour {tour.title}: {e}")
-
-
-async def create_sample_scavenger_hunts():
-    """Create sample scavenger hunts"""
-    settings = get_settings()
-    service = AppwriteService(settings)
-
-    hunts = [
-        ScavengerHuntCreate(
-            title="Plant Detective Challenge",
-            description="Find these special plants throughout the domes!",
-            difficulty="easy",
-            items=[
-                ScavengerHuntItem(
-                    id="1",
-                    name="Bird of Paradise",
-                    description="Find the plant with orange and blue flowers that looks like a bird",
-                    hint="Look in the tropical section",
-                ),
-                ScavengerHuntItem(
-                    id="2",
-                    name="Giant Cactus",
-                    description="Find a cactus taller than you are",
-                    hint="In the desert dome",
-                ),
-                ScavengerHuntItem(
-                    id="3",
-                    name="Hanging Plant",
-                    description="Find a plant growing on another plant (epiphyte)",
-                    hint="Look up in the tropical canopy",
-                ),
-            ],
-        ),
-        ScavengerHuntCreate(
-            title="Leaf Shape Hunt",
-            description="Find plants with these different leaf shapes",
-            difficulty="medium",
-            items=[
-                ScavengerHuntItem(
-                    id="1", name="Heart-Shaped Leaves", description="Find a plant with heart-shaped leaves"
-                ),
-                ScavengerHuntItem(
-                    id="2", name="Needle-Like Leaves", description="Find a plant with needle-like leaves"
-                ),
-                ScavengerHuntItem(
-                    id="3", name="Compound Leaves", description="Find a plant with leaves made of smaller leaflets"
-                ),
-            ],
-        ),
-    ]
-
-    for hunt in hunts:
-        try:
-            await service.create_scavenger_hunt(hunt)
-            print(f"✅ Created scavenger hunt: {hunt.title}")
-        except Exception as e:
-            print(f"❌ Error creating hunt {hunt.title}: {e}")
+# Tour and scavenger hunt sample data has been removed. Use context file uploads and LLM generation instead.
 
 
 async def main():
@@ -190,18 +66,12 @@ async def main():
         print("\n1️⃣  Loading plants from CSV...")
         await load_plants_from_csv()
 
-        print("\n2️⃣  Creating sample tours...")
-        await create_sample_tours()
-
-        print("\n3️⃣  Creating sample scavenger hunts...")
-        await create_sample_scavenger_hunts()
-
         print("\n" + "=" * 50)
         print("✅ Database initialization complete!")
         print("\nNext steps:")
         print("1. Visit http://localhost:8000/admin to view the admin dashboard")
         print("2. Check http://localhost:8000/docs for API documentation")
-        print("3. Start building your mobile app!")
+        print("3. Upload context files for LLM generation via /admin/context-files")
 
     except Exception as e:
         print(f"\n❌ Error during initialization: {e}")

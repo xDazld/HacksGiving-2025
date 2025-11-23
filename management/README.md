@@ -5,15 +5,14 @@ A comprehensive backend and management interface for the Milwaukee Domes mobile 
 ## 🌟 Features
 
 - **RESTful API** for mobile app integration
-  - Tours management (audio tours with progressive unlocking)
-  - Scavenger hunts with QR code support
+   - Context file uploads for LLM-generated tours and content
   - Cafe tours with recipes
   - Plant database management
   - Real-time progress tracking via BLE beacons
   - Ticket barcode validation
 
 - **Admin Dashboard** (FastUI-based)
-  - Manage tours, scavenger hunts, and plants
+   - Manage uploaded context files and plants
   - View analytics and visitor statistics
   - Easy-to-use web interface (no frontend coding needed!)
 
@@ -58,20 +57,10 @@ A comprehensive backend and management interface for the Milwaukee Domes mobile 
    
    d. Create the following collections with these attributes:
 
-   **tours** collection:
-   - `title` (string, required)
-   - `description` (string, required)
-   - `parts` (string array, required) - Store as JSON
-   - `created_at` (datetime)
-   - `updated_at` (datetime)
 
-   **scavenger-hunts** collection:
-   - `title` (string, required)
-   - `description` (string, required)
-   - `items` (string array, required) - Store as JSON
-   - `difficulty` (string, required)
-   - `created_at` (datetime)
-   - `updated_at` (datetime)
+   **context-files** bucket (Storage):
+   - Used to store text or multimedia files that will be used as input for LLM generation
+   - Files uploaded via the admin dashboard or API are listed under `/admin/context-files`
 
    **cafe-tours** collection:
    - `title` (string, required)
@@ -267,17 +256,10 @@ Once running, visit:
 
 ### Key Endpoints
 
-#### Tours
-- `GET /api/v1/tours` - List all tours
-- `GET /api/v1/tours/{id}` - Get specific tour
-- `POST /api/v1/tours` - Create tour (requires auth)
-- `PUT /api/v1/tours/{id}` - Update tour (requires auth)
-- `DELETE /api/v1/tours/{id}` - Delete tour (requires auth)
-
-#### Scavenger Hunts
-- `GET /api/v1/scavenger-hunts` - List all hunts
-- `GET /api/v1/scavenger-hunts/{id}` - Get specific hunt
-- `POST /api/v1/scavenger-hunts` - Create hunt (requires auth)
+#### Context Files
+- `GET /api/admin/context-files` - Admin page listing context files
+- `POST /api/admin/context-files/upload` - Upload a context file (multipart/form-data with field `file`)
+- `GET /api/admin/context-files/{file_id}/delete` - Delete a context file
 
 #### Plants
 - `GET /api/v1/plants` - List all plants
@@ -300,11 +282,11 @@ curl -X POST http://localhost:8000/api/v1/auth/login-json \
   -H "Content-Type: application/json" \
   -d '{"username":"admin","password":"your-password"}'
 
-# Use token
-curl -X POST http://localhost:8000/api/v1/tours \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"title":"New Tour","description":"Test","parts":[]}'
+# Use token (example: create a cafe tour)
+curl -X POST http://localhost:8000/api/v1/cafe-tours \
+   -H "Authorization: Bearer YOUR_TOKEN" \
+   -H "Content-Type: application/json" \
+   -d '{"title":"Morning Cafe Menu Tour","description":"A guided tour of cafe menu items","parts":[]}'
 ```
 
 ## 🏗️ Project Structure
@@ -319,8 +301,7 @@ management/
 │   ├── models.py             # Pydantic models
 │   ├── routers/              # API route handlers
 │   │   ├── auth.py
-│   │   ├── tours.py
-│   │   ├── scavenger_hunts.py
+│   │   ├── cafe_tours.py
 │   │   ├── cafe_tours.py
 │   │   ├── plants.py
 │   │   └── progress.py
@@ -336,7 +317,7 @@ management/
 └── README.md                 # This file
 ```
 
-## 🤝 Integration with Mobile App
+##  Integration with Mobile App
 
 Update the mobile app's API base URL:
 

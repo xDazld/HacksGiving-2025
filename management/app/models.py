@@ -13,92 +13,7 @@ class TimestampMixin(BaseModel):
     updated_at: Optional[datetime] = None
 
 
-# Tour models
-class TourPart(BaseModel):
-    """A part/section of a tour"""
-
-    id: str
-    title: str
-    content: str
-    unlock_progress: float = Field(ge=0, le=100, description="Progress percentage to unlock this part")
-    audio_url: Optional[str] = None
-
-
-class TourBase(BaseModel):
-    """Base tour model"""
-
-    title: str = Field(min_length=1, max_length=200)
-    description: str
-    parts: list[TourPart] = Field(default_factory=list)
-
-
-class TourCreate(TourBase):
-    """Model for creating a tour"""
-
-    pass
-
-
-class TourUpdate(BaseModel):
-    """Model for updating a tour"""
-
-    title: Optional[str] = Field(None, min_length=1, max_length=200)
-    description: Optional[str] = None
-    parts: Optional[list[TourPart]] = None
-
-
-class Tour(TourBase, TimestampMixin):
-    """Complete tour model"""
-
-    model_config = ConfigDict(from_attributes=True)
-
-    id: str
-
-
-# Scavenger Hunt models
-class ScavengerHuntItem(BaseModel):
-    """An item in a scavenger hunt"""
-
-    id: str
-    name: str
-    description: str
-    image_url: Optional[str] = None
-    hint: Optional[str] = None
-    qr_code: Optional[str] = None
-
-
-class ScavengerHuntBase(BaseModel):
-    """Base scavenger hunt model"""
-
-    title: str = Field(min_length=1, max_length=200)
-    description: str
-    items: list[ScavengerHuntItem] = Field(default_factory=list)
-    difficulty: str = Field(default="medium", pattern="^(easy|medium|hard)$")
-
-
-class ScavengerHuntCreate(ScavengerHuntBase):
-    """Model for creating a scavenger hunt"""
-
-    pass
-
-
-class ScavengerHuntUpdate(BaseModel):
-    """Model for updating a scavenger hunt"""
-
-    title: Optional[str] = Field(None, min_length=1, max_length=200)
-    description: Optional[str] = None
-    items: Optional[list[ScavengerHuntItem]] = None
-    difficulty: Optional[str] = Field(None, pattern="^(easy|medium|hard)$")
-
-
-class ScavengerHunt(ScavengerHuntBase, TimestampMixin):
-    """Complete scavenger hunt model"""
-
-    model_config = ConfigDict(from_attributes=True)
-
-    id: str
-
-
-# Cafe Tour models
+# Cafe Tour models (used to manage small guided 'cafe' experiences in-app)
 class CafeTourPart(BaseModel):
     """A part/section of a cafe tour"""
 
@@ -272,3 +187,14 @@ class AnalyticsOverview(BaseModel):
     active_visitors: int
     today_visitors: int
     avg_completion_rate: float
+
+
+# Context file models (used for LLM generation inputs)
+class ContextFile(BaseModel):
+    """Uploaded context file metadata"""
+
+    id: str
+    name: str
+    size_original: int = Field(ge=0)
+    mime_type: str | None = None
+    created_at: datetime | None = None

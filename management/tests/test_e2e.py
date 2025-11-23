@@ -139,97 +139,38 @@ class TestHealthEndpoint:
 
 
 class TestAdminInterface:
-    """Test admin interface"""
+    """Test admin interface (tours removed)"""
 
     def test_admin_dashboard_loads(self, page: Page, base_url: str):
-        """Test that admin dashboard loads"""
         page.goto(f"{base_url}/admin")
-
-        # FastUI should render the page
         page.wait_for_load_state("networkidle")
-
-        # Check that the page has loaded
         expect(page).not_to_have_title("404")
 
-    def test_admin_tours_page(self, page: Page, base_url: str):
-        """Test tours management page"""
-        page.goto(f"{base_url}/admin/tours")
-
-        # Wait for page to load
+    def test_admin_context_files_page(self, page: Page, base_url: str):
+        page.goto(f"{base_url}/admin/context-files")
         page.wait_for_load_state("networkidle")
-
-        # Page should load without errors
         expect(page).not_to_have_title("404")
 
     def test_admin_plants_page(self, page: Page, base_url: str):
-        """Test plants management page"""
         page.goto(f"{base_url}/admin/plants")
-
-        # Wait for page to load
         page.wait_for_load_state("networkidle")
-
-        # Page should load without errors
         expect(page).not_to_have_title("404")
+
+    def test_context_files_upload_via_fetch(self, page: Page, base_url: str):
+        """Upload using simple direct HTML form (non-FastUI) and verify redirect."""
+        page.goto(f"{base_url}/admin/context-files/upload-direct")
+        page.wait_for_load_state("networkidle")
+        file_input = page.locator('input[type="file"]')
+        assert file_input.count() == 1, "File input not found on upload page"
+        file_input.set_input_files({"name": "e2e-upload.txt", "mimeType": "text/plain", "buffer": b"context data"})
+        page.click('button:has-text("Upload")')
+        page.wait_for_load_state("networkidle")
+        # Redirect to listing (FastUI navigation fires client-side); allow either listing or API call result
+        assert "/admin/context-files" in page.url or "/api/admin/context-files" in page.url
 
 
 class TestAdminForms:
-    """Test admin form creation features"""
-
-    def test_tour_creation_form_loads(self, page: Page, base_url: str):
-        """Test that tour creation form loads"""
-        page.goto(f"{base_url}/admin/tours/new")
-        page.wait_for_load_state("networkidle")
-
-        # Check that form page loaded (no 404)
-        expect(page).not_to_have_title("404")
-
-        # Wait for content to render
-        page.wait_for_selector("body", state="visible")
-
-    def test_tour_creation_form_submission(self, page: Page, base_url: str):
-        """Test tour creation form submission workflow"""
-        page.goto(f"{base_url}/admin/tours/new")
-        page.wait_for_load_state("networkidle")
-        page.wait_for_selector("body", state="visible")
-
-        # Fill form fields using helper functions
-        title_filled = fill_form_field(page, 'input[name="title"]', "E2E Test Tour")
-        description_filled = fill_form_field(
-            page, 'textarea[name="description"], input[name="description"]', "A tour created by E2E test"
-        )
-
-        # Only attempt submission if fields were found and filled
-        if title_filled and description_filled:
-            submit_form(page)
-            # Should redirect to tours list or show success
-            # (exact behavior depends on FastUI configuration)
-
-    def test_scavenger_hunt_creation_form_loads(self, page: Page, base_url: str):
-        """Test that scavenger hunt creation form loads"""
-        page.goto(f"{base_url}/admin/scavenger-hunts/new")
-        page.wait_for_load_state("networkidle")
-
-        # Check that form page loaded (no 404)
-        expect(page).not_to_have_title("404")
-
-        page.wait_for_selector("body", state="visible")
-
-    def test_scavenger_hunt_creation_form_submission(self, page: Page, base_url: str):
-        """Test scavenger hunt creation form submission workflow"""
-        page.goto(f"{base_url}/admin/scavenger-hunts/new")
-        page.wait_for_load_state("networkidle")
-        page.wait_for_selector("body", state="visible")
-
-        # Fill form fields using helper functions
-        title_filled = fill_form_field(page, 'input[name="title"]', "E2E Test Hunt")
-        description_filled = fill_form_field(
-            page, 'textarea[name="description"], input[name="description"]', "A hunt created by E2E test"
-        )
-        difficulty_filled = select_form_option(page, 'select[name="difficulty"], input[name="difficulty"]', "easy")
-
-        # Only attempt submission if fields were found and filled
-        if title_filled and description_filled and difficulty_filled:
-            submit_form(page)
+    """Test remaining admin form features"""
 
     def test_plant_creation_form_loads(self, page: Page, base_url: str):
         """Test that plant creation form loads"""
@@ -259,41 +200,19 @@ class TestAdminForms:
             submit_form(page)
 
     def test_form_create_buttons_present(self, page: Page, base_url: str):
-        """Test that 'Create New' buttons are present on list pages"""
-        # Check tours page
-        page.goto(f"{base_url}/admin/tours")
+        page.goto(f"{base_url}/admin/plants")
         page.wait_for_load_state("networkidle")
         page.wait_for_selector("body", state="visible")
-
-        # Look for button/link that leads to creation form
-        create_link = page.locator('a[href*="/new"], button:has-text("Create"), button:has-text("New")')
-        # If button exists, verify we can navigate to form
+        create_link = page.locator('button:has-text("Add New Plant")')
         if create_link.count() > 0:
             create_link.first.click()
             page.wait_for_load_state("networkidle")
-            # Should be on the /new page
-            assert "/new" in page.url or "create" in page.url.lower()
+            assert "/plants/new" in page.url
 
 
 class TestAPIEndpoints:
-    """Test API endpoints return valid data"""
-
-    def test_tours_api_returns_json(self, page: Page, base_url: str):
-        """Test tours API returns valid JSON"""
-        response = page.goto(f"{base_url}/api/v1/tours")
-        assert response is not None and response.status == 200
-        # FastAPI's default JSON response in browser is wrapped in HTML with a <pre> tag
-        pre = page.locator("pre")
-        text = pre.text_content()
-        assert text is not None
-        assert text.strip().startswith("[")
-
-    def test_scavenger_hunts_api(self, page: Page, base_url: str):
-        """Test scavenger hunts API"""
-        response = page.goto(f"{base_url}/api/v1/scavenger-hunts")
-        assert response is not None and response.status == 200
+    """Test active API endpoints return valid data"""
 
     def test_plants_api(self, page: Page, base_url: str):
-        """Test plants API"""
         response = page.goto(f"{base_url}/api/v1/plants")
         assert response is not None and response.status == 200

@@ -1,7 +1,7 @@
-"""Admin interface using FastUI"""
+"""Admin interface using FastUI (tours & hunts removed; context files + plants remain)"""
 
 from typing import Annotated
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, UploadFile, File
 from pydantic import BaseModel, Field
 from fastapi.responses import HTMLResponse
 from fastui import FastUI, AnyComponent, prebuilt_html, components as c
@@ -11,16 +11,12 @@ from fastui.forms import fastui_form
 
 from app.config import Settings, get_settings
 from app.models import (
-    Tour,
-    TourCreate,
-    ScavengerHunt,
-    ScavengerHuntCreate,
     Plant,
     PlantCreate,
     AnalyticsOverview,
+    ContextFile,
 )
 from app.services import AppwriteService
-# from app.auth import get_current_active_user, User  # Removed unused imports
 
 router = APIRouter()
 
@@ -30,24 +26,8 @@ class MetricValue(BaseModel):
     value: int | float | str
 
 
-# Simplified form models (FastUI doesn't fully support array fields)
-class TourFormCreate(BaseModel):
-    """Simplified tour creation form"""
-
-    title: str = Field(min_length=1, max_length=200, description="Tour title")
-    description: str = Field(description="Tour description")
-
-
-class ScavengerHuntFormCreate(BaseModel):
-    """Simplified scavenger hunt creation form"""
-
-    title: str = Field(min_length=1, max_length=200, description="Hunt title")
-    description: str = Field(description="Hunt description")
-    difficulty: str = Field(default="medium", description="Difficulty level (easy/medium/hard)")
-
-
 class PlantFormCreate(BaseModel):
-    """Plant creation form"""
+    """Plant creation/update form"""
 
     common_name: str = Field(description="Common name")
     scientific_name: str = Field(description="Scientific name")
@@ -57,41 +37,34 @@ class PlantFormCreate(BaseModel):
 
 
 def get_appwrite_service(settings: Settings = Depends(get_settings)) -> AppwriteService:
-    """Get Appwrite service instance"""
     return AppwriteService(settings)
 
 
 @router.get("/api/admin", response_model=FastUI, response_model_exclude_none=True)
-async def admin_home(
-    service: AppwriteService = Depends(get_appwrite_service),
-) -> list[AnyComponent]:
-    """Admin dashboard home"""
-    # Get basic analytics
-    tours = await service.get_tours(limit=10)
-    scavenger_hunts = await service.get_scavenger_hunts(limit=10)
+async def admin_home(service: AppwriteService = Depends(get_appwrite_service)) -> list[AnyComponent]:
     plants = await service.get_plants(limit=10)
+    context_files = await service.list_context_files()
 
     analytics = AnalyticsOverview(
-        total_tours=len(tours),
-        total_scavenger_hunts=len(scavenger_hunts),
+        total_tours=0,
+        total_scavenger_hunts=0,
         total_plants=len(plants),
-        active_visitors=0,  # Would come from real-time tracking
-        today_visitors=0,  # Would come from analytics service
-        avg_completion_rate=0.0,  # Would come from analytics service
+        active_visitors=0,
+        today_visitors=0,
+        avg_completion_rate=0.0,
     )
 
     return [
         c.Page(
             components=[
                 c.Heading(text="Milwaukee Domes Management Dashboard", level=1),
-                c.Paragraph(text="Welcome to the admin interface for managing tours, plants, and visitor experiences."),
+                c.Paragraph(text="Manage uploaded context files for LLM generation and maintain plant records."),
                 c.Div(
                     components=[
                         c.Heading(text="Quick Stats", level=2),
                         c.Table(
                             data=[
-                                MetricValue(metric="Total Tours", value=analytics.total_tours),
-                                MetricValue(metric="Total Scavenger Hunts", value=analytics.total_scavenger_hunts),
+                                MetricValue(metric="Context Files", value=len(context_files)),
                                 MetricValue(metric="Total Plants", value=analytics.total_plants),
                                 MetricValue(metric="Active Visitors", value=analytics.active_visitors),
                             ],
@@ -110,12 +83,8 @@ async def admin_home(
                         c.LinkList(
                             links=[
                                 c.Link(
-                                    components=[c.Text(text="Manage Tours")],
-                                    on_click=GoToEvent(url="/admin/tours"),
-                                ),
-                                c.Link(
-                                    components=[c.Text(text="Manage Scavenger Hunts")],
-                                    on_click=GoToEvent(url="/admin/scavenger-hunts"),
+                                    components=[c.Text(text="Context Files")],
+                                    on_click=GoToEvent(url="/admin/context-files"),
                                 ),
                                 c.Link(
                                     components=[c.Text(text="Manage Plants")],
@@ -134,70 +103,105 @@ async def admin_home(
     ]
 
 
-@router.get("/api/admin/tours", response_model=FastUI, response_model_exclude_none=True)
-async def tours_list(
-    service: AppwriteService = Depends(get_appwrite_service),
-) -> list[AnyComponent]:
-    """List all tours"""
-    tours = await service.get_tours()
-
+@router.get("/api/admin/context-files", response_model=FastUI, response_model_exclude_none=True)
+async def context_files_list(service: AppwriteService = Depends(get_appwrite_service)) -> list[AnyComponent]:
+    files = await service.list_context_files()
     return [
         c.Page(
             components=[
-                c.Heading(text="Tours Management", level=1),
+                c.Heading(text="Context Files", level=1),
                 c.Button(text="← Back to Dashboard", on_click=BackEvent()),
-                c.Button(text="Create New Tour", on_click=GoToEvent(url="/admin/tours/new")),
+                c.Button(text="Upload New File", on_click=GoToEvent(url="/admin/context-files/upload")),
+                c.Button(text="Simple Upload Form", on_click=GoToEvent(url="/admin/context-files/upload-direct")),
                 c.Table(
-                    data=tours,
-                    data_model=Tour,
+                    data=files,
+                    data_model=ContextFile,
                     columns=[
-                        DisplayLookup(field="title", title="Title"),
-                        DisplayLookup(field="description", title="Description"),
+                        DisplayLookup(field="name", title="Name"),
+                        DisplayLookup(field="mime_type", title="MIME Type"),
+                        DisplayLookup(field="size_original", title="Size"),
                         DisplayLookup(field="id", title="ID"),
                     ],
-                    no_data_message="No tours found",
+                    no_data_message="No context files uploaded",
                 ),
             ]
         )
     ]
 
 
-@router.get("/api/admin/scavenger-hunts", response_model=FastUI, response_model_exclude_none=True)
-async def scavenger_hunts_list(
-    service: AppwriteService = Depends(get_appwrite_service),
-) -> list[AnyComponent]:
-    """List all scavenger hunts"""
-    hunts = await service.get_scavenger_hunts()
-
+@router.get("/api/admin/context-files/upload", response_model=FastUI, response_model_exclude_none=True)
+async def context_file_upload_page() -> list[AnyComponent]:
     return [
         c.Page(
             components=[
-                c.Heading(text="Scavenger Hunts Management", level=1),
-                c.Button(text="← Back to Dashboard", on_click=BackEvent()),
-                c.Button(text="Create New Hunt", on_click=GoToEvent(url="/admin/scavenger-hunts/new")),
-                c.Table(
-                    data=hunts,
-                    data_model=ScavengerHunt,
-                    columns=[
-                        DisplayLookup(field="title", title="Title"),
-                        DisplayLookup(field="description", title="Description"),
-                        DisplayLookup(field="difficulty", title="Difficulty"),
-                        DisplayLookup(field="id", title="ID"),
-                    ],
-                    no_data_message="No hunts found",
+                c.Heading(text="Upload Context File", level=1),
+                c.Paragraph(text="Select a file and upload it. Supported: text, JSON, images (used for LLM context)."),
+                c.Markdown(
+                    text="""
+<form action="/api/admin/context-files/upload" method="post" enctype="multipart/form-data" style="margin:1rem 0;">
+    <input type="file" name="file" required />
+    <button type="submit">Upload</button>
+</form>
+"""
                 ),
+                c.Button(text="← Back to Files", on_click=GoToEvent(url="/admin/context-files")),
+            ]
+        )
+    ]
+
+
+@router.get("/admin/context-files/upload-direct")
+async def context_files_upload_direct() -> HTMLResponse:
+    """Direct HTML form upload page (bypasses FastUI form limitations for file inputs)."""
+    html = """
+        <!DOCTYPE html>
+        <html><head><title>Upload Context File</title></head>
+        <body style='font-family:system-ui;max-width:640px;margin:2rem auto;'>
+            <h1>Upload Context File</h1>
+            <p>Use this simple form to upload a file for LLM context generation.</p>
+            <form action="/api/admin/context-files/upload" method="post" enctype="multipart/form-data" style="margin:1rem 0;">
+                <input type="file" name="file" required />
+                <button type="submit">Upload</button>
+            </form>
+            <p><a href="/admin/context-files">Back to Context Files</a></p>
+        </body></html>
+        """
+    return HTMLResponse(html)
+
+
+@router.post("/api/admin/context-files/upload", response_model=FastUI, response_model_exclude_none=True)
+async def context_file_upload(
+    file: UploadFile = File(...),
+    service: AppwriteService = Depends(get_appwrite_service),
+):
+    data = await file.read()
+    created = await service.upload_context_file(
+        filename=file.filename or "upload", file_bytes=data, mime_type=file.content_type
+    )
+    # Return FastUI event redirect
+    return [c.FireEvent(event=GoToEvent(url="/admin/context-files"))]
+
+
+@router.get("/api/admin/context-files/{file_id}/delete", response_model=FastUI, response_model_exclude_none=True)
+async def context_file_delete(
+    file_id: str, service: AppwriteService = Depends(get_appwrite_service)
+) -> list[AnyComponent]:
+    ok = await service.delete_context_file(file_id)
+    if ok:
+        return [c.FireEvent(event=GoToEvent(url="/admin/context-files"))]
+    return [
+        c.Page(
+            components=[
+                c.Heading(text="Error Deleting File", level=1),
+                c.Button(text="← Back", on_click=GoToEvent(url="/admin/context-files")),
             ]
         )
     ]
 
 
 @router.get("/api/admin/plants", response_model=FastUI, response_model_exclude_none=True)
-async def plants_list(
-    service: AppwriteService = Depends(get_appwrite_service),
-) -> list[AnyComponent]:
-    """List all plants"""
+async def plants_list(service: AppwriteService = Depends(get_appwrite_service)) -> list[AnyComponent]:
     plants = await service.get_plants()
-
     return [
         c.Page(
             components=[
@@ -216,121 +220,30 @@ async def plants_list(
                     ],
                     no_data_message="No plants found",
                 ),
+                c.Heading(text="Plant Actions", level=2),
+                c.Div(
+                    components=[
+                        c.LinkList(
+                            links=[
+                                c.Link(
+                                    components=[c.Text(text=f"✏️ Edit {p.common_name}")],
+                                    on_click=GoToEvent(url=f"/admin/plants/{p.id}/edit"),
+                                )
+                                for p in plants
+                            ]
+                            + [
+                                c.Link(
+                                    components=[c.Text(text=f"🗑 Delete {p.common_name}")],
+                                    on_click=GoToEvent(url=f"/admin/plants/{p.id}/delete"),
+                                )
+                                for p in plants
+                            ],
+                        )
+                    ]
+                ),
             ]
         )
     ]
-
-
-# Provide trailing-slash variants for FastUI JS fetches that may append '/'
-@router.get("/api/admin/", response_model=FastUI, response_model_exclude_none=True, include_in_schema=False)
-async def admin_home_slash(service: AppwriteService = Depends(get_appwrite_service)) -> list[AnyComponent]:
-    return await admin_home(service)
-
-
-@router.get("/api/admin/tours/", response_model=FastUI, response_model_exclude_none=True, include_in_schema=False)
-async def tours_list_slash(service: AppwriteService = Depends(get_appwrite_service)) -> list[AnyComponent]:
-    return await tours_list(service)
-
-
-@router.get(
-    "/api/admin/scavenger-hunts/", response_model=FastUI, response_model_exclude_none=True, include_in_schema=False
-)
-async def scavenger_hunts_list_slash(service: AppwriteService = Depends(get_appwrite_service)) -> list[AnyComponent]:
-    return await scavenger_hunts_list(service)
-
-
-@router.get("/api/admin/plants/", response_model=FastUI, response_model_exclude_none=True, include_in_schema=False)
-async def plants_list_slash(service: AppwriteService = Depends(get_appwrite_service)) -> list[AnyComponent]:
-    return await plants_list(service)
-
-
-# --- Creation Pages (placeholders to eliminate 404s from "Create New" buttons) ---
-@router.get("/api/admin/tours/new", response_model=FastUI, response_model_exclude_none=True)
-async def tour_create_page() -> list[AnyComponent]:
-    return [
-        c.Page(
-            components=[
-                c.Heading(text="Create New Tour", level=1),
-                c.Paragraph(text="Note: Parts/sections can be added after creation via the API."),
-                c.ModelForm(model=TourFormCreate, submit_url="/api/admin/tours/create"),
-                c.Button(text="← Back to Tours", on_click=GoToEvent(url="/admin/tours")),
-            ]
-        )
-    ]
-
-
-@router.post("/api/admin/tours/create", response_model=FastUI, response_model_exclude_none=True)
-async def tour_create(
-    form: Annotated[TourFormCreate, fastui_form(TourFormCreate)],
-    service: AppwriteService = Depends(get_appwrite_service),
-) -> list[AnyComponent]:
-    """Create a new tour"""
-    try:
-        # Convert form to TourCreate with empty parts list
-        tour_data = TourCreate(title=form.title, description=form.description, parts=[])
-        await service.create_tour(tour_data)
-        return [c.FireEvent(event=GoToEvent(url="/admin/tours"))]
-    except Exception as e:
-        return [
-            c.Page(
-                components=[
-                    c.Heading(text="Error Creating Tour", level=1),
-                    c.Text(text=f"Failed to create tour: {str(e)}"),
-                    c.Button(text="← Back to Form", on_click=GoToEvent(url="/admin/tours/new")),
-                ]
-            )
-        ]
-
-
-@router.get("/api/admin/tours/new/", response_model=FastUI, response_model_exclude_none=True, include_in_schema=False)
-async def tour_create_page_slash() -> list[AnyComponent]:
-    return await tour_create_page()
-
-
-@router.get("/api/admin/scavenger-hunts/new", response_model=FastUI, response_model_exclude_none=True)
-async def scavenger_hunt_create_page() -> list[AnyComponent]:
-    return [
-        c.Page(
-            components=[
-                c.Heading(text="Create New Scavenger Hunt", level=1),
-                c.Paragraph(text="Note: Items can be added after creation via the API."),
-                c.ModelForm(model=ScavengerHuntFormCreate, submit_url="/api/admin/scavenger-hunts/create"),
-                c.Button(text="← Back to Hunts", on_click=GoToEvent(url="/admin/scavenger-hunts")),
-            ]
-        )
-    ]
-
-
-@router.post("/api/admin/scavenger-hunts/create", response_model=FastUI, response_model_exclude_none=True)
-async def scavenger_hunt_create(
-    form: Annotated[ScavengerHuntFormCreate, fastui_form(ScavengerHuntFormCreate)],
-    service: AppwriteService = Depends(get_appwrite_service),
-) -> list[AnyComponent]:
-    """Create a new scavenger hunt"""
-    try:
-        # Convert form to ScavengerHuntCreate with empty items list
-        hunt_data = ScavengerHuntCreate(
-            title=form.title, description=form.description, difficulty=form.difficulty, items=[]
-        )
-        await service.create_scavenger_hunt(hunt_data)
-        return [c.FireEvent(event=GoToEvent(url="/admin/scavenger-hunts"))]
-    except Exception as e:
-        return [
-            c.Page(
-                components=[
-                    c.Heading(text="Error Creating Scavenger Hunt", level=1),
-                    c.Text(text=f"Failed to create hunt: {str(e)}"),
-                    c.Button(text="← Back to Form", on_click=GoToEvent(url="/admin/scavenger-hunts/new")),
-                ]
-            )
-        ]
-
-
-@router.get(
-    "/api/admin/scavenger-hunts/new/", response_model=FastUI, response_model_exclude_none=True, include_in_schema=False
-)
-async def scavenger_hunt_create_page_slash() -> list[AnyComponent]:
-    return await scavenger_hunt_create_page()
 
 
 @router.get("/api/admin/plants/new", response_model=FastUI, response_model_exclude_none=True)
@@ -351,9 +264,7 @@ async def plant_create(
     form: Annotated[PlantFormCreate, fastui_form(PlantFormCreate)],
     service: AppwriteService = Depends(get_appwrite_service),
 ) -> list[AnyComponent]:
-    """Create a new plant"""
     try:
-        # Convert form to PlantCreate with all fields
         plant_data = PlantCreate(
             common_name=form.common_name,
             scientific_name=form.scientific_name,
@@ -368,19 +279,112 @@ async def plant_create(
             c.Page(
                 components=[
                     c.Heading(text="Error Adding Plant", level=1),
-                    c.Text(text=f"Failed to add plant: {str(e)}"),
+                    c.Text(text=f"Failed to add plant: {e}"),
                     c.Button(text="← Back to Form", on_click=GoToEvent(url="/admin/plants/new")),
                 ]
             )
         ]
 
 
-@router.get("/api/admin/plants/new/", response_model=FastUI, response_model_exclude_none=True, include_in_schema=False)
-async def plant_create_page_slash() -> list[AnyComponent]:
-    return await plant_create_page()
+@router.get("/api/admin/plants/{plant_id}/edit", response_model=FastUI, response_model_exclude_none=True)
+async def plant_edit_page(
+    plant_id: str, service: AppwriteService = Depends(get_appwrite_service)
+) -> list[AnyComponent]:
+    plant = await service.get_plant(plant_id)
+    if not plant:
+        return [
+            c.Page(
+                components=[
+                    c.Heading(text="Plant Not Found", level=1),
+                    c.Button(text="← Back to Plants", on_click=GoToEvent(url="/admin/plants")),
+                ]
+            )
+        ]
+
+    # Dynamic model with defaults for prefill
+    class PlantFormPrefill(BaseModel):
+        common_name: str = Field(default=plant.common_name)
+        scientific_name: str = Field(default=plant.scientific_name)
+        quantity: int = Field(default=plant.quantity, ge=0)
+        dome_location: str = Field(default=plant.dome_location or "")
+        notes: str = Field(default=plant.notes or "")
+
+    return [
+        c.Page(
+            components=[
+                c.Heading(text=f"Edit Plant: {plant.common_name}", level=1),
+                c.Text(text="Update the fields and submit."),
+                c.ModelForm(model=PlantFormPrefill, submit_url=f"/api/admin/plants/{plant_id}/update"),
+                c.Button(text="Delete Plant", on_click=GoToEvent(url=f"/admin/plants/{plant_id}/delete")),
+                c.Button(text="← Back to Plants", on_click=GoToEvent(url="/admin/plants")),
+            ]
+        )
+    ]
+
+
+@router.post("/api/admin/plants/{plant_id}/update", response_model=FastUI, response_model_exclude_none=True)
+async def plant_update(
+    plant_id: str,
+    form: Annotated[PlantFormCreate, fastui_form(PlantFormCreate)],
+    service: AppwriteService = Depends(get_appwrite_service),
+) -> list[AnyComponent]:
+    try:
+        from app.models import PlantUpdate  # local import to avoid circular
+
+        update = PlantUpdate(
+            common_name=form.common_name,
+            scientific_name=form.scientific_name,
+            quantity=form.quantity,
+            dome_location=form.dome_location or None,
+            notes=form.notes or None,
+        )
+        await service.update_plant(plant_id, update)
+        return [c.FireEvent(event=GoToEvent(url="/admin/plants"))]
+    except Exception as e:
+        return [
+            c.Page(
+                components=[
+                    c.Heading(text="Error Updating Plant", level=1),
+                    c.Text(text=f"Failed to update plant: {e}"),
+                    c.Button(text="← Back", on_click=GoToEvent(url=f"/admin/plants/{plant_id}/edit")),
+                ]
+            )
+        ]
+
+
+@router.get("/api/admin/plants/{plant_id}/delete", response_model=FastUI, response_model_exclude_none=True)
+async def plant_delete(plant_id: str, service: AppwriteService = Depends(get_appwrite_service)) -> list[AnyComponent]:
+    ok = await service.delete_plant(plant_id)
+    if ok:
+        return [c.FireEvent(event=GoToEvent(url="/admin/plants"))]
+    return [
+        c.Page(
+            components=[
+                c.Heading(text="Error Deleting Plant", level=1),
+                c.Button(text="← Back to Plants", on_click=GoToEvent(url="/admin/plants")),
+            ]
+        )
+    ]
+
+
+# Trailing-slash variants
+@router.get("/api/admin/", response_model=FastUI, response_model_exclude_none=True, include_in_schema=False)
+async def admin_home_slash(service: AppwriteService = Depends(get_appwrite_service)) -> list[AnyComponent]:
+    return await admin_home(service)
+
+
+@router.get(
+    "/api/admin/context-files/", response_model=FastUI, response_model_exclude_none=True, include_in_schema=False
+)
+async def context_files_list_slash(service: AppwriteService = Depends(get_appwrite_service)) -> list[AnyComponent]:
+    return await context_files_list(service)
+
+
+@router.get("/api/admin/plants/", response_model=FastUI, response_model_exclude_none=True, include_in_schema=False)
+async def plants_list_slash(service: AppwriteService = Depends(get_appwrite_service)) -> list[AnyComponent]:
+    return await plants_list(service)
 
 
 @router.get("/admin/{path:path}")
 async def html_landing() -> HTMLResponse:
-    """Serve the FastUI HTML page for the admin interface"""
     return HTMLResponse(prebuilt_html(title="Milwaukee Domes Admin"))

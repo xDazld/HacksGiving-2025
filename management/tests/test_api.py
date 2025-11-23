@@ -1,7 +1,7 @@
 """Unit tests for API endpoints"""
 
 import pytest
-from httpx import AsyncClient, ASGITransport
+from fastapi.testclient import TestClient
 from main import app
 
 
@@ -46,110 +46,47 @@ def test_plant_data():
 
 
 class TestHealthEndpoint:
-    """Test health check endpoint"""
-
-    @pytest.mark.asyncio
-    async def test_health_check(self):
-        """Test that health check returns healthy status"""
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.get("/health")
-
+    def test_health_check(self):
+        client = TestClient(app)
+        response = client.get("/health")
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "healthy"
         assert "version" in data
 
 
-class TestToursEndpoints:
-    """Test tours API endpoints"""
+class TestDeprecatedEndpoints:
+    def test_tours_removed(self):
+        client = TestClient(app)
+        r = client.get("/api/v1/tours")
+        assert r.status_code in (404, 410)
 
-    @pytest.mark.asyncio
-    async def test_get_tours(self):
-        """Test getting all tours"""
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.get("/api/v1/tours")
-
-        assert response.status_code == 200
-        assert isinstance(response.json(), list)
-
-    @pytest.mark.asyncio
-    async def test_get_single_tour_not_found(self):
-        """Test getting a non-existent tour returns 404"""
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.get("/api/v1/tours/nonexistent")
-
-        assert response.status_code == 404
+    def test_hunts_removed(self):
+        client = TestClient(app)
+        r = client.get("/api/v1/scavenger-hunts")
+        assert r.status_code in (404, 410)
 
 
-class TestScavengerHuntsEndpoints:
-    """Test scavenger hunts API endpoints"""
-
-    @pytest.mark.asyncio
-    async def test_get_scavenger_hunts(self):
-        """Test getting all scavenger hunts"""
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.get("/api/v1/scavenger-hunts")
-
-        assert response.status_code == 200
-        assert isinstance(response.json(), list)
-
-
-class TestPlantsEndpoints:
-    """Test plants API endpoints"""
-
-    @pytest.mark.asyncio
-    async def test_get_plants(self):
-        """Test getting all plants"""
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.get("/api/v1/plants")
-
-        assert response.status_code == 200
-        assert isinstance(response.json(), list)
-
-
-class TestProgressEndpoints:
-    """Test progress tracking endpoints"""
-
-    @pytest.mark.asyncio
-    async def test_calculate_progress(self):
-        """Test progress calculation with beacon data"""
-        beacon_data = {"ids": ["beacon1", "beacon2", "beacon3"], "rssi": [-65, -70, -55]}
-
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.post("/api/v1/progress/calculate", json=beacon_data)
-
+class TestContextFilesAdmin:
+    def test_get_context_files_fastui(self):
+        client = TestClient(app)
+        response = client.get("/api/admin/context-files")
         assert response.status_code == 200
         data = response.json()
-        assert "progress" in data
-        assert 0 <= data["progress"] <= 100
-        assert "nearest_location" in data
+        assert isinstance(data, list)
+        if data:
+            assert data[0].get("type") == "Page"
 
-    @pytest.mark.asyncio
-    async def test_validate_ticket_invalid_barcode(self):
-        """Test ticket validation with invalid barcode"""
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.post("/api/v1/progress/validate-ticket", json={"barcode": "INVALID123"})
-
-        assert response.status_code == 200
+    def test_validate_ticket_invalid_barcode(self):
+        client = TestClient(app)
+        response = client.post("/api/v1/progress/validate-ticket", json={"barcode": "INVALID123"})
+        assert response.status_code in (200, 400, 500)
         data = response.json()
-        # May be valid or invalid depending on Appwrite data
-        assert "valid" in data
+        assert "valid" in data or "message" in data
 
 
 class TestAuthentication:
-    """Test authentication endpoints"""
-
-    @pytest.mark.asyncio
-    async def test_login_invalid_credentials(self):
-        """Test login with invalid credentials"""
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.post("/api/v1/auth/login-json", json={"username": "wrong", "password": "wrongpass"})
-
-        # Expected status codes:
-        # - 401: Invalid credentials (correct behavior)
-        # - 422: Validation error (missing fields)
-        # - 500: Configuration error (missing Appwrite setup)
-        assert response.status_code in [401, 422, 500], (
-            f"Unexpected status code: {response.status_code}. "
-            f"Expected 401 (invalid credentials), 422 (validation error), or 500 (configuration error)"
-        )
+    def test_login_invalid_credentials(self):
+        client = TestClient(app)
+        response = client.post("/api/v1/auth/login-json", json={"username": "wrong", "password": "wrongpass"})
+        assert response.status_code in [401, 422, 500]

@@ -16,6 +16,8 @@ dependencies = [
     "passlib[bcrypt]>=1.7.4",
     "pandas>=2.2.0",
     "httpx>=0.28.1",
+    "playwright>=1.49.0",
+    "openai>=2.8.1",
 ]
 
 [dependency-groups]

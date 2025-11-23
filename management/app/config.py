@@ -36,6 +36,8 @@ class Settings(BaseSettings):
     plants_collection_id: str = "plants"
     progress_collection_id: str = "progress"
     tickets_collection_id: str = "tickets"
+    # Storage bucket for uploaded context files (LLM generation input)
+    context_files_bucket_id: str = "context-files"
 
     # JWT settings
     secret_key: str
