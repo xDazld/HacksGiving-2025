@@ -93,6 +93,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
+    paddingTop: 30,
     paddingBottom: 40,
   },
   welcomeSection: {
