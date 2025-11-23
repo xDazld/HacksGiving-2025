@@ -48,3 +48,48 @@ Join our community of developers creating universal apps.
 
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+
+## Appwrite Plant Integration
+
+This app now loads plant data from an Appwrite Database collection (`plants`) provisioned by the management server. If remote fetch fails, it falls back to the bundled CSV.
+
+### Configuration
+
+Set the following in `app.json` under `expo.extra` (or via EAS secrets):
+
+```jsonc
+"appwriteEndpoint": "https://cloud.appwrite.io/v1",
+"appwriteProjectId": "<your-project-id>",
+"appwriteDatabaseId": "milwaukee-domes",
+"appwritePlantsCollectionId": "plants"
+```
+
+### Usage
+
+Wrap the root layout with `PlantProvider` (already configured). Access plants with:
+
+```tsx
+import { usePlants } from '@/contexts/PlantContext';
+const { plants, refresh } = usePlants();
+```
+
+### Offline Caching
+
+Successful responses are cached in AsyncStorage (`plants-cache-v1`). Call `refresh({ force: true })` to bust cache.
+
+### Document Mapping
+
+Appwrite fields (snake_case) → UI record fields:
+
+- `common_name` → `Common Name`
+- `scientific_name` → `Scientific Name`
+- `quantity` → `Qty`
+- Boolean flags map to an `'x'` marker.
+
+### Adding New Fields
+
+Add attributes to the Appwrite collection, then extend `PlantDoc` and `docToRecord` in `services/PlantService.ts`.
+
+### Fallback CSV
+
+If the Appwrite fetch returns no documents or errors, the provider parses `Plants_Formatted.csv` for continuity.

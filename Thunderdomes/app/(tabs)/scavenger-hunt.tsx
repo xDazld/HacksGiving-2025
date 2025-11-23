@@ -18,12 +18,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { OpenAIClient } from '@/services/OpenAIClient';
 import { PlantStoryService } from '@/services/PlantStoryService';
 import { ScavengerHuntService } from '@/services/ScavengerHuntService';
-import {
-  fetchPlantsCsvText,
-  parsePlantsCsv,
-  filterPlants,
-  PlantRecord,
-} from '@/utils/plantData';
+import { PlantRecord } from '@/services/PlantService';
+import { usePlants } from '@/contexts/PlantContext';
 import { useLocalization } from '@/contexts/LocalizationContext';
 
 type GameStatus = 'initial' | 'playing' | 'verifying' | 'success' | 'completed';
@@ -51,29 +47,15 @@ export default function ScavengerHuntScreen() {
   const scavengerServiceRef = useRef<ScavengerHuntService | null>(null);
   const storyServiceRef = useRef<PlantStoryService | null>(null);
 
-  useEffect(() => {
-    const initServices = async () => {
-      try {
-        const csvText = await fetchPlantsCsvText();
-        const allPlants = parsePlantsCsv(csvText);
-        const filteredPlants = filterPlants(allPlants);
+  const { plants, loading: plantsLoading } = usePlants();
 
-        const client = new OpenAIClient();
-        scavengerServiceRef.current = new ScavengerHuntService(
-          client,
-          filteredPlants,
-        );
-        storyServiceRef.current = new PlantStoryService(client);
-      } catch (e) {
-        console.error('Failed to load plant data', e);
-        Alert.alert(
-          'Error',
-          'Failed to load plant data. Please restart the app.',
-        );
-      }
-    };
-    initServices();
-  }, []);
+  useEffect(() => {
+    if (!plantsLoading && plants.length) {
+      const client = new OpenAIClient();
+      scavengerServiceRef.current = new ScavengerHuntService(client, plants);
+      storyServiceRef.current = new PlantStoryService(client);
+    }
+  }, [plantsLoading, plants]);
 
   const startNewRound = async () => {
     if (!scavengerServiceRef.current) return;
@@ -205,7 +187,7 @@ export default function ScavengerHuntScreen() {
     setIsStoryExpanded(false);
   };
 
-  if (isLoading) {
+  if (isLoading || plantsLoading) {
     return (
       <ThemedView
         style={styles.centeredContainer}

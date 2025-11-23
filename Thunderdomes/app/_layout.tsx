@@ -7,6 +7,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { PlantProvider } from '@/contexts/PlantContext';
 import { LocalizationProvider } from '@/contexts/LocalizationContext';
 
 function RootLayoutNav() {
@@ -18,7 +19,7 @@ function RootLayoutNav() {
   useEffect(() => {
     if (isLoading) return;
 
-    const currentSegment = segments[0];
+    const currentSegment = segments[0] as string;
     const inAuthGroup = currentSegment === '(tabs)';
     const onLoginPage = currentSegment === 'login';
     const onIndexPage = currentSegment === 'index';
@@ -55,7 +56,9 @@ export default function RootLayout() {
     <LocalizationProvider>
       <SafeAreaProvider>
         <AuthProvider>
-          <RootLayoutNav />
+          <PlantProvider>
+            <RootLayoutNav />
+          </PlantProvider>
         </AuthProvider>
       </SafeAreaProvider>
     </LocalizationProvider>

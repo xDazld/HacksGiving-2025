@@ -85,7 +85,8 @@
       },
       "appwriteEndpoint": "https://nyc.cloud.appwrite.io/v1",
       "appwriteProjectId": "69211c3d0030edb86edf",
-      "appwriteDatabaseId": "milwaukee-domes"
+      "appwriteDatabaseId": "milwaukee-domes",
+      "appwritePlantsCollectionId": "plants"
     }
   }
 }
