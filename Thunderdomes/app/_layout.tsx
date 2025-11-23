@@ -31,7 +31,7 @@ function RootLayoutNav() {
       router.replace('/login');
     } else if (user && onLoginPage) {
       // Redirect to tabs if authenticated and on login page
-      router.replace('/(tabs)/audio-tour');
+      router.replace('/(tabs)/botanical-tales');
     }
   }, [user, segments, isLoading, router]);
 
@@ -41,6 +41,7 @@ function RootLayoutNav() {
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="botanical-tales" options={{ headerShown: false }} />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>
