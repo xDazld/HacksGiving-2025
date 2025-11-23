@@ -14,8 +14,10 @@
         "NSCameraUsageDescription": "Allow Thunderdomes to access your camera to scan ticket barcodes and take photos for the scavenger hunt.",
         "NSPhotoLibraryUsageDescription": "Allow Thunderdomes to access your photo library to select images for the scavenger hunt.",
         "NSBluetoothAlwaysUsageDescription": "Allow Thunderdomes to access Bluetooth to track your location in the domes.",
-        "NSBluetoothPeripheralUsageDescription": "Allow Thunderdomes to access Bluetooth to track your location in the domes."
-      }
+        "NSBluetoothPeripheralUsageDescription": "Allow Thunderdomes to access Bluetooth to track your location in the domes.",
+        "NSMicrophoneUsageDescription": "Allow Thunderdomes to access your microphone for voice chat."
+      },
+      "bundleIdentifier": "com.anonymous.Thunderdomes"
     },
     "android": {
       "adaptiveIcon": {
