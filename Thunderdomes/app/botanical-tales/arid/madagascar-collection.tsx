@@ -8,11 +8,21 @@ import {
   SafeAreaView,
   Platform,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+
 import { router } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
+import { OpenAIClient } from '@/services/OpenAIClient';
+import { PlantStoryService } from '@/services/PlantStoryService';
+import {
+  fetchPlantsCsvText,
+  parsePlantsCsv,
+  pickRandomPlant,
+  getSamplePlant,
+  PlantRecord,
+} from '@/utils/plantData';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -27,25 +37,25 @@ interface AudioSegment {
 const audioSegments: AudioSegment[] = [
   {
     id: 1,
-    text: "Welcome to the Madagascar Collection at the Mitchell Park Domes.",
+    text: 'Welcome to the Madagascar Collection at the Mitchell Park Domes.',
     startTime: 0,
     endTime: 4,
   },
   {
     id: 2,
-    text: "These remarkable plants come from the island of Madagascar,",
+    text: 'These remarkable plants come from the island of Madagascar,',
     startTime: 4,
     endTime: 8,
   },
   {
     id: 3,
-    text: "a land of incredible biodiversity off the southeastern coast of Africa.",
+    text: 'a land of incredible biodiversity off the southeastern coast of Africa.',
     startTime: 8,
     endTime: 12,
   },
   {
     id: 4,
-    text: "Look closely at these vibrant pink and purple blooms.",
+    text: 'Look closely at these vibrant pink and purple blooms.',
     startTime: 12,
     endTime: 16,
   },
@@ -57,25 +67,25 @@ const audioSegments: AudioSegment[] = [
   },
   {
     id: 6,
-    text: "As you look at them now, imagine the dry winds of Madagascar",
+    text: 'As you look at them now, imagine the dry winds of Madagascar',
     startTime: 19,
     endTime: 23,
   },
   {
     id: 7,
-    text: "crossing over coral-sand soils,",
+    text: 'crossing over coral-sand soils,',
     startTime: 23,
     endTime: 26,
   },
   {
     id: 8,
-    text: "shaping a plant that learned to embrace",
+    text: 'shaping a plant that learned to embrace',
     startTime: 26,
     endTime: 29,
   },
   {
     id: 9,
-    text: "the harshness of its environment.",
+    text: 'the harshness of its environment.',
     startTime: 29,
     endTime: 32,
   },
@@ -85,12 +95,60 @@ export default function MadagascarCollectionScreen() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [currentSegmentId, setCurrentSegmentId] = useState<number | null>(1);
+  const [plantStory, setPlantStory] = useState<string>('');
+  const [isStoryLoading, setIsStoryLoading] = useState<boolean>(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    // Generate a plant story when the screen loads
+    generatePlantStory();
+  }, []);
+
+  async function generatePlantStory() {
+    try {
+      setIsStoryLoading(true);
+      const csv = await fetchPlantsCsvText();
+      const rows = parsePlantsCsv(csv);
+
+      // Try to find a plant related to Madagascar, otherwise pick random
+      let pick: PlantRecord | undefined;
+      const madagascarPlants = rows.filter(
+        r =>
+          (r['Notes'] && r['Notes'].toLowerCase().includes('madagascar')) ||
+          (r['Common Name'] &&
+            r['Common Name'].toLowerCase().includes('madagascar')),
+      );
+
+      if (madagascarPlants.length > 0) {
+        pick = pickRandomPlant(madagascarPlants);
+      } else {
+        pick = pickRandomPlant(rows);
+      }
+
+      if (!pick) pick = getSamplePlant();
+
+      const client = new OpenAIClient();
+      const service = new PlantStoryService(client);
+      const story = await service.generateStory(pick);
+
+      setPlantStory(story);
+    } catch (e) {
+      console.error('Error generating story:', e);
+      // Fallback to sample
+      const client = new OpenAIClient();
+      const service = new PlantStoryService(client);
+      const story = await service.generateStory(getSamplePlant());
+      setPlantStory(story);
+    } finally {
+      setIsStoryLoading(false);
+    }
+  }
 
   useEffect(() => {
     // Find current segment based on time
     const activeSegment = audioSegments.find(
-      (segment) => currentTime >= segment.startTime && currentTime < segment.endTime
+      segment =>
+        currentTime >= segment.startTime && currentTime < segment.endTime,
     );
     if (activeSegment) {
       setCurrentSegmentId(activeSegment.id);
@@ -101,7 +159,7 @@ export default function MadagascarCollectionScreen() {
     if (isPlaying) {
       // Simulate audio playback with a timer
       intervalRef.current = setInterval(() => {
-        setCurrentTime((prev) => {
+        setCurrentTime(prev => {
           const newTime = prev + 0.1;
           // Loop back to start when finished
           if (newTime >= 32) {
@@ -145,20 +203,20 @@ export default function MadagascarCollectionScreen() {
 
           {/* Center Logo */}
           <View style={styles.logoContainer}>
-            <Image 
-              source={require('@/assets/images/DomesLogo.png')} 
+            <Image
+              source={require('@/assets/images/DomesLogo.png')}
               style={styles.logo}
               resizeMode="contain"
             />
           </View>
 
           {/* Right Settings Button */}
-          <TouchableOpacity 
-            style={styles.settingsButton} 
+          <TouchableOpacity
+            style={styles.settingsButton}
             onPress={() => router.push('/settings')}
           >
-            <Image 
-              source={require('@/assets/images/Settings.png')} 
+            <Image
+              source={require('@/assets/images/Settings.png')}
               style={styles.settingsIcon}
               resizeMode="contain"
             />
@@ -166,7 +224,7 @@ export default function MadagascarCollectionScreen() {
         </View>
       </SafeAreaView>
 
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollViewContent}
       >
@@ -185,19 +243,18 @@ export default function MadagascarCollectionScreen() {
 
           {/* Audio Transcript with 3-Line View and Fade Effects */}
           <View style={styles.transcriptWrapper}>
-            {/* Top Fade Effect */}
-            <LinearGradient
-              colors={['rgba(255, 255, 255, 1)', 'rgba(255, 255, 255, 0)']}
-              style={styles.topGradient}
-              pointerEvents="none"
-            />
-            
             <View style={styles.transcriptContainer}>
               {/* Previous Line (if exists) */}
-              {currentSegmentId > 1 && (
+              {currentSegmentId && currentSegmentId > 1 && (
                 <View style={styles.segmentContainer}>
-                  <ThemedText style={[styles.segmentText, styles.blurredSegmentText]}>
-                    {audioSegments.find(s => s.id === currentSegmentId - 1)?.text}
+                  <ThemedText
+                    style={[styles.segmentText, styles.blurredSegmentText]}
+                  >
+                    {
+                      audioSegments.find(
+                        s => s.id === (currentSegmentId || 0) - 1,
+                      )?.text
+                    }
                   </ThemedText>
                 </View>
               )}
@@ -205,35 +262,51 @@ export default function MadagascarCollectionScreen() {
               {/* Current Line */}
               {currentSegmentId && (
                 <View style={styles.segmentContainer}>
-                  <ThemedText style={[styles.segmentText, styles.activeSegmentText]}>
+                  <ThemedText
+                    style={[styles.segmentText, styles.activeSegmentText]}
+                  >
                     {audioSegments.find(s => s.id === currentSegmentId)?.text}
                   </ThemedText>
                 </View>
               )}
 
               {/* Next Line (if exists) */}
-              {currentSegmentId < audioSegments.length && (
+              {currentSegmentId && currentSegmentId < audioSegments.length && (
                 <View style={styles.segmentContainer}>
-                  <ThemedText style={[styles.segmentText, styles.blurredSegmentText]}>
-                    {audioSegments.find(s => s.id === currentSegmentId + 1)?.text}
+                  <ThemedText
+                    style={[styles.segmentText, styles.blurredSegmentText]}
+                  >
+                    {
+                      audioSegments.find(s => s.id === currentSegmentId + 1)
+                        ?.text
+                    }
                   </ThemedText>
                 </View>
               )}
             </View>
+          </View>
 
-            {/* Bottom Fade Effect */}
-            <LinearGradient
-              colors={['rgba(255, 255, 255, 0)', 'rgba(255, 255, 255, 1)']}
-              style={styles.bottomGradient}
-              pointerEvents="none"
-            />
+          {/* Featured Plant Story Section */}
+          <View style={styles.storySection}>
+            <ThemedText type="subtitle" style={styles.storyTitle}>
+              Featured Plant Story
+            </ThemedText>
+            {isStoryLoading ? (
+              <ActivityIndicator size="small" color="#68A4D2" />
+            ) : plantStory ? (
+              <ThemedText style={styles.storyText}>{plantStory}</ThemedText>
+            ) : (
+              <ThemedText style={styles.storyText}>
+                Unable to load story at this time.
+              </ThemedText>
+            )}
           </View>
         </ThemedView>
       </ScrollView>
 
       {/* Fixed Play/Pause Button */}
       <View style={styles.fixedButtonContainer}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.playButton}
           onPress={handlePlayPause}
           activeOpacity={0.8}
@@ -333,29 +406,14 @@ const styles = StyleSheet.create({
   transcriptWrapper: {
     position: 'relative',
     height: SCREEN_HEIGHT * 0.35,
-    marginBottom: 20,
+    marginBottom: 30,
   },
   transcriptContainer: {
     flex: 1,
     justifyContent: 'center',
     paddingVertical: 10,
   },
-  topGradient: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 40,
-    zIndex: 1,
-  },
-  bottomGradient: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 40,
-    zIndex: 1,
-  },
+
   segmentContainer: {
     marginVertical: 8,
     paddingVertical: 4,
@@ -398,5 +456,24 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 70,
   },
+  storySection: {
+    marginTop: 20,
+    padding: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
+  storyTitle: {
+    textAlign: 'center',
+    marginBottom: 12,
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  storyText: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: '#444',
+  },
 });
-
