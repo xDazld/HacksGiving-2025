@@ -13,6 +13,7 @@ import {
   Text,
   Linking,
 } from 'react-native';
+import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { router } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
@@ -259,7 +260,7 @@ export default function MadagascarCollectionScreen() {
                 onPress={() => handleMenuItemPress('accessibility')}
               >
                 <Text style={styles.menuText}>{t('menu.accessibility')}</Text>
-                <Text style={styles.menuIcon}>ⓘ</Text>
+                <MaterialIcons name="info-outline" size={24} color="#FFFFFF" />
               </TouchableOpacity>
 
               <TouchableOpacity 
@@ -267,7 +268,7 @@ export default function MadagascarCollectionScreen() {
                 onPress={() => setLanguageExpanded(!languageExpanded)}
               >
                 <Text style={styles.menuText}>{t('menu.language')}</Text>
-                <Text style={styles.menuIcon}>🌐</Text>
+                <MaterialIcons name="language" size={24} color="#FFFFFF" />
               </TouchableOpacity>
 
               {languageExpanded && (
@@ -289,7 +290,7 @@ export default function MadagascarCollectionScreen() {
                 onPress={() => handleMenuItemPress('member')}
               >
                 <Text style={styles.menuText}>{t('menu.becomeMember')}</Text>
-                <Text style={styles.menuIcon}>📋</Text>
+                <MaterialCommunityIcons name="card-account-details-outline" size={24} color="#FFFFFF" />
               </TouchableOpacity>
 
               <TouchableOpacity 
@@ -297,7 +298,7 @@ export default function MadagascarCollectionScreen() {
                 onPress={() => handleMenuItemPress('donate')}
               >
                 <Text style={styles.menuText}>{t('menu.makeDonation')}</Text>
-                <Text style={styles.menuIcon}>💝</Text>
+                <MaterialIcons name="volunteer-activism" size={24} color="#FFFFFF" />
               </TouchableOpacity>
 
               <TouchableOpacity 
@@ -305,7 +306,7 @@ export default function MadagascarCollectionScreen() {
                 onPress={() => handleMenuItemPress('calendar')}
               >
                 <Text style={styles.menuText}>{t('menu.viewCalendar')}</Text>
-                <Text style={styles.menuIcon}>📅</Text>
+                <MaterialIcons name="event" size={24} color="#FFFFFF" />
               </TouchableOpacity>
 
               <TouchableOpacity 
@@ -313,7 +314,7 @@ export default function MadagascarCollectionScreen() {
                 onPress={() => handleMenuItemPress('website')}
               >
                 <Text style={styles.menuText}>{t('menu.visitWebsite')}</Text>
-                <Text style={styles.menuIcon}>🏛️</Text>
+                <MaterialIcons name="public" size={24} color="#FFFFFF" />
               </TouchableOpacity>
             </ScrollView>
           </View>
@@ -469,10 +470,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     flex: 1,
-  },
-  menuIcon: {
-    fontSize: 24,
-    marginLeft: 10,
   },
   submenu: {
     backgroundColor: 'rgba(0, 0, 0, 0.3)',

@@ -12,6 +12,7 @@ import {
   Text,
   Linking,
 } from 'react-native';
+import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { router } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
@@ -230,7 +231,7 @@ export default function SipAndSeekScreen() {
           activeOpacity={0.8}
         >
           <ThemedText style={styles.scanButtonText}>{t('sipAndSeek.scanButton')}</ThemedText>
-          <ThemedText style={styles.cameraIcon}>📷</ThemedText>
+          <MaterialIcons name="camera-alt" size={24} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
 
@@ -260,7 +261,7 @@ export default function SipAndSeekScreen() {
                 onPress={() => handleMenuItemPress('accessibility')}
               >
                 <Text style={styles.menuText}>{t('menu.accessibility')}</Text>
-                <Text style={styles.menuIcon}>ⓘ</Text>
+                <MaterialIcons name="info-outline" size={24} color="#FFFFFF" />
               </TouchableOpacity>
 
               <TouchableOpacity 
@@ -268,7 +269,7 @@ export default function SipAndSeekScreen() {
                 onPress={() => setLanguageExpanded(!languageExpanded)}
               >
                 <Text style={styles.menuText}>{t('menu.language')}</Text>
-                <Text style={styles.menuIcon}>🌐</Text>
+                <MaterialIcons name="language" size={24} color="#FFFFFF" />
               </TouchableOpacity>
 
               {languageExpanded && (
@@ -290,7 +291,7 @@ export default function SipAndSeekScreen() {
                 onPress={() => handleMenuItemPress('member')}
               >
                 <Text style={styles.menuText}>{t('menu.becomeMember')}</Text>
-                <Text style={styles.menuIcon}>📋</Text>
+                <MaterialCommunityIcons name="card-account-details-outline" size={24} color="#FFFFFF" />
               </TouchableOpacity>
 
               <TouchableOpacity 
@@ -298,7 +299,7 @@ export default function SipAndSeekScreen() {
                 onPress={() => handleMenuItemPress('donate')}
               >
                 <Text style={styles.menuText}>{t('menu.makeDonation')}</Text>
-                <Text style={styles.menuIcon}>💝</Text>
+                <MaterialIcons name="volunteer-activism" size={24} color="#FFFFFF" />
               </TouchableOpacity>
 
               <TouchableOpacity 
@@ -306,7 +307,7 @@ export default function SipAndSeekScreen() {
                 onPress={() => handleMenuItemPress('calendar')}
               >
                 <Text style={styles.menuText}>{t('menu.viewCalendar')}</Text>
-                <Text style={styles.menuIcon}>📅</Text>
+                <MaterialIcons name="event" size={24} color="#FFFFFF" />
               </TouchableOpacity>
 
               <TouchableOpacity 
@@ -314,7 +315,7 @@ export default function SipAndSeekScreen() {
                 onPress={() => handleMenuItemPress('website')}
               >
                 <Text style={styles.menuText}>{t('menu.visitWebsite')}</Text>
-                <Text style={styles.menuIcon}>🏛️</Text>
+                <MaterialIcons name="public" size={24} color="#FFFFFF" />
               </TouchableOpacity>
             </ScrollView>
           </View>
@@ -434,10 +435,6 @@ const styles = StyleSheet.create({
     marginRight: 8,
     lineHeight: 24,
   },
-  cameraIcon: {
-    fontSize: 24,
-    lineHeight: 24,
-  },
   cameraHeaderSafeArea: {
     backgroundColor: '#68A4D2',
     paddingTop: Platform.OS === 'android' ? 35 : 0,
@@ -523,10 +520,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     flex: 1,
-  },
-  menuIcon: {
-    fontSize: 24,
-    marginLeft: 10,
   },
   submenu: {
     backgroundColor: 'rgba(0, 0, 0, 0.3)',

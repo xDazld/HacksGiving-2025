@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, View, TouchableOpacity, Alert } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions, Camera } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
 import { ThemedView } from './themed-view';
@@ -120,9 +121,12 @@ export function PlantCameraModal({ onPhotoTaken, onClose }: PlantCameraModalProp
         onPress={handleTakePicture}
         disabled={isCapturing}
       >
-        <ThemedText style={styles.scanButtonText}>
-          {isCapturing ? 'Taking Picture...' : 'Scan 📷'}
-        </ThemedText>
+        <View style={styles.scanButtonContent}>
+          <ThemedText style={styles.scanButtonText}>
+            {isCapturing ? 'Taking Picture...' : 'Scan'}
+          </ThemedText>
+          {!isCapturing && <MaterialIcons name="camera-alt" size={20} color="#FFFFFF" style={{marginLeft: 8}} />}
+        </View>
       </TouchableOpacity>
     </ThemedView>
   );
@@ -172,6 +176,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3,
     elevation: 3,
+  },
+  scanButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   scanButtonText: {
     color: '#F5F1E3',
