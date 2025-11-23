@@ -851,7 +851,7 @@ const styles = StyleSheet.create({
   },
   fixedButtonContainer: {
     position: 'absolute',
-    bottom: Platform.OS === 'ios' ? 40 : 20,
+    bottom: Platform.OS === 'ios' ? 120 : 110,
     left: 0,
     right: 0,
     alignItems: 'center',
