@@ -3,11 +3,27 @@ import { I18n } from 'i18n-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import en from '@/locales/en.json';
 import es from '@/locales/es.json';
+import zh from '@/locales/zh.json';
+import hi from '@/locales/hi.json';
+import ar from '@/locales/ar.json';
+import fr from '@/locales/fr.json';
+import de from '@/locales/de.json';
+import ja from '@/locales/ja.json';
+import pt from '@/locales/pt.json';
+import ru from '@/locales/ru.json';
 
 // Create i18n instance
 const i18n = new I18n({
   en,
   es,
+  zh,
+  hi,
+  ar,
+  fr,
+  de,
+  ja,
+  pt,
+  ru,
 });
 
 // Set default language

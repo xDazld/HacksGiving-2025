@@ -1,0 +1,144 @@
+{
+  "common": {
+    "loading": "جار التحميل...",
+    "comingSoon": "قريباً"
+  },
+  "navigation": {
+    "voiceChat": "دردشة صوتية",
+    "botanicalTales": "حكايات نباتية",
+    "domeDetective": "محقق القبة",
+    "sipAndSeek": "احتسِ وابحث"
+  },
+  "menu": {
+    "accessibility": "إمكانية الوصول",
+    "language": "اللغة",
+    "becomeMember": "كن عضواً",
+    "makeDonation": "تبرع",
+    "viewCalendar": "عرض التقويم",
+    "visitWebsite": "زيارة موقعنا"
+  },
+  "languages": {
+    "en": "الإنجليزية (English)",
+    "es": "الإسبانية (Español)",
+    "zh": "الصينية (中文)",
+    "hi": "الهندية (हिन्दी)",
+    "ar": "العربية",
+    "fr": "الفرنسية (Français)",
+    "de": "الألمانية (Deutsch)",
+    "ja": "اليابانية (日本語)",
+    "pt": "البرتغالية (Português)",
+    "ru": "الروسية (Русский)"
+  },
+  "botanicalTales": {
+    "title": "حكايات نباتية",
+    "welcome": "مرحباً بك في القباب!",
+    "selectDome": "أي بيئة تريد استكشافها؟",
+    "desertDome": "القبة القاحلة",
+    "kidsDome": "قبة الأطفال",
+    "tropicalDome": "القبة الاستوائية",
+    "showDome": "القبة الزهرية"
+  },
+  "aridDome": {
+    "title": "جولات القبة القاحلة",
+    "availableTours": "الجولات الصوتية المتاحة",
+    "madagascarCollection": "مجموعة مدغشقر",
+    "madagascarDesc": "رحلة عبر النباتات الفريدة للجزيرة",
+    "worldOfCacti": "عالم الصبار",
+    "cactiDesc": "استكشف صبار الصحراء المتنوع",
+    "desertBloom": "ازدهار الصحراء",
+    "bloomDesc": "شاهد زهور الصحراء الموسمية",
+    "canaryIsland": "مجموعة جزر الكناري",
+    "canaryDesc": "اكتشف نباتات جزر الأطلسي"
+  },
+  "madagascarTour": {
+    "title": "مجموعة مدغشقر",
+    "featuredPlantStory": "قصة النبات المميز",
+    "generating": "جارٍ إنشاء قصة نباتك الشخصية...",
+    "audioLoading": "جارٍ تحضير الصوت...",
+    "audioReady": "الصوت جاهز! اضغط تشغيل للبدء.",
+    "errorLoading": "خطأ في تحميل القصة. يرجى المحاولة مرة أخرى.",
+    "playButton": "▶",
+    "pauseButton": "⏸"
+  },
+  "sipAndSeek": {
+    "title": "احتسِ وابحث",
+    "description": "اشترِ طعاماً أو مشروباً من مقهانا لفتح مغامرة المشروب المخصص. امسح الرمز الشريطي لبدء جولتك!",
+    "featuredBeverages": "المشروبات المميزة",
+    "scanButton": "مسح",
+    "scannerTitle": "مسح الرمز الشريطي",
+    "scanInstruction": "وجّه الكاميرا إلى الرمز الشريطي للمسح",
+    "cameraPermission": "إذن الكاميرا",
+    "cameraPermissionMessage": "يلزم الوصول إلى الكاميرا لمسح الرموز الشريطية.",
+    "barcodeScanned": "تم مسح الرمز الشريطي!",
+    "codeLabel": "الرمز:",
+    "drinks": {
+      "pricklyPear": "مبرد الكمثرى الشوكية",
+      "pricklyPearDesc": "مشروب أرجواني نابض مصنوع من فاكهة الصبار الصحراوي",
+      "hibiscus": "جنة الكركديه",
+      "hibiscusDesc": "شاي زهور استوائي أحمر عميق بلمسة لاذعة",
+      "lavender": "هدوء اللافندر",
+      "lavenderDesc": "لاتيه زهري بنفسجي مهدئ بنكهة العسل",
+      "vanilla": "ميلك شيك حبوب الفانيليا",
+      "vanillaDesc": "ميلك شيك كريمي بحبوب الفانيليا من مدغشقر"
+    }
+  },
+  "voiceChat": {
+    "speaking": "🔊 يتحدث (اضغط للإيقاف)",
+    "listening": "🔴 يستمع...",
+    "thinking": "✨ يفكر...",
+    "tapToChat": "اضغط للدردشة",
+    "tapToSend": "اضغط للإرسال",
+    "tapToInterrupt": "اضغط للمقاطعة",
+    "tapToSpeak": "اضغط للتحدث"
+  },
+  "domeDetective": {
+    "title": "محقق القبة",
+    "description": "حدد النباتات باستخدام الأدلة ومهاراتك التحقيقية... هل أنت مستعد لتكون محققاً؟",
+    "letsGo": "لنذهب!",
+    "loading": {
+      "consulting": "استشارة أرواح النبات...",
+      "whispering": "همس إلى الأوراق...",
+      "checking": "فحص تخمينك..."
+    },
+    "huntComplete": "اكتمل البحث!",
+    "congratulations": "تهانينا! لقد وجدت جميع النباتات في هذا البحث.",
+    "totalFound": "إجمالي النباتات المكتشفة:",
+    "playAgain": "العب مرة أخرى",
+    "exit": "خروج",
+    "correct": "صحيح!",
+    "itWasThe": "كان",
+    "learnMore": "تعلم المزيد",
+    "hideStory": "إخفاء القصة",
+    "nextPlant": "النبات التالي",
+    "getAnotherHint": "احصل على تلميح آخر",
+    "foundIt": "أعتقد أنني وجدته!",
+    "notQuite": "ليس تماماً...",
+    "tryAgain": "حاول مرة أخرى",
+    "startActivity": "بدء النشاط",
+    "startMessage": "بدء محقق القبة سيستخدم تذكرتك. بعد إكمال هذا النشاط، يمكنك مسح تذكرة جديدة لبدء آخر. متابعة؟",
+    "cancel": "إلغاء",
+    "start": "بدء"
+  },
+  "settings": {
+    "title": "إعدادات إمكانية الوصول",
+    "textSize": "حجم النص",
+    "highContrast": "وضع التباين العالي",
+    "screenReader": "دعم قارئ الشاشة"
+  },
+  "login": {
+    "welcome": "مرحباً بك في قباب ميتشل بارك",
+    "subtitle": "أدخل عمرك والرمز الشريطي للتذكرة للبدء",
+    "age": "العمر",
+    "agePlaceholder": "أدخل عمرك",
+    "done": "تم",
+    "barcode": "الرمز الشريطي للتذكرة (اختياري)",
+    "barcodeManualPlaceholder": "أدخل الرمز الشريطي يدوياً",
+    "scan": "مسح",
+    "scanBarcode": "مسح الرمز الشريطي",
+    "orEnterManually": "أو أدخل يدوياً",
+    "loginButton": "تسجيل الدخول",
+    "close": "إغلاق",
+    "scanInstructions": "ضع الرمز الشريطي داخل الإطار"
+  }
+}
+

@@ -1,0 +1,144 @@
+{
+  "common": {
+    "loading": "加载中...",
+    "comingSoon": "即将推出"
+  },
+  "navigation": {
+    "voiceChat": "语音聊天",
+    "botanicalTales": "植物故事",
+    "domeDetective": "圆顶侦探",
+    "sipAndSeek": "啜饮与寻找"
+  },
+  "menu": {
+    "accessibility": "无障碍功能",
+    "language": "语言",
+    "becomeMember": "成为会员",
+    "makeDonation": "捐款",
+    "viewCalendar": "查看日历",
+    "visitWebsite": "访问网站"
+  },
+  "languages": {
+    "en": "英语 (English)",
+    "es": "西班牙语 (Español)",
+    "zh": "中文",
+    "hi": "印地语 (हिन्दी)",
+    "ar": "阿拉伯语 (العربية)",
+    "fr": "法语 (Français)",
+    "de": "德语 (Deutsch)",
+    "ja": "日语 (日本語)",
+    "pt": "葡萄牙语 (Português)",
+    "ru": "俄语 (Русский)"
+  },
+  "botanicalTales": {
+    "title": "植物故事",
+    "welcome": "欢迎来到圆顶花园！",
+    "selectDome": "您想探索哪个环境？",
+    "desertDome": "干旱圆顶",
+    "kidsDome": "儿童圆顶",
+    "tropicalDome": "热带圆顶",
+    "showDome": "花卉圆顶"
+  },
+  "aridDome": {
+    "title": "干旱圆顶之旅",
+    "availableTours": "可用的音频导览",
+    "madagascarCollection": "马达加斯加收藏",
+    "madagascarDesc": "探索独特的岛屿植物",
+    "worldOfCacti": "仙人掌世界",
+    "cactiDesc": "探索多样的沙漠仙人掌",
+    "desertBloom": "沙漠之花",
+    "bloomDesc": "见证季节性沙漠花卉",
+    "canaryIsland": "加那利群岛收藏",
+    "canaryDesc": "发现大西洋岛屿植物"
+  },
+  "madagascarTour": {
+    "title": "马达加斯加收藏",
+    "featuredPlantStory": "精选植物故事",
+    "generating": "正在生成您的个性化植物故事...",
+    "audioLoading": "正在准备音频...",
+    "audioReady": "音频准备就绪！按播放开始。",
+    "errorLoading": "加载故事时出错。请重试。",
+    "playButton": "▶",
+    "pauseButton": "⏸"
+  },
+  "sipAndSeek": {
+    "title": "啜饮与寻找",
+    "description": "从我们的咖啡厅购买食物或饮料，解锁定制饮品冒险。扫描条形码开始您的旅程！",
+    "featuredBeverages": "精选饮品",
+    "scanButton": "扫描",
+    "scannerTitle": "扫描条形码",
+    "scanInstruction": "将相机对准条形码进行扫描",
+    "cameraPermission": "相机权限",
+    "cameraPermissionMessage": "需要相机访问权限才能扫描条形码。",
+    "barcodeScanned": "条形码已扫描！",
+    "codeLabel": "代码：",
+    "drinks": {
+      "pricklyPear": "仙人掌果冷饮",
+      "pricklyPearDesc": "由沙漠仙人掌果实制成的鲜艳洋红色饮品",
+      "hibiscus": "芙蓉天堂",
+      "hibiscusDesc": "深红色热带花茶，带有酸味",
+      "lavender": "薰衣草宁静",
+      "lavenderDesc": "舒缓的紫色花香拿铁，带有蜂蜜香",
+      "vanilla": "香草奶昔",
+      "vanillaDesc": "用马达加斯加香草豆制成的奶油奶昔"
+    }
+  },
+  "voiceChat": {
+    "speaking": "🔊 说话中（点击停止）",
+    "listening": "🔴 聆听中...",
+    "thinking": "✨ 思考中...",
+    "tapToChat": "点击聊天",
+    "tapToSend": "点击发送",
+    "tapToInterrupt": "点击打断",
+    "tapToSpeak": "点击说话"
+  },
+  "domeDetective": {
+    "title": "圆顶侦探",
+    "description": "使用线索和侦探技巧识别植物...您准备好成为侦探了吗？",
+    "letsGo": "开始吧！",
+    "loading": {
+      "consulting": "咨询植物精灵...",
+      "whispering": "向叶子低语...",
+      "checking": "检查您的答案..."
+    },
+    "huntComplete": "搜寻完成！",
+    "congratulations": "恭喜！您已找到此次搜寻中的所有植物。",
+    "totalFound": "找到的植物总数：",
+    "playAgain": "再玩一次",
+    "exit": "退出",
+    "correct": "正确！",
+    "itWasThe": "它是",
+    "learnMore": "了解更多",
+    "hideStory": "隐藏故事",
+    "nextPlant": "下一个植物",
+    "getAnotherHint": "获取另一个提示",
+    "foundIt": "我想我找到了！",
+    "notQuite": "不太对...",
+    "tryAgain": "再试一次",
+    "startActivity": "开始活动",
+    "startMessage": "开始圆顶侦探将使用您的门票。完成此活动后，您可以扫描新门票开始另一个活动。继续？",
+    "cancel": "取消",
+    "start": "开始"
+  },
+  "settings": {
+    "title": "无障碍设置",
+    "textSize": "文字大小",
+    "highContrast": "高对比度模式",
+    "screenReader": "屏幕阅读器支持"
+  },
+  "login": {
+    "welcome": "欢迎来到米切尔公园圆顶花园",
+    "subtitle": "输入您的年龄和门票条形码开始",
+    "age": "年龄",
+    "agePlaceholder": "输入您的年龄",
+    "done": "完成",
+    "barcode": "门票条形码（可选）",
+    "barcodeManualPlaceholder": "手动输入条形码",
+    "scan": "扫描",
+    "scanBarcode": "扫描条形码",
+    "orEnterManually": "或手动输入",
+    "loginButton": "登录",
+    "close": "关闭",
+    "scanInstructions": "将条形码放在框内"
+  }
+}
+

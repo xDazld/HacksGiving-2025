@@ -124,6 +124,21 @@
     "textSize": "Tamaño del Texto",
     "highContrast": "Modo de Alto Contraste",
     "screenReader": "Soporte de Lector de Pantalla"
+  },
+  "login": {
+    "welcome": "Bienvenido a Mitchell Park Domes",
+    "subtitle": "Ingrese su edad y el código de barras del boleto para comenzar",
+    "age": "Edad",
+    "agePlaceholder": "Ingrese su edad",
+    "done": "Listo",
+    "barcode": "Código de Barras del Boleto (Opcional)",
+    "barcodeManualPlaceholder": "Ingrese el código de barras manualmente",
+    "scan": "Escanear",
+    "scanBarcode": "Escanear Código de Barras",
+    "orEnterManually": "O ingresar manualmente",
+    "loginButton": "Iniciar Sesión",
+    "close": "Cerrar",
+    "scanInstructions": "Posicione el código de barras dentro del marco"
   }
 }
 
