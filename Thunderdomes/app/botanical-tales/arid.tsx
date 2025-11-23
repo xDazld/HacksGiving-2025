@@ -16,6 +16,7 @@ import { router } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { useLocalization } from '@/contexts/LocalizationContext';
+import { CustomBottomNav } from '@/components/CustomBottomNav';
 
 const LANGUAGES = [
   { code: 'en', nameKey: 'languages.en' },
@@ -265,6 +266,7 @@ export default function AridDomeScreen() {
           </View>
         </ThemedView>
       </ScrollView>
+      <CustomBottomNav />
     </View>
   );
 }
@@ -385,7 +387,7 @@ const styles = StyleSheet.create({
   content: {
     padding: 20,
     paddingTop: 30,
-    paddingBottom: 40,
+    paddingBottom: 120, // Extra space for bottom nav
   },
   title: {
     fontSize: 28,

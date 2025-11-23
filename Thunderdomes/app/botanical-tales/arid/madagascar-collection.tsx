@@ -28,6 +28,7 @@ import {
   PlantRecord,
 } from '@/utils/plantData';
 import { useLocalization } from '@/contexts/LocalizationContext';
+import { CustomBottomNav } from '@/components/CustomBottomNav';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -374,6 +375,7 @@ export default function MadagascarCollectionScreen() {
           )}
         </TouchableOpacity>
       </View>
+      <CustomBottomNav />
     </View>
   );
 }
@@ -492,7 +494,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollViewContent: {
-    paddingBottom: 120,
+    paddingBottom: 200, // Extra space for bottom nav + play button
   },
   content: {
     padding: 20,
