@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, TouchableOpacity, Image, SafeAreaView, Platform, Animated } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Image, Platform, Animated } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface CustomHeaderProps {
   menuVisible: boolean;
@@ -96,8 +97,10 @@ export function CustomHeader({ menuVisible, onMenuToggle }: CustomHeaderProps) {
     outputRange: [0, -9],
   });
 
+  const insets = useSafeAreaInsets();
+
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={[styles.safeArea, { paddingTop: insets.top }]}>
       <View style={styles.container}>
         {/* Left spacer to balance the hamburger menu */}
         <View style={styles.spacer} />
@@ -150,8 +153,8 @@ export function CustomHeader({ menuVisible, onMenuToggle }: CustomHeaderProps) {
             ]}
           />
         </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+    </View>
+    </View>
   );
 }
 
@@ -192,4 +195,3 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
 });
-

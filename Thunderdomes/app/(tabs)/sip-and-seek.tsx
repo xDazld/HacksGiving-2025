@@ -6,12 +6,12 @@ import {
   TouchableOpacity,
   Image,
   Alert,
-  SafeAreaView,
   Platform,
   Modal,
   Text,
   Linking,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { router } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
@@ -72,6 +72,7 @@ export default function SipAndSeekScreen() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [languageExpanded, setLanguageExpanded] = useState(false);
   const { t, setLocale } = useLocalization();
+  const insets = useSafeAreaInsets();
 
   const handleScanPress = async () => {
     if (!permission?.granted) {
@@ -133,7 +134,7 @@ export default function SipAndSeekScreen() {
     >
       <View style={styles.fullScreenContainer}>
         {/* Header with Back Button */}
-        <SafeAreaView style={styles.cameraHeaderSafeArea}>
+        <View style={[styles.cameraHeaderSafeArea, { paddingTop: insets.top }]}>
           <View style={styles.cameraHeader}>
             {/* Back Button */}
             <TouchableOpacity 
@@ -165,7 +166,7 @@ export default function SipAndSeekScreen() {
               <View style={styles.hamburgerLine} />
             </TouchableOpacity>
           </View>
-        </SafeAreaView>
+        </View>
 
         <CameraView
           style={styles.camera}
@@ -327,6 +328,7 @@ export default function SipAndSeekScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#fff',
   },
   fullScreenContainer: {
     flex: 1,
@@ -337,7 +339,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
-    paddingTop: 30,
+    paddingTop: 24,
     paddingBottom: 120,
   },
   title: {
@@ -345,6 +347,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 20,
+    marginTop: 0,
     paddingBottom: 5,
     color: '#333',
   },
@@ -440,7 +443,6 @@ const styles = StyleSheet.create({
   },
   cameraHeaderSafeArea: {
     backgroundColor: '#68A4D2',
-    paddingTop: Platform.OS === 'android' ? 35 : 0,
   },
   cameraHeader: {
     height: 60,

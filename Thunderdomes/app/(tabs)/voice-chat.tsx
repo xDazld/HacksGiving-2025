@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { StyleSheet, View, TouchableOpacity, ActivityIndicator, Animated } from 'react-native';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system/legacy';
+import { useFocusEffect } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -13,6 +14,7 @@ const PRIMARY_COLOR = '#458E5E';
 export default function VoiceChatScreen() {
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [sound, setSound] = useState<Audio.Sound | null>(null);
+  const soundRef = useRef<Audio.Sound | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -21,6 +23,38 @@ export default function VoiceChatScreen() {
   
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const animationRef = useRef<Animated.CompositeAnimation | null>(null);
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    soundRef.current = sound;
+  }, [sound]);
+
+  // Stop playback when navigating away
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        console.log('Navigating away - stopping playback cleanup');
+        // Cleanup function when screen loses focus
+        const currentSound = soundRef.current;
+        if (currentSound) {
+          console.log('Stopping sound via ref');
+          currentSound.stopAsync().catch(err => console.log('Error stopping sound:', err));
+          currentSound.unloadAsync().catch(err => console.log('Error unloading sound:', err));
+        }
+        setSound(null);
+        setIsPlaying(false);
+        
+        // Reset audio mode to default to ensure it doesn't stay active
+        Audio.setAudioModeAsync({
+          allowsRecordingIOS: false,
+          playsInSilentModeIOS: false,
+          staysActiveInBackground: false,
+          shouldDuckAndroid: true,
+          playThroughEarpieceAndroid: false,
+        }).catch(err => console.log('Error resetting audio mode:', err));
+      };
+    }, [])
+  );
 
   useEffect(() => {
     return () => {

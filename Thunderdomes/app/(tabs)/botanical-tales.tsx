@@ -93,15 +93,17 @@ export default function BotanicalTalesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#fff',
   },
   content: {
     padding: 20,
-    paddingTop: 30,
+    paddingTop: 24,
     paddingBottom: 40,
   },
   welcomeSection: {
     marginBottom: 30,
     paddingHorizontal: 10,
+    marginTop: 0,
   },
   welcomeTitle: {
     fontSize: 28,

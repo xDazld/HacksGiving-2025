@@ -20,6 +20,20 @@ import { ThemedText } from '@/components/themed-text';
 import { OpenAIClient } from '@/services/OpenAIClient';
 import { PlantStoryService } from '@/services/PlantStoryService';
 import { TextToSpeechService } from '@/services/TextToSpeechService';
+import { useUserPosition } from '@/hooks/useUserPosition';
+import {
+  initializeBLE,
+  startScanning,
+  stopScanning,
+  getLocationContextBeacons,
+  isBLEAvailable,
+} from '@/services/bleService';
+import {
+  calibrate,
+  calculatePosition,
+  isPositionSystemCalibrated,
+} from '@/services/positionService';
+import { BeaconData } from '@/types';
 import {
   fetchPlantsCsvText,
   parsePlantsCsv,
@@ -45,6 +59,59 @@ const LANGUAGES = [
   { code: 'ru', nameKey: 'languages.ru' },
 ];
 
+/**
+ * Split story into 3 parts at sentence boundaries
+ */
+function splitStoryIntoThreeParts(story: string): string[] {
+  // Find all sentence boundaries (. ! ? followed by space and capital letter, or end of string)
+  const sentenceRegex = /[.!?](?:\s+(?=[A-Z])|$)/g;
+  const matches: number[] = [];
+  let match;
+  
+  while ((match = sentenceRegex.exec(story)) !== null) {
+    matches.push(match.index + 1); // Position after the punctuation
+  }
+  
+  if (matches.length === 0) {
+    // No sentences found, split by character count
+    const third = Math.floor(story.length / 3);
+    return [
+      story.slice(0, third),
+      story.slice(third, third * 2),
+      story.slice(third * 2)
+    ];
+  }
+  
+  // Find split points closest to 1/3 and 2/3
+  const targetThird = story.length / 3;
+  const targetTwoThirds = (story.length * 2) / 3;
+  
+  let firstSplit = 0;
+  let secondSplit = matches[matches.length - 1];
+  let minDiff1 = Infinity;
+  let minDiff2 = Infinity;
+  
+  matches.forEach(pos => {
+    const diff1 = Math.abs(pos - targetThird);
+    const diff2 = Math.abs(pos - targetTwoThirds);
+    
+    if (diff1 < minDiff1) {
+      minDiff1 = diff1;
+      firstSplit = pos;
+    }
+    if (diff2 < minDiff2 && pos > firstSplit) {
+      minDiff2 = diff2;
+      secondSplit = pos;
+    }
+  });
+  
+  return [
+    story.slice(0, firstSplit).trim(),
+    story.slice(firstSplit, secondSplit).trim(),
+    story.slice(secondSplit).trim()
+  ];
+}
+
 export default function MadagascarCollectionScreen() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [plantStory, setPlantStory] = useState<string>('');
@@ -55,6 +122,20 @@ export default function MadagascarCollectionScreen() {
   const [languageExpanded, setLanguageExpanded] = useState(false);
   const { t, setLocale, locale } = useLocalization();
   const ttsService = useRef<TextToSpeechService>(new TextToSpeechService());
+  
+  // Progressive unlock state
+  const [storyParts, setStoryParts] = useState<string[]>([]);
+  const [unlockedParts, setUnlockedParts] = useState<number>(1); // Starts with part 1 unlocked
+  const [currentPlayingPart, setCurrentPlayingPart] = useState<number>(-1); // -1 means nothing playing, 0-2 for parts
+  const [waitingForThreshold, setWaitingForThreshold] = useState<{ part: number; threshold: number } | null>(null);
+  
+  // BLE scanning state
+  const [beacons, setBeacons] = useState<BeaconData[]>([]);
+  const [isScanning, setIsScanning] = useState(false);
+  const [autoCalibrationAttempted, setAutoCalibrationAttempted] = useState(false);
+  
+  // Get user position for progressive unlock
+  const { progress, isCalibrated } = useUserPosition(500);
 
   useEffect(() => {
     // Set TTS language based on current locale
@@ -63,11 +144,108 @@ export default function MadagascarCollectionScreen() {
     // Generate a plant story when the screen loads or when language changes
     generatePlantStory();
 
-    // Cleanup TTS service when component unmounts
+    // Start BLE scanning for position tracking
+    initializeBLEAndStartScanning();
+
+    // Cleanup TTS service and BLE scanning when component unmounts
     return () => {
       ttsService.current.cleanup();
+      stopScanning();
     };
   }, [locale]);
+
+  // Auto-calibrate after beacons are detected
+  useEffect(() => {
+    const calibrationStatus = isPositionSystemCalibrated();
+    
+    if (!autoCalibrationAttempted && beacons.length > 0 && !calibrationStatus) {
+      // Wait 500ms to ensure all beacons are detected
+      const timer = setTimeout(() => {
+        performAutoCalibration();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [beacons, autoCalibrationAttempted]);
+
+  // Update position when beacons change (if calibrated)
+  useEffect(() => {
+    const calibrationStatus = isPositionSystemCalibrated();
+    if (calibrationStatus && beacons.length > 0) {
+      calculatePosition(beacons, 'trilateration', true);
+    }
+  }, [beacons]);
+
+  // Monitor progress to unlock parts
+  useEffect(() => {
+    if (isCalibrated && progress >= 33 && unlockedParts === 1) {
+      setUnlockedParts(2);
+    }
+    if (isCalibrated && progress >= 66 && unlockedParts === 2) {
+      setUnlockedParts(3);
+    }
+  }, [progress, isCalibrated, unlockedParts]);
+
+  // Auto-continue when threshold is reached
+  useEffect(() => {
+    if (waitingForThreshold && isCalibrated && progress >= waitingForThreshold.threshold) {
+      const nextPart = waitingForThreshold.part;
+      setWaitingForThreshold(null);
+      continueWithUnlockedPart(nextPart);
+    }
+  }, [waitingForThreshold, progress, isCalibrated]);
+
+  /**
+   * Initialize BLE and start scanning for beacons
+   */
+  async function initializeBLEAndStartScanning() {
+    if (!isBLEAvailable()) {
+      console.warn('⚠️ BLE is not available on this platform');
+      return;
+    }
+
+    try {
+      const initialized = await initializeBLE();
+      if (!initialized) {
+        console.warn('⚠️ Failed to initialize BLE');
+        return;
+      }
+
+      await startScanning((detectedBeacons: BeaconData[]) => {
+        const filteredBeacons = getLocationContextBeacons(detectedBeacons);
+        setBeacons(filteredBeacons);
+      });
+
+      setIsScanning(true);
+    } catch (err: any) {
+      console.error('❌ Failed to start BLE scanning:', err);
+    }
+  }
+
+  /**
+   * Auto-calibrate position system (assumes user is at LocationContext_0)
+   */
+  function performAutoCalibration() {
+    if (beacons.length === 0) {
+      setAutoCalibrationAttempted(true);
+      return;
+    }
+
+    // Check if LocationContext_0 is present
+    const lc0 = beacons.find((b) => b.name === 'LocationContext_0');
+    if (!lc0) {
+      setAutoCalibrationAttempted(true);
+      return;
+    }
+    
+    const success = calibrate(beacons);
+    
+    if (success) {
+      // Trigger an immediate position calculation
+      calculatePosition(beacons, 'trilateration', true);
+    }
+    
+    setAutoCalibrationAttempted(true);
+  }
 
   async function generatePlantStory() {
     try {
@@ -98,14 +276,16 @@ export default function MadagascarCollectionScreen() {
 
       setPlantStory(story);
 
-      // Preload audio in the background after story is generated
-      if (story) {
-        console.log('🔄 Starting audio preload...');
+      // Split story into 3 parts
+      const parts = splitStoryIntoThreeParts(story);
+      setStoryParts(parts);
+
+      // Preload audio for first part only (will preload others on-demand)
+      if (parts.length > 0 && parts[0]) {
         setIsAudioLoading(true);
         try {
-          await ttsService.current.preloadAudio(story);
+          await ttsService.current.preloadAudio(parts[0]);
           setIsAudioReady(true);
-          console.log('✅ Audio ready for playback');
         } catch (err) {
           console.error('⚠️ Audio preload failed:', err);
           setIsAudioReady(false);
@@ -121,13 +301,16 @@ export default function MadagascarCollectionScreen() {
       const story = await service.generateStory(getSamplePlant(), undefined, locale);
       setPlantStory(story);
 
-      // Preload audio for fallback story too
-      if (story) {
+      // Split fallback story into 3 parts
+      const parts = splitStoryIntoThreeParts(story);
+      setStoryParts(parts);
+
+      // Preload audio for first part
+      if (parts.length > 0 && parts[0]) {
         setIsAudioLoading(true);
         try {
-          await ttsService.current.preloadAudio(story);
+          await ttsService.current.preloadAudio(parts[0]);
           setIsAudioReady(true);
-          console.log('✅ Audio ready for playback');
         } catch (err) {
           console.error('⚠️ Audio preload failed:', err);
           setIsAudioReady(false);
@@ -140,10 +323,95 @@ export default function MadagascarCollectionScreen() {
     }
   }
 
+  /**
+   * Play a specific unlocked part
+   */
+  const continueWithUnlockedPart = async (partIndex: number) => {
+    if (partIndex >= storyParts.length || partIndex < 0) {
+      console.error('Invalid part index:', partIndex);
+      return;
+    }
+
+    const partText = storyParts[partIndex];
+    if (!partText) {
+      console.error('No text for part:', partIndex);
+      return;
+    }
+
+    try {
+      setCurrentPlayingPart(partIndex);
+      setIsAudioLoading(true);
+      
+      // Stop current audio and preload new part
+      await ttsService.current.stop();
+      await ttsService.current.preloadAudio(partText);
+      
+      setIsAudioLoading(false);
+      await ttsService.current.speak(partText);
+      setIsPlaying(true);
+
+      // Monitor playback completion
+      const checkPlayback = setInterval(() => {
+        if (!ttsService.current.isPlaying()) {
+          setIsPlaying(false);
+          clearInterval(checkPlayback);
+          playNextPartOrWait(partIndex);
+        }
+      }, 500);
+    } catch (error) {
+      console.error('❌ Error playing part:', error);
+      setIsPlaying(false);
+      setIsAudioLoading(false);
+    }
+  };
+
+  /**
+   * Called when a part finishes playing - check if next part is unlocked
+   */
+  const playNextPartOrWait = async (justFinishedPartIndex: number) => {
+    const nextPartIndex = justFinishedPartIndex + 1;
+    
+    // Check if we've finished all parts
+    if (nextPartIndex >= storyParts.length) {
+      setCurrentPlayingPart(-1);
+      return;
+    }
+
+    // Check if next part is unlocked
+    const nextPartNumber = nextPartIndex + 1; // Convert 0-indexed to 1-indexed
+    if (nextPartNumber <= unlockedParts) {
+      // Next part is unlocked, play it immediately
+      await continueWithUnlockedPart(nextPartIndex);
+    } else {
+      // Next part is locked, play "continue exploring" message
+      const threshold = nextPartNumber === 2 ? 33 : 66;
+      setWaitingForThreshold({ part: nextPartIndex, threshold });
+      setCurrentPlayingPart(-1);
+      
+      try {
+        const message = "Please continue exploring to learn more.";
+        await ttsService.current.stop();
+        await ttsService.current.preloadAudio(message);
+        await ttsService.current.speak(message);
+        setIsPlaying(true);
+        
+        // Monitor when message finishes
+        const checkPlayback = setInterval(() => {
+          if (!ttsService.current.isPlaying()) {
+            setIsPlaying(false);
+            clearInterval(checkPlayback);
+          }
+        }, 500);
+      } catch (error) {
+        console.error('❌ Error playing continue message:', error);
+        setIsPlaying(false);
+      }
+    }
+  };
+
   const handlePlayPause = async () => {
     try {
-      if (!plantStory) {
-        console.log('⚠️ No story to play');
+      if (storyParts.length === 0) {
         return;
       }
 
@@ -152,17 +420,24 @@ export default function MadagascarCollectionScreen() {
         await ttsService.current.pause();
         setIsPlaying(false);
       } else {
-        // Currently paused or not started, so play/resume
-        await ttsService.current.speak(plantStory);
-        setIsPlaying(true);
+        // Currently paused or not started
+        if (currentPlayingPart === -1) {
+          // Not started yet, start from part 0
+          await continueWithUnlockedPart(0);
+        } else {
+          // Resume current part
+          await ttsService.current.speak(storyParts[currentPlayingPart]);
+          setIsPlaying(true);
 
-        // Monitor playback status to update UI when finished
-        const checkPlayback = setInterval(() => {
-          if (!ttsService.current.isPlaying()) {
-            setIsPlaying(false);
-            clearInterval(checkPlayback);
-          }
-        }, 500);
+          // Monitor playback status
+          const checkPlayback = setInterval(() => {
+            if (!ttsService.current.isPlaying()) {
+              setIsPlaying(false);
+              clearInterval(checkPlayback);
+              playNextPartOrWait(currentPlayingPart);
+            }
+          }, 500);
+        }
       }
     } catch (error) {
       console.error('❌ Play/Pause Error:', error);
@@ -342,8 +617,81 @@ export default function MadagascarCollectionScreen() {
             <ThemedText type="subtitle" style={styles.storyTitle}>
               {t('madagascarTour.featuredPlantStory')}
             </ThemedText>
+            
+            {/* Part Progress Indicator */}
+            {storyParts.length > 0 && (
+              <View style={styles.partIndicatorContainer}>
+                {[1, 2, 3].map((partNum) => (
+                  <View
+                    key={partNum}
+                    style={[
+                      styles.partIndicator,
+                      partNum <= unlockedParts && styles.partIndicatorUnlocked,
+                      currentPlayingPart === partNum - 1 && styles.partIndicatorPlaying,
+                    ]}
+                  >
+                    <ThemedText
+                      style={[
+                        styles.partIndicatorText,
+                        partNum <= unlockedParts && styles.partIndicatorTextUnlocked,
+                        currentPlayingPart === partNum - 1 && styles.partIndicatorTextPlaying,
+                      ]}
+                    >
+                      {partNum}
+                    </ThemedText>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {/* Position Status */}
+            {isCalibrated && (
+              <ThemedText style={styles.progressText}>
+                {progress.toFixed(0)}%
+                {waitingForThreshold && ` • Explore to ${waitingForThreshold.threshold}% to unlock next part`}
+              </ThemedText>
+            )}
+            {!isCalibrated && isScanning && (
+              <ThemedText style={styles.infoText}>
+                🔍 Scanning for beacons... {beacons.length} detected
+              </ThemedText>
+            )}
+            {!isCalibrated && autoCalibrationAttempted && (
+              <ThemedText style={styles.warningText}>
+                ⚠️ Position tracking not available. Make sure you're at the starting point and Bluetooth is enabled.
+              </ThemedText>
+            )}
+
             {isStoryLoading ? (
               <ActivityIndicator size="small" color="#68A4D2" />
+            ) : storyParts.length > 0 ? (
+              <>
+                {storyParts.map((part, index) => {
+                  const partNum = index + 1;
+                  const isUnlocked = partNum <= unlockedParts;
+                  const isCurrentPart = currentPlayingPart === index;
+                  
+                  return (
+                    <View key={index} style={styles.storyPartContainer}>
+                      <View style={styles.storyPartHeader}>
+                        <ThemedText style={styles.storyPartTitle}>
+                          Part {partNum} of {storyParts.length}
+                          {isCurrentPart && ' 🎵'}
+                          {!isUnlocked && ' 🔒'}
+                        </ThemedText>
+                      </View>
+                      <ThemedText
+                        style={[
+                          styles.storyText,
+                          !isUnlocked && styles.storyTextLocked,
+                        ]}
+                      >
+                        {isUnlocked ? part : '🔒 Explore the dome to unlock this part...'}
+                      </ThemedText>
+                    </View>
+                  );
+                })}
+              </>
             ) : plantStory ? (
               <ThemedText style={styles.storyText}>{plantStory}</ThemedText>
             ) : (
@@ -383,6 +731,7 @@ export default function MadagascarCollectionScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#fff',
   },
   headerSafeArea: {
     backgroundColor: '#68A4D2',
@@ -498,7 +847,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
-    paddingTop: 30,
+    paddingTop: 24,
   },
   fixedButtonContainer: {
     position: 'absolute',
@@ -571,5 +920,84 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     color: '#444',
+  },
+  partIndicatorContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 12,
+    marginBottom: 16,
+  },
+  partIndicator: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#ddd',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#ccc',
+  },
+  partIndicatorUnlocked: {
+    backgroundColor: '#68A4D2',
+    borderColor: '#5090C0',
+  },
+  partIndicatorPlaying: {
+    backgroundColor: '#4CAF50',
+    borderColor: '#45a049',
+    shadowColor: '#4CAF50',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  partIndicatorText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#999',
+  },
+  partIndicatorTextUnlocked: {
+    color: '#FFFFFF',
+  },
+  partIndicatorTextPlaying: {
+    color: '#FFFFFF',
+  },
+  progressText: {
+    fontSize: 11,
+    textAlign: 'center',
+    marginBottom: 12,
+    color: '#999',
+    opacity: 0.7,
+  },
+  warningText: {
+    fontSize: 13,
+    textAlign: 'center',
+    marginBottom: 12,
+    color: '#f59e0b',
+    fontStyle: 'italic',
+  },
+  infoText: {
+    fontSize: 13,
+    textAlign: 'center',
+    marginBottom: 12,
+    color: '#68A4D2',
+    fontStyle: 'italic',
+  },
+  storyPartContainer: {
+    marginBottom: 20,
+  },
+  storyPartHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  storyPartTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#68A4D2',
+    textTransform: 'uppercase',
+  },
+  storyTextLocked: {
+    opacity: 0.5,
+    fontStyle: 'italic',
   },
 });

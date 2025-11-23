@@ -3,10 +3,10 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
-import { PositionProvider } from '@/contexts/PositionContext';
 import { LocalizationProvider } from '@/contexts/LocalizationContext';
 
 function RootLayoutNav() {
@@ -53,11 +53,11 @@ function RootLayoutNav() {
 export default function RootLayout() {
   return (
     <LocalizationProvider>
-      <AuthProvider>
-        <PositionProvider>
+      <SafeAreaProvider>
+        <AuthProvider>
           <RootLayoutNav />
-        </PositionProvider>
-      </AuthProvider>
+        </AuthProvider>
+      </SafeAreaProvider>
     </LocalizationProvider>
   );
 }

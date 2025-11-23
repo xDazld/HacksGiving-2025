@@ -478,6 +478,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
+    paddingTop: 0,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -528,7 +529,7 @@ const styles = StyleSheet.create({
   playingContainer: {
     flex: 1,
     backgroundColor: '#F5F1E3',
-    paddingTop: 60,
+    paddingTop: 0,
     paddingBottom: 20,
     paddingHorizontal: 20,
   },

@@ -274,6 +274,7 @@ export default function AridDomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#fff',
   },
   headerSafeArea: {
     backgroundColor: '#68A4D2',
