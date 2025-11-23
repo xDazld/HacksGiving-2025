@@ -32,9 +32,41 @@ export class PlantStoryService {
       }
     }
 
-    const languageInstruction = language === 'es' 
-      ? '\n\nIMPORTANT: Write the entire story in Spanish (Español). Use natural, fluent Spanish appropriate for the target audience.'
-      : '';
+    let languageInstruction = '';
+    switch (language) {
+      case 'es':
+        languageInstruction = '\n\nIMPORTANT: Write the entire story in Spanish (Español). Use natural, fluent Spanish appropriate for the target audience.';
+        break;
+      case 'zh':
+        languageInstruction = '\n\nIMPORTANT: Write the entire story in Chinese (中文). Use natural, fluent Simplified Chinese appropriate for the target audience.';
+        break;
+      case 'hi':
+        languageInstruction = '\n\nIMPORTANT: Write the entire story in Hindi (हिन्दी). Use natural, fluent Hindi appropriate for the target audience.';
+        break;
+      case 'ar':
+        languageInstruction = '\n\nIMPORTANT: Write the entire story in Arabic (العربية). Use natural, fluent Arabic appropriate for the target audience.';
+        break;
+      case 'fr':
+        languageInstruction = '\n\nIMPORTANT: Write the entire story in French (Français). Use natural, fluent French appropriate for the target audience.';
+        break;
+      case 'de':
+        languageInstruction = '\n\nIMPORTANT: Write the entire story in German (Deutsch). Use natural, fluent German appropriate for the target audience.';
+        break;
+      case 'ja':
+        languageInstruction = '\n\nIMPORTANT: Write the entire story in Japanese (日本語). Use natural, fluent Japanese appropriate for the target audience.';
+        break;
+      case 'pt':
+        languageInstruction = '\n\nIMPORTANT: Write the entire story in Portuguese (Português). Use natural, fluent Portuguese appropriate for the target audience.';
+        break;
+      case 'ru':
+        languageInstruction = '\n\nIMPORTANT: Write the entire story in Russian (Русский). Use natural, fluent Russian appropriate for the target audience.';
+        break;
+      case 'en':
+      default:
+        // English is default, no additional instruction needed
+        languageInstruction = '';
+        break;
+    }
 
     const prompt = `You are a storyteller at a botanical garden.
     Write an engaging story related to the plant "${commonName}" (${scientificName}).
