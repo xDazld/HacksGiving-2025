@@ -227,14 +227,16 @@ export default function VoiceChatScreen() {
         setIsPlaying(false);
         
         // Clean up any leftover response files
-        const docDir = FileSystem.documentDirectory || FileSystem.cacheDirectory;
-        const files = await FileSystem.readDirectoryAsync(docDir);
-        for (const file of files) {
-          if (file.startsWith('response_') && file.endsWith('.mp3')) {
-            try {
-              await FileSystem.deleteAsync(`${docDir}${file}`, { idempotent: true });
-            } catch (e) {
-              // Ignore individual file cleanup errors
+        const docDir = FileSystem.documentDirectory || FileSystem.cacheDirectory || '';
+        if (docDir) {
+          const files = await FileSystem.readDirectoryAsync(docDir);
+          for (const file of files) {
+            if (file.startsWith('response_') && file.endsWith('.mp3')) {
+              try {
+                await FileSystem.deleteAsync(`${docDir}${file}`, { idempotent: true });
+              } catch (e) {
+                // Ignore individual file cleanup errors
+              }
             }
           }
         }
@@ -281,7 +283,7 @@ export default function VoiceChatScreen() {
                  <IconSymbol 
                     name={isPlaying ? "waveform" : (isRecording ? "mic.fill" : (isProcessing ? "sparkles" : "mic"))} 
                     size={isPlaying ? 100 : 80} 
-                    color="white" 
+                    color={isPlaying ? "white" : (isRecording ? "white" : (isProcessing ? "white" : PRIMARY_COLOR))}
                  />
             </Animated.View>
           </TouchableOpacity>
