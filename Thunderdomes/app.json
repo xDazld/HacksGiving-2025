@@ -82,7 +82,10 @@
       "router": {},
       "eas": {
         "projectId": "51f74d9d-8f77-4905-bfa8-9f44b083e751"
-      }
+      },
+      "appwriteEndpoint": "https://nyc.cloud.appwrite.io/v1",
+      "appwriteProjectId": "69211c3d0030edb86edf",
+      "appwriteDatabaseId": "milwaukee-domes"
     }
   }
 }
