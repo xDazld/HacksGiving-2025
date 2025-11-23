@@ -56,9 +56,9 @@ export default function SipAndSeekScreen() {
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollView}>
-        <ThemedView style={styles.content}>
+        <ThemedView style={styles.content} lightColor="#F5F1E3" darkColor="#2C2416">
           {/* Title */}
-          <ThemedText style={styles.title}>{t('sipAndSeek.title')}</ThemedText>
+          <ThemedText type="title" style={styles.title}>{t('sipAndSeek.title')}</ThemedText>
 
           {/* Description */}
           <ThemedText style={styles.description}>

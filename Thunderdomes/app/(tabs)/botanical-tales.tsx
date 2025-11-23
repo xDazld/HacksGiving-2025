@@ -55,11 +55,11 @@ export default function BotanicalTalesScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      <ThemedView style={styles.content}>
+      <ThemedView style={styles.content} lightColor="#F5F1E3" darkColor="#2C2416">
         {/* Welcome Section */}
         <View style={styles.welcomeSection}>
-          <ThemedText style={styles.welcomeTitle}>{t('botanicalTales.welcome')}</ThemedText>
-          <ThemedText style={styles.welcomeSubtitle}>
+          <ThemedText type="title" style={styles.welcomeTitle}>{t('botanicalTales.welcome')}</ThemedText>
+          <ThemedText type="default" style={styles.welcomeSubtitle}>
             {t('botanicalTales.selectDome')}
           </ThemedText>
         </View>

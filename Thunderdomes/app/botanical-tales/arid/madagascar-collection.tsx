@@ -609,9 +609,9 @@ export default function MadagascarCollectionScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollViewContent}
       >
-        <ThemedView style={styles.content}>
+        <ThemedView style={styles.content} lightColor="#F5F1E3" darkColor="#2C2416">
           {/* Title */}
-          <ThemedText style={styles.title}>{t('madagascarTour.title')}</ThemedText>
+          <ThemedText type="title" style={styles.title}>{t('madagascarTour.title')}</ThemedText>
 
           {/* Tour Image */}
           <View style={styles.imageContainer}>

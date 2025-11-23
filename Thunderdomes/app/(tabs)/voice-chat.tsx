@@ -296,7 +296,7 @@ export default function VoiceChatScreen() {
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView style={styles.container} lightColor="#F5F1E3" darkColor="#2C2416">
       <View style={styles.content}>
         <View style={styles.visualizer}>
           <TouchableOpacity 

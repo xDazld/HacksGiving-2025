@@ -238,10 +238,10 @@ export default function AridDomeScreen() {
       </Modal>
 
       <ScrollView style={styles.scrollView}>
-        <ThemedView style={styles.content}>
+        <ThemedView style={styles.content} lightColor="#F5F1E3" darkColor="#2C2416">
           {/* Title */}
-          <ThemedText style={styles.title}>{t('aridDome.title')}</ThemedText>
-          <ThemedText style={styles.subtitle}>{t('aridDome.availableTours')}</ThemedText>
+          <ThemedText type="title" style={styles.title}>{t('aridDome.title')}</ThemedText>
+          <ThemedText type="default" style={styles.subtitle}>{t('aridDome.availableTours')}</ThemedText>
 
           {/* Audio Tour Cards */}
           <View style={styles.tourCards}>
