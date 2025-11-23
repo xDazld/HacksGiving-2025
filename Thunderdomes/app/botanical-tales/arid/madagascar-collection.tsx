@@ -19,6 +19,19 @@ import { PlantStoryService } from '@/services/PlantStoryService';
 import { TextToSpeechService } from '@/services/TextToSpeechService';
 import { useUserPosition } from '@/hooks/useUserPosition';
 import {
+  initializeBLE,
+  startScanning,
+  stopScanning,
+  getLocationContextBeacons,
+  isBLEAvailable,
+} from '@/services/bleService';
+import {
+  calibrate,
+  calculatePosition,
+  isPositionSystemCalibrated,
+} from '@/services/positionService';
+import { BeaconData } from '@/types';
+import {
   fetchPlantsCsvText,
   parsePlantsCsv,
   pickRandomPlant,
@@ -95,6 +108,11 @@ export default function MadagascarCollectionScreen() {
   const [currentPlayingPart, setCurrentPlayingPart] = useState<number>(-1); // -1 means nothing playing, 0-2 for parts
   const [waitingForThreshold, setWaitingForThreshold] = useState<{ part: number; threshold: number } | null>(null);
   
+  // BLE scanning state
+  const [beacons, setBeacons] = useState<BeaconData[]>([]);
+  const [isScanning, setIsScanning] = useState(false);
+  const [autoCalibrationAttempted, setAutoCalibrationAttempted] = useState(false);
+  
   // Get user position for progressive unlock
   const { progress, isCalibrated } = useUserPosition(500);
 
@@ -102,14 +120,46 @@ export default function MadagascarCollectionScreen() {
     // Generate a plant story when the screen loads
     generatePlantStory();
 
-    // Cleanup TTS service when component unmounts
+    // Start BLE scanning for position tracking
+    initializeBLEAndStartScanning();
+
+    // Cleanup TTS service and BLE scanning when component unmounts
     return () => {
       ttsService.current.cleanup();
+      stopScanning();
     };
   }, []);
 
+  // Auto-calibrate after beacons are detected
+  useEffect(() => {
+    const calibrationStatus = isPositionSystemCalibrated();
+    console.log('🔍 Auto-cal check - Attempted:', autoCalibrationAttempted, 'Beacons:', beacons.length, 'Calibrated:', calibrationStatus);
+    
+    if (!autoCalibrationAttempted && beacons.length > 0 && !calibrationStatus) {
+      console.log('⏰ Waiting 500ms before auto-calibration...');
+      // Wait 500ms to ensure all beacons are detected
+      const timer = setTimeout(() => {
+        performAutoCalibration();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [beacons, autoCalibrationAttempted]);
+
+  // Update position when beacons change (if calibrated)
+  useEffect(() => {
+    const calibrationStatus = isPositionSystemCalibrated();
+    if (calibrationStatus && beacons.length > 0) {
+      const position = calculatePosition(beacons, 'trilateration', true);
+      console.log('🎯 Position calculated:', position ? `${position.progressPercentage.toFixed(1)}% progress` : 'null');
+    } else if (!calibrationStatus && beacons.length > 0) {
+      console.log('⏳ Beacons detected but not calibrated yet');
+    }
+  }, [beacons]);
+
   // Monitor progress to unlock parts
   useEffect(() => {
+    console.log('📊 Progress update - Calibrated:', isCalibrated, 'Progress:', progress.toFixed(1), '% Unlocked parts:', unlockedParts);
+    
     if (isCalibrated && progress >= 33 && unlockedParts === 1) {
       console.log('✅ Unlocked part 2 at 33% progress');
       setUnlockedParts(2);
@@ -129,6 +179,77 @@ export default function MadagascarCollectionScreen() {
       continueWithUnlockedPart(nextPart);
     }
   }, [waitingForThreshold, progress, isCalibrated]);
+
+  /**
+   * Initialize BLE and start scanning for beacons
+   */
+  async function initializeBLEAndStartScanning() {
+    if (!isBLEAvailable()) {
+      console.warn('⚠️ BLE is not available on this platform');
+      return;
+    }
+
+    try {
+      const initialized = await initializeBLE();
+      if (!initialized) {
+        console.warn('⚠️ Failed to initialize BLE');
+        return;
+      }
+
+      await startScanning((detectedBeacons: BeaconData[]) => {
+        const filteredBeacons = getLocationContextBeacons(detectedBeacons);
+        if (filteredBeacons.length > 0) {
+          console.log('📡 Beacons updated:', filteredBeacons.length, 'LocationContext beacons');
+        }
+        setBeacons(filteredBeacons);
+      });
+
+      setIsScanning(true);
+      console.log('✅ BLE scanning started');
+    } catch (err: any) {
+      console.error('❌ Failed to start BLE scanning:', err);
+    }
+  }
+
+  /**
+   * Auto-calibrate position system (assumes user is at LocationContext_0)
+   */
+  function performAutoCalibration() {
+    console.log('🔧 Attempting auto-calibration...');
+    console.log('📍 Detected beacons:', beacons.map(b => `${b.name} (${b.rssi}dBm)`).join(', '));
+    
+    if (beacons.length === 0) {
+      console.warn('⚠️ No beacons detected for auto-calibration');
+      setAutoCalibrationAttempted(true);
+      return;
+    }
+
+    // Check if LocationContext_0 is present
+    const lc0 = beacons.find((b) => b.name === 'LocationContext_0');
+    if (!lc0) {
+      console.warn('⚠️ LocationContext_0 not detected for auto-calibration');
+      console.warn('Available beacons:', beacons.map(b => b.name).join(', '));
+      setAutoCalibrationAttempted(true);
+      return;
+    }
+
+    console.log('✓ LocationContext_0 found with RSSI:', lc0.rssi);
+    
+    const success = calibrate(beacons);
+    
+    if (success) {
+      console.log('✅ Auto-calibration complete with', beacons.length, 'beacons');
+      console.log('✓ Calibration status:', isPositionSystemCalibrated());
+      
+      // Trigger an immediate position calculation
+      const initialPosition = calculatePosition(beacons, 'trilateration', true);
+      console.log('📍 Initial position:', initialPosition);
+    } else {
+      console.warn('⚠️ Auto-calibration failed');
+    }
+    
+    setAutoCalibrationAttempted(true);
+  }
 
   async function generatePlantStory() {
     try {
@@ -427,13 +548,18 @@ export default function MadagascarCollectionScreen() {
             {/* Position Status */}
             {isCalibrated && (
               <ThemedText style={styles.progressText}>
-                Your Progress: {progress.toFixed(0)}%
+                🎯 Your Progress: {progress.toFixed(0)}%
                 {waitingForThreshold && ` • Explore to ${waitingForThreshold.threshold}% to unlock next part`}
               </ThemedText>
             )}
-            {!isCalibrated && storyParts.length > 0 && (
+            {!isCalibrated && isScanning && (
+              <ThemedText style={styles.infoText}>
+                🔍 Scanning for beacons... {beacons.length} detected
+              </ThemedText>
+            )}
+            {!isCalibrated && autoCalibrationAttempted && (
               <ThemedText style={styles.warningText}>
-                ⚠️ Position tracking not calibrated. Visit Developer → BLE Scanner to calibrate.
+                ⚠️ Position tracking not available. Make sure you're at the starting point and Bluetooth is enabled.
               </ThemedText>
             )}
 
@@ -683,6 +809,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 12,
     color: '#f59e0b',
+    fontStyle: 'italic',
+  },
+  infoText: {
+    fontSize: 13,
+    textAlign: 'center',
+    marginBottom: 12,
+    color: '#68A4D2',
     fontStyle: 'italic',
   },
   storyPartContainer: {
