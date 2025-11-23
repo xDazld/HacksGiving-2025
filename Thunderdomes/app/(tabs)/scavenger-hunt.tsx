@@ -16,41 +16,71 @@ import { ThemedText } from '@/components/themed-text';
 import { PlantCameraModal } from '@/components/PlantCameraModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { OpenAIClient } from '@/services/OpenAIClient';
+import { PlantStoryService } from '@/services/PlantStoryService';
 import { ScavengerHuntService } from '@/services/ScavengerHuntService';
-import { Plant } from '@/data/plants';
+import {
+  fetchPlantsCsvText,
+  parsePlantsCsv,
+  filterPlants,
+  PlantRecord,
+} from '@/utils/plantData';
 
 type GameStatus = 'initial' | 'playing' | 'verifying' | 'success' | 'completed';
 
 export default function ScavengerHuntScreen() {
   const { user } = useAuth();
   const [status, setStatus] = useState<GameStatus>('initial');
-  const [currentPlant, setCurrentPlant] = useState<Plant | null>(null);
+  const [currentPlant, setCurrentPlant] = useState<PlantRecord | null>(null);
   const [foundPlantIds, setFoundPlantIds] = useState<string[]>([]);
   const [riddle, setRiddle] = useState<string>('');
+  const [story, setStory] = useState<string>('');
   const [hint, setHint] = useState<string>('');
+  const [hintHistory, setHintHistory] = useState<string[]>([]);
   const [feedback, setFeedback] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [showWrongModal, setShowWrongModal] = useState(false);
   const [wrongAnswerFeedback, setWrongAnswerFeedback] = useState('');
   const [showCameraModal, setShowCameraModal] = useState(false);
+  const [isStoryExpanded, setIsStoryExpanded] = useState(false);
 
   // Initialize service
-  const serviceRef = useRef<ScavengerHuntService | null>(null);
+  // Initialize services
+  const scavengerServiceRef = useRef<ScavengerHuntService | null>(null);
+  const storyServiceRef = useRef<PlantStoryService | null>(null);
 
   useEffect(() => {
-    const client = new OpenAIClient();
-    serviceRef.current = new ScavengerHuntService(client);
+    const initServices = async () => {
+      try {
+        const csvText = await fetchPlantsCsvText();
+        const allPlants = parsePlantsCsv(csvText);
+        const filteredPlants = filterPlants(allPlants);
+
+        const client = new OpenAIClient();
+        scavengerServiceRef.current = new ScavengerHuntService(
+          client,
+          filteredPlants,
+        );
+        storyServiceRef.current = new PlantStoryService(client);
+      } catch (e) {
+        console.error('Failed to load plant data', e);
+        Alert.alert(
+          'Error',
+          'Failed to load plant data. Please restart the app.',
+        );
+      }
+    };
+    initServices();
   }, []);
 
   const startNewRound = async () => {
-    if (!serviceRef.current) return;
+    if (!scavengerServiceRef.current) return;
 
     setIsLoading(true);
     setLoadingMessage('Consulting the botanical spirits...');
 
     try {
-      const plant = serviceRef.current.startGame(foundPlantIds);
+      const plant = scavengerServiceRef.current.startGame(foundPlantIds);
 
       if (!plant) {
         setStatus('completed');
@@ -61,9 +91,13 @@ export default function ScavengerHuntScreen() {
       setCurrentPlant(plant);
 
       // Get riddle
-      const newRiddle = await serviceRef.current.getPlantDescription(plant);
+      const newRiddle = await scavengerServiceRef.current.getPlantDescription(
+        plant,
+        user?.age,
+      );
       setRiddle(newRiddle);
       setHint(''); // Reset hint
+      setHintHistory([]);
       setFeedback('');
       setStatus('playing');
     } catch (error) {
@@ -75,14 +109,20 @@ export default function ScavengerHuntScreen() {
   };
 
   const handleGetHint = async () => {
-    if (!serviceRef.current || !currentPlant) return;
+    if (!scavengerServiceRef.current || !currentPlant) return;
 
     setIsLoading(true);
     setLoadingMessage('Whispering to the leaves...');
 
     try {
-      const newHint = await serviceRef.current.getHint(currentPlant);
+      const previousContent = [riddle, ...hintHistory];
+      const newHint = await scavengerServiceRef.current.getHint(
+        currentPlant,
+        user?.age,
+        previousContent,
+      );
       setHint(newHint);
+      setHintHistory(prev => [...prev, newHint]);
     } catch (error) {
       Alert.alert('Error', 'Failed to get a hint.');
     } finally {
@@ -100,21 +140,34 @@ export default function ScavengerHuntScreen() {
   };
 
   const verifyImage = async (base64Image: string) => {
-    if (!serviceRef.current || !currentPlant) return;
+    if (!scavengerServiceRef.current || !currentPlant) return;
 
     setStatus('verifying');
     setIsLoading(true);
     setLoadingMessage('Checking your guess...');
 
     try {
-      const result = await serviceRef.current.verifyFind(
+      const result = await scavengerServiceRef.current.verifyFind(
         base64Image,
         currentPlant,
       );
 
       if (result.isMatch) {
         setFeedback(result.feedback);
-        setFoundPlantIds(prev => [...prev, currentPlant.id]);
+        setFoundPlantIds(prev => [
+          ...prev,
+          currentPlant['Scientific Name'] || '',
+        ]);
+
+        // Generate story
+        if (storyServiceRef.current) {
+          const newStory = await storyServiceRef.current.generateStory(
+            currentPlant,
+            user?.age,
+          );
+          setStory(newStory);
+        }
+
         setStatus('success');
       } else {
         setWrongAnswerFeedback(result.feedback);
@@ -139,15 +192,22 @@ export default function ScavengerHuntScreen() {
     setStatus('initial');
     setCurrentPlant(null);
     setRiddle('');
+    setStory('');
     setHint('');
+    setHintHistory([]);
     setFeedback('');
+    setIsStoryExpanded(false);
   };
 
   if (isLoading) {
     return (
-      <ThemedView style={styles.centeredContainer} lightColor="#F5F1E3" darkColor="#2C2416">
+      <ThemedView
+        style={styles.centeredContainer}
+        lightColor="#F5F1E3"
+        darkColor="#2C2416"
+      >
         <ActivityIndicator size="large" color="#5A6A5D" />
-        <ThemedText 
+        <ThemedText
           style={styles.loadingText}
           lightColor="#2C2416"
           darkColor="#F5F1E3"
@@ -168,7 +228,7 @@ export default function ScavengerHuntScreen() {
       Alert.alert(
         'Ticket Already Used',
         'You have already used your ticket for one tour or scavenger hunt. Please scan a new ticket to continue.',
-        [{ text: 'OK' }]
+        [{ text: 'OK' }],
       );
       return;
     }
@@ -191,22 +251,26 @@ export default function ScavengerHuntScreen() {
 
   if (status === 'initial') {
     return (
-      <ThemedView style={styles.initialContainer} lightColor="#F5F1E3" darkColor="#F5F1E3">
-        <ThemedText 
-          type="title" 
+      <ThemedView
+        style={styles.initialContainer}
+        lightColor="#F5F1E3"
+        darkColor="#F5F1E3"
+      >
+        <ThemedText
+          type="title"
           style={styles.initialTitle}
           lightColor="#2C2416"
           darkColor="#2C2416"
         >
           Dome Detective
         </ThemedText>
-        <ThemedText 
+        <ThemedText
           style={styles.initialDescription}
           lightColor="#2C2416"
           darkColor="#2C2416"
         >
-          Identify plants using clues and your sleuthing skills... Are you
-          ready to be a detective?
+          Identify plants using clues and your sleuthing skills... Are you ready
+          to be a detective?
         </ThemedText>
         <Image
           source={require('@/assets/images/DomeDetectiveEntry.png')}
@@ -259,9 +323,13 @@ export default function ScavengerHuntScreen() {
 
   return (
     <>
-      <ThemedView style={styles.playingContainer} lightColor="#F5F1E3" darkColor="#F5F1E3">
-        <ThemedText 
-          type="title" 
+      <ThemedView
+        style={styles.playingContainer}
+        lightColor="#F5F1E3"
+        darkColor="#F5F1E3"
+      >
+        <ThemedText
+          type="title"
           style={styles.playingTitle}
           lightColor="#2C2416"
           darkColor="#2C2416"
@@ -270,17 +338,44 @@ export default function ScavengerHuntScreen() {
         </ThemedText>
 
         {status === 'success' ? (
-          <ScrollView style={styles.successScrollContainer} contentContainerStyle={styles.successContent}>
+          <ScrollView
+            style={styles.successScrollContainer}
+            contentContainerStyle={styles.successContent}
+          >
             <ThemedText type="title" style={styles.successTitle}>
               Correct!
             </ThemedText>
             <ThemedText style={styles.plantName}>
-              It was the {currentPlant?.commonName}
+              It was the {currentPlant?.['Common Name']}
             </ThemedText>
             <ThemedText style={styles.scientificName}>
-              ({currentPlant?.scientificName})
+              ({currentPlant?.['Scientific Name']})
             </ThemedText>
             <ThemedText style={styles.feedbackText}>{feedback}</ThemedText>
+
+            {/* Collapsible Story Section */}
+            {story ? (
+              <View style={styles.storyContainer}>
+                <TouchableOpacity
+                  style={styles.learnMoreButton}
+                  onPress={() => setIsStoryExpanded(!isStoryExpanded)}
+                  activeOpacity={0.7}
+                >
+                  <ThemedText style={styles.learnMoreText}>
+                    {isStoryExpanded ? 'Hide Story' : 'Learn More'}
+                  </ThemedText>
+                  <Ionicons
+                    name={isStoryExpanded ? 'chevron-up' : 'chevron-down'}
+                    size={20}
+                    color="#5A6A5D"
+                  />
+                </TouchableOpacity>
+
+                {isStoryExpanded && (
+                  <ThemedText style={styles.storyText}>{story}</ThemedText>
+                )}
+              </View>
+            ) : null}
 
             <TouchableOpacity
               style={styles.primaryButton}
@@ -291,8 +386,11 @@ export default function ScavengerHuntScreen() {
           </ScrollView>
         ) : (
           <>
-            <ScrollView style={styles.riddleScrollContainer} contentContainerStyle={styles.riddleContent}>
-              <ThemedText 
+            <ScrollView
+              style={styles.riddleScrollContainer}
+              contentContainerStyle={styles.riddleContent}
+            >
+              <ThemedText
                 style={styles.riddleText}
                 lightColor="#2C2416"
                 darkColor="#2C2416"
@@ -303,7 +401,7 @@ export default function ScavengerHuntScreen() {
 
             {hint && (
               <View style={styles.hintBox}>
-                <ThemedText 
+                <ThemedText
                   style={styles.hintText}
                   lightColor="#2C2416"
                   darkColor="#2C2416"
@@ -315,8 +413,8 @@ export default function ScavengerHuntScreen() {
 
             <View style={styles.buttonContainer}>
               {!hint && (
-                <TouchableOpacity 
-                  style={styles.getHintButton} 
+                <TouchableOpacity
+                  style={styles.getHintButton}
                   onPress={handleGetHint}
                 >
                   <View style={styles.getHintButtonContent}>
@@ -330,8 +428,8 @@ export default function ScavengerHuntScreen() {
                 </TouchableOpacity>
               )}
 
-              <TouchableOpacity 
-                style={styles.foundItButton} 
+              <TouchableOpacity
+                style={styles.foundItButton}
                 onPress={handleFoundIt}
               >
                 <ThemedText style={styles.foundItButtonText}>
@@ -645,5 +743,38 @@ const styles = StyleSheet.create({
     color: '#F5F1E3',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  storyContainer: {
+    marginBottom: 20,
+  },
+  learnMoreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#5A6A5D',
+    borderRadius: 25,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    marginBottom: 10,
+  },
+  learnMoreText: {
+    color: '#5A6A5D',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  storyText: {
+    fontSize: 16,
+    lineHeight: 24,
+    textAlign: 'left',
+    marginTop: 10,
+    color: '#2C2416',
+    padding: 15,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#D4C5A0',
   },
 });
