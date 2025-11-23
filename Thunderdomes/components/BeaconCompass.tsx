@@ -133,3 +133,4 @@ const styles = StyleSheet.create({
 
 export default BeaconCompass;
 
+

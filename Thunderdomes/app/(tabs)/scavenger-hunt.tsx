@@ -1,258 +1,649 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+  Image,
+  Modal,
+  View,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
-import { SessionGuard } from '@/components/SessionGuard';
+import { PlantCameraModal } from '@/components/PlantCameraModal';
 import { useAuth } from '@/contexts/AuthContext';
-import { fetchScavengerHunts } from '@/services/api';
-import { ScavengerHunt, ScavengerHuntItem } from '@/types';
+import { OpenAIClient } from '@/services/OpenAIClient';
+import { ScavengerHuntService } from '@/services/ScavengerHuntService';
+import { Plant } from '@/data/plants';
+
+type GameStatus = 'initial' | 'playing' | 'verifying' | 'success' | 'completed';
 
 export default function ScavengerHuntScreen() {
-  const { logout } = useAuth();
-  const [hunts, setHunts] = useState<ScavengerHunt[]>([]);
-  const [selectedHunt, setSelectedHunt] = useState<ScavengerHunt | null>(null);
-  const [items, setItems] = useState<ScavengerHuntItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasStarted, setHasStarted] = useState(false);
+  const { user } = useAuth();
+  const [status, setStatus] = useState<GameStatus>('initial');
+  const [currentPlant, setCurrentPlant] = useState<Plant | null>(null);
+  const [foundPlantIds, setFoundPlantIds] = useState<string[]>([]);
+  const [riddle, setRiddle] = useState<string>('');
+  const [hint, setHint] = useState<string>('');
+  const [feedback, setFeedback] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
+  const [showWrongModal, setShowWrongModal] = useState(false);
+  const [wrongAnswerFeedback, setWrongAnswerFeedback] = useState('');
+  const [showCameraModal, setShowCameraModal] = useState(false);
+
+  // Initialize service
+  const serviceRef = useRef<ScavengerHuntService | null>(null);
 
   useEffect(() => {
-    loadHunts();
+    const client = new OpenAIClient();
+    serviceRef.current = new ScavengerHuntService(client);
   }, []);
 
-  const loadHunts = async () => {
+  const startNewRound = async () => {
+    if (!serviceRef.current) return;
+
+    setIsLoading(true);
+    setLoadingMessage('Consulting the botanical spirits...');
+
     try {
-      const fetchedHunts = await fetchScavengerHunts();
-      setHunts(fetchedHunts);
+      const plant = serviceRef.current.startGame(foundPlantIds);
+
+      if (!plant) {
+        setStatus('completed');
+        setIsLoading(false);
+        return;
+      }
+
+      setCurrentPlant(plant);
+
+      // Get riddle
+      const newRiddle = await serviceRef.current.getPlantDescription(plant);
+      setRiddle(newRiddle);
+      setHint(''); // Reset hint
+      setFeedback('');
+      setStatus('playing');
     } catch (error) {
-      Alert.alert('Error', 'Failed to load scavenger hunts. Please try again.');
+      console.error('Error starting round:', error);
+      Alert.alert('Error', 'Failed to start the round. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleStart = () => {
-    if (hunts.length > 0) {
-      const hunt = hunts[0];
-      setSelectedHunt(hunt);
-      setItems([...hunt.items]);
-      setHasStarted(true);
+  const handleGetHint = async () => {
+    if (!serviceRef.current || !currentPlant) return;
+
+    setIsLoading(true);
+    setLoadingMessage('Whispering to the leaves...');
+
+    try {
+      const newHint = await serviceRef.current.getHint(currentPlant);
+      setHint(newHint);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to get a hint.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleToggleItem = (itemId: string) => {
-    setItems((prevItems) =>
-      prevItems.map((item) =>
-        item.id === itemId ? { ...item, completed: !item.completed } : item
-      )
-    );
+  const handleFoundIt = () => {
+    setShowCameraModal(true);
   };
 
-  const handleComplete = async () => {
-    const allCompleted = items.every((item) => item.completed);
-    
-    if (!allCompleted) {
+  const handlePhotoTaken = (base64Image: string) => {
+    setShowCameraModal(false);
+    verifyImage(base64Image);
+  };
+
+  const verifyImage = async (base64Image: string) => {
+    if (!serviceRef.current || !currentPlant) return;
+
+    setStatus('verifying');
+    setIsLoading(true);
+    setLoadingMessage('Checking your guess...');
+
+    try {
+      const result = await serviceRef.current.verifyFind(
+        base64Image,
+        currentPlant,
+      );
+
+      if (result.isMatch) {
+        setFeedback(result.feedback);
+        setFoundPlantIds(prev => [...prev, currentPlant.id]);
+        setStatus('success');
+      } else {
+        setWrongAnswerFeedback(result.feedback);
+        setShowWrongModal(true);
+        setStatus('playing');
+      }
+    } catch (error) {
+      console.error('Verification error:', error);
+      Alert.alert('Error', 'Failed to verify image. Please try again.');
+      setStatus('playing');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleNextPlant = () => {
+    startNewRound();
+  };
+
+  const handleRestart = () => {
+    setFoundPlantIds([]);
+    setStatus('initial');
+    setCurrentPlant(null);
+    setRiddle('');
+    setHint('');
+    setFeedback('');
+  };
+
+  if (isLoading) {
+    return (
+      <ThemedView style={styles.centeredContainer} lightColor="#F5F1E3" darkColor="#2C2416">
+        <ActivityIndicator size="large" color="#5A6A5D" />
+        <ThemedText 
+          style={styles.loadingText}
+          lightColor="#2C2416"
+          darkColor="#F5F1E3"
+        >
+          {loadingMessage}
+        </ThemedText>
+      </ThemedView>
+    );
+  }
+
+  const handleStartWithValidation = () => {
+    if (!user) {
+      Alert.alert('Error', 'You must be logged in to start an activity.');
+      return;
+    }
+
+    if (user.hasUsedTicket) {
       Alert.alert(
-        'Not Complete',
-        'Please find all items before completing the scavenger hunt.',
+        'Ticket Already Used',
+        'You have already used your ticket for one tour or scavenger hunt. Please scan a new ticket to continue.',
+        [{ text: 'OK' }]
       );
       return;
     }
 
     Alert.alert(
-      'Scavenger Hunt Complete!',
-      'Congratulations! You found all the items. Thank you for visiting Mitchell Park Domes. Would you like to scan a new ticket to start another activity?',
+      'Start Activity',
+      'Starting Dome Detective will use your ticket. After completing this activity, you can scan a new ticket to start another. Continue?',
       [
         {
-          text: 'No, Thanks',
+          text: 'Cancel',
           style: 'cancel',
         },
         {
-          text: 'Scan New Ticket',
-          onPress: () => {
-            router.push('/(tabs)/settings');
-          },
+          text: 'Start',
+          onPress: startNewRound,
         },
       ],
     );
   };
 
-  if (isLoading) {
+  if (status === 'initial') {
     return (
-      <ThemedView style={styles.container}>
-        <ActivityIndicator size="large" />
-        <ThemedText style={styles.loadingText}>Loading scavenger hunts...</ThemedText>
-      </ThemedView>
-    );
-  }
-
-  if (!hasStarted) {
-    return (
-      <SessionGuard activityName="Scavenger Hunt" onStart={handleStart}>
-        <ThemedView style={styles.container}>
-          <ThemedText>This should not be visible</ThemedText>
-        </ThemedView>
-      </SessionGuard>
-    );
-  }
-
-  if (!selectedHunt) {
-    return (
-      <ThemedView style={styles.container}>
-        <ThemedText>No hunt selected</ThemedText>
-      </ThemedView>
-    );
-  }
-
-  const completedCount = items.filter((item) => item.completed).length;
-  const totalCount = items.length;
-
-  return (
-    <ScrollView style={styles.container}>
-      <ThemedView style={styles.content}>
-        <ThemedText type="title" style={styles.title}>
-          {selectedHunt.title}
+      <ThemedView style={styles.initialContainer} lightColor="#F5F1E3" darkColor="#F5F1E3">
+        <ThemedText 
+          type="title" 
+          style={styles.initialTitle}
+          lightColor="#2C2416"
+          darkColor="#2C2416"
+        >
+          Dome Detective
         </ThemedText>
-        <ThemedText style={styles.description}>{selectedHunt.description}</ThemedText>
-
-        <ThemedView style={styles.progressContainer}>
-          <ThemedText style={styles.progressText}>
-            Found: {completedCount} / {totalCount}
-          </ThemedText>
-        </ThemedView>
-
-        {items.map((item) => (
-          <ThemedView key={item.id} style={styles.itemContainer}>
-            <TouchableOpacity
-              style={styles.itemRow}
-              onPress={() => handleToggleItem(item.id)}>
-              <ThemedView style={styles.checkboxContainer}>
-                <ThemedView
-                  style={[
-                    styles.checkbox,
-                    item.completed && styles.checkboxChecked,
-                  ]}>
-                  {item.completed && (
-                    <ThemedText style={styles.checkmark}>✓</ThemedText>
-                  )}
-                </ThemedView>
-              </ThemedView>
-              <ThemedView style={styles.itemContent}>
-                <ThemedText
-                  type="subtitle"
-                  style={[
-                    styles.itemName,
-                    item.completed && styles.itemNameCompleted,
-                  ]}>
-                  {item.name}
-                </ThemedText>
-                <ThemedText style={styles.itemDescription}>
-                  {item.description}
-                </ThemedText>
-              </ThemedView>
-            </TouchableOpacity>
-          </ThemedView>
-        ))}
-
-        <TouchableOpacity style={styles.completeButton} onPress={handleComplete}>
-          <ThemedText style={styles.completeButtonText}>Complete Hunt</ThemedText>
+        <ThemedText 
+          style={styles.initialDescription}
+          lightColor="#2C2416"
+          darkColor="#2C2416"
+        >
+          Identify plants using clues and your sleuthing skills... Are you
+          ready to be a detective?
+        </ThemedText>
+        <Image
+          source={require('@/assets/images/DomeDetectiveEntry.png')}
+          style={styles.detectiveImage}
+          resizeMode="contain"
+        />
+        <TouchableOpacity
+          style={styles.letsGoButton}
+          onPress={handleStartWithValidation}
+        >
+          <ThemedText style={styles.letsGoButtonText}>Let's Go!</ThemedText>
         </TouchableOpacity>
       </ThemedView>
-    </ScrollView>
+    );
+  }
+
+  if (status === 'completed') {
+    return (
+      <ThemedView style={styles.container}>
+        <ThemedText type="title" style={styles.title}>
+          Hunt Complete!
+        </ThemedText>
+        <ThemedText style={styles.description}>
+          Congratulations! You've found all the plants in this hunt.
+        </ThemedText>
+        <ThemedText style={styles.score}>
+          Total Plants Found: {foundPlantIds.length}
+        </ThemedText>
+        <TouchableOpacity style={styles.primaryButton} onPress={handleRestart}>
+          <ThemedText style={styles.buttonText}>Play Again</ThemedText>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.secondaryButton, { marginTop: 10 }]}
+          onPress={() => router.push('/settings')}
+        >
+          <ThemedText style={styles.secondaryButtonText}>Exit</ThemedText>
+        </TouchableOpacity>
+      </ThemedView>
+    );
+  }
+
+  if (showCameraModal) {
+    return (
+      <PlantCameraModal
+        onPhotoTaken={handlePhotoTaken}
+        onClose={() => setShowCameraModal(false)}
+      />
+    );
+  }
+
+  return (
+    <>
+      <ThemedView style={styles.playingContainer} lightColor="#F5F1E3" darkColor="#F5F1E3">
+        <ThemedText 
+          type="title" 
+          style={styles.playingTitle}
+          lightColor="#2C2416"
+          darkColor="#2C2416"
+        >
+          Dome Detective
+        </ThemedText>
+
+        {status === 'success' ? (
+          <ScrollView style={styles.successScrollContainer} contentContainerStyle={styles.successContent}>
+            <ThemedText type="title" style={styles.successTitle}>
+              Correct!
+            </ThemedText>
+            <ThemedText style={styles.plantName}>
+              It was the {currentPlant?.commonName}
+            </ThemedText>
+            <ThemedText style={styles.scientificName}>
+              ({currentPlant?.scientificName})
+            </ThemedText>
+            <ThemedText style={styles.feedbackText}>{feedback}</ThemedText>
+
+            <TouchableOpacity
+              style={styles.primaryButton}
+              onPress={handleNextPlant}
+            >
+              <ThemedText style={styles.buttonText}>Next Plant</ThemedText>
+            </TouchableOpacity>
+          </ScrollView>
+        ) : (
+          <>
+            <ScrollView style={styles.riddleScrollContainer} contentContainerStyle={styles.riddleContent}>
+              <ThemedText 
+                style={styles.riddleText}
+                lightColor="#2C2416"
+                darkColor="#2C2416"
+              >
+                {riddle}
+              </ThemedText>
+            </ScrollView>
+
+            {hint && (
+              <View style={styles.hintBox}>
+                <ThemedText 
+                  style={styles.hintText}
+                  lightColor="#2C2416"
+                  darkColor="#2C2416"
+                >
+                  {hint}
+                </ThemedText>
+              </View>
+            )}
+
+            <View style={styles.buttonContainer}>
+              {!hint && (
+                <TouchableOpacity 
+                  style={styles.getHintButton} 
+                  onPress={handleGetHint}
+                >
+                  <View style={styles.getHintButtonContent}>
+                    <ThemedText style={styles.getHintButtonText}>
+                      Get Another Hint
+                    </ThemedText>
+                    <View style={styles.checkmarkCircle}>
+                      <ThemedText style={styles.questionMark}>?</ThemedText>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              )}
+
+              <TouchableOpacity 
+                style={styles.foundItButton} 
+                onPress={handleFoundIt}
+              >
+                <ThemedText style={styles.foundItButtonText}>
+                  I Think I Found It!
+                </ThemedText>
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
+      </ThemedView>
+
+      {/* Wrong Answer Modal */}
+      <Modal
+        visible={showWrongModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowWrongModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <ThemedText type="title" style={styles.modalTitle}>
+              Not Quite...
+            </ThemedText>
+            <ThemedText style={styles.modalText}>
+              {wrongAnswerFeedback}
+            </ThemedText>
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={() => setShowWrongModal(false)}
+            >
+              <ThemedText style={styles.modalButtonText}>Try Again</ThemedText>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  content: {
     padding: 20,
-  },
-  loadingText: {
-    marginTop: 10,
-    textAlign: 'center',
-  },
-  title: {
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  description: {
-    marginBottom: 20,
-    fontSize: 16,
-    lineHeight: 24,
-    textAlign: 'center',
-  },
-  progressContainer: {
-    backgroundColor: '#e3f2fd',
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 20,
-    alignItems: 'center',
-  },
-  progressText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#0a7ea4',
-  },
-  itemContainer: {
-    marginBottom: 15,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
-    padding: 15,
-  },
-  itemRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  checkboxContainer: {
-    marginRight: 15,
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 4,
-    borderWidth: 2,
-    borderColor: '#999',
-    backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  checkboxChecked: {
-    backgroundColor: '#4caf50',
-    borderColor: '#4caf50',
+  initialContainer: {
+    flex: 1,
+    padding: 20,
+    paddingTop: 60,
+    paddingBottom: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F5F1E3',
   },
-  checkmark: {
-    color: '#fff',
-    fontSize: 16,
+  initialTitle: {
+    textAlign: 'center',
+    marginBottom: 15,
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: '#2C2416',
+  },
+  initialDescription: {
+    textAlign: 'center',
+    marginBottom: 30,
+    fontSize: 18,
+    lineHeight: 26,
+    color: '#2C2416',
+    paddingHorizontal: 20,
+  },
+  detectiveImage: {
+    width: '100%',
+    height: 275,
+  },
+  letsGoButton: {
+    backgroundColor: '#5A6A5D',
+    paddingVertical: 16,
+    paddingHorizontal: 50,
+    borderRadius: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  letsGoButtonText: {
+    color: '#F5F1E3',
+    fontSize: 22,
     fontWeight: 'bold',
   },
-  itemContent: {
+  playingContainer: {
     flex: 1,
+    backgroundColor: '#F5F1E3',
+    paddingTop: 60,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
   },
-  itemName: {
-    marginBottom: 5,
+  playingTitle: {
+    textAlign: 'center',
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#2C2416',
+    marginBottom: 20,
   },
-  itemNameCompleted: {
-    textDecorationLine: 'line-through',
-    opacity: 0.6,
+  riddleScrollContainer: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    marginBottom: 15,
+    borderWidth: 2,
+    borderColor: '#D4C5A0',
   },
-  itemDescription: {
-    fontSize: 14,
-    color: '#666',
+  riddleContent: {
+    padding: 20,
   },
-  completeButton: {
-    backgroundColor: '#4caf50',
-    borderRadius: 8,
+  riddleText: {
+    fontSize: 18,
+    lineHeight: 28,
+    color: '#2C2416',
+  },
+  hintBox: {
+    backgroundColor: '#E8DCC4',
+    borderRadius: 12,
     padding: 15,
-    alignItems: 'center',
-    marginTop: 30,
-    marginBottom: 40,
+    marginBottom: 15,
+    borderWidth: 2,
+    borderColor: '#D4C5A0',
   },
-  completeButtonText: {
-    color: '#fff',
+  hintText: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: '#2C2416',
+  },
+  buttonContainer: {
+    gap: 12,
+  },
+  getHintButton: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#8BB4D0',
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  getHintButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  getHintButtonText: {
+    color: '#8BB4D0',
     fontSize: 18,
     fontWeight: '600',
   },
+  checkmarkCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#8BB4D0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  questionMark: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+    lineHeight: 20,
+  },
+  foundItButton: {
+    backgroundColor: '#5A6A5D',
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  foundItButtonText: {
+    color: '#F5F1E3',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  successScrollContainer: {
+    flex: 1,
+  },
+  successContent: {
+    padding: 20,
+  },
+  centeredContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 20,
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  title: {
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  description: {
+    textAlign: 'center',
+    marginBottom: 30,
+    fontSize: 16,
+    lineHeight: 24,
+  },
+  score: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 30,
+    color: '#4caf50',
+  },
+  primaryButton: {
+    backgroundColor: '#5A6A5D',
+    paddingVertical: 14,
+    paddingHorizontal: 30,
+    borderRadius: 25,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  buttonText: {
+    color: '#F5F1E3',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  secondaryButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 25,
+    minWidth: 200,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#666',
+  },
+  secondaryButtonText: {
+    fontSize: 16,
+  },
+  successTitle: {
+    color: '#4caf50',
+    textAlign: 'center',
+    marginBottom: 10,
+    fontSize: 32,
+  },
+  plantName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 5,
+    color: '#2C2416',
+  },
+  scientificName: {
+    fontSize: 16,
+    fontStyle: 'italic',
+    textAlign: 'center',
+    marginBottom: 20,
+    color: '#666',
+  },
+  feedbackText: {
+    fontSize: 16,
+    lineHeight: 24,
+    textAlign: 'center',
+    marginBottom: 10,
+    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+    padding: 15,
+    borderRadius: 8,
+    color: '#2C2416',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: '#F5F1E3',
+    borderRadius: 20,
+    padding: 30,
+    width: '100%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  modalTitle: {
+    color: '#C75B4B',
+    textAlign: 'center',
+    marginBottom: 15,
+    fontSize: 28,
+  },
+  modalText: {
+    fontSize: 16,
+    lineHeight: 24,
+    textAlign: 'center',
+    marginBottom: 25,
+    color: '#2C2416',
+  },
+  modalButton: {
+    backgroundColor: '#5A6A5D',
+    borderRadius: 25,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    color: '#F5F1E3',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
 });
-
