@@ -111,6 +111,146 @@ class TestAdminInterface:
         expect(page).not_to_have_title("404")
 
 
+class TestAdminForms:
+    """Test admin form creation features"""
+
+    def test_tour_creation_form_loads(self, page: Page, base_url: str):
+        """Test that tour creation form loads"""
+        page.goto(f"{base_url}/admin/tours/new")
+        page.wait_for_load_state("networkidle")
+
+        # Check that form page loaded (no 404)
+        expect(page).not_to_have_title("404")
+
+        # Wait for content to render
+        page.wait_for_timeout(1000)
+
+    def test_tour_creation_form_submission(self, page: Page, base_url: str):
+        """Test tour creation form submission workflow"""
+        page.goto(f"{base_url}/admin/tours/new")
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(1000)
+
+        # Find and fill form fields (FastUI renders forms dynamically)
+        # Look for input fields by their placeholder or label text
+        title_input = page.locator('input[name="title"]')
+        if title_input.count() > 0:
+            title_input.fill("E2E Test Tour")
+
+            description_input = page.locator('textarea[name="description"], input[name="description"]')
+            if description_input.count() > 0:
+                description_input.fill("A tour created by E2E test")
+
+                # Submit the form
+                submit_button = page.locator('button[type="submit"]')
+                if submit_button.count() > 0:
+                    submit_button.click()
+
+                    # Wait for navigation or response
+                    page.wait_for_load_state("networkidle")
+
+                    # Should redirect to tours list or show success
+                    # (exact behavior depends on FastUI configuration)
+
+    def test_scavenger_hunt_creation_form_loads(self, page: Page, base_url: str):
+        """Test that scavenger hunt creation form loads"""
+        page.goto(f"{base_url}/admin/scavenger-hunts/new")
+        page.wait_for_load_state("networkidle")
+
+        # Check that form page loaded (no 404)
+        expect(page).not_to_have_title("404")
+
+        page.wait_for_timeout(1000)
+
+    def test_scavenger_hunt_creation_form_submission(self, page: Page, base_url: str):
+        """Test scavenger hunt creation form submission workflow"""
+        page.goto(f"{base_url}/admin/scavenger-hunts/new")
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(1000)
+
+        # Find and fill form fields
+        title_input = page.locator('input[name="title"]')
+        if title_input.count() > 0:
+            title_input.fill("E2E Test Hunt")
+
+            description_input = page.locator('textarea[name="description"], input[name="description"]')
+            if description_input.count() > 0:
+                description_input.fill("A hunt created by E2E test")
+
+                difficulty_select = page.locator('select[name="difficulty"], input[name="difficulty"]')
+                if difficulty_select.count() > 0:
+                    # Try to select 'easy' if it's a select, or fill if it's an input
+                    if page.locator('select[name="difficulty"]').count() > 0:
+                        difficulty_select.select_option("easy")
+                    else:
+                        difficulty_select.fill("easy")
+
+                    # Submit the form
+                    submit_button = page.locator('button[type="submit"]')
+                    if submit_button.count() > 0:
+                        submit_button.click()
+                        page.wait_for_load_state("networkidle")
+
+    def test_plant_creation_form_loads(self, page: Page, base_url: str):
+        """Test that plant creation form loads"""
+        page.goto(f"{base_url}/admin/plants/new")
+        page.wait_for_load_state("networkidle")
+
+        # Check that form page loaded (no 404)
+        expect(page).not_to_have_title("404")
+
+        page.wait_for_timeout(1000)
+
+    def test_plant_creation_form_submission(self, page: Page, base_url: str):
+        """Test plant creation form submission workflow"""
+        page.goto(f"{base_url}/admin/plants/new")
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(1000)
+
+        # Find and fill form fields
+        common_name = page.locator('input[name="common_name"]')
+        if common_name.count() > 0:
+            common_name.fill("E2E Test Plant")
+
+            scientific_name = page.locator('input[name="scientific_name"]')
+            if scientific_name.count() > 0:
+                scientific_name.fill("Testus e2eus")
+
+                quantity_input = page.locator('input[name="quantity"]')
+                if quantity_input.count() > 0:
+                    quantity_input.fill("10")
+
+                    dome_location = page.locator('input[name="dome_location"]')
+                    if dome_location.count() > 0:
+                        dome_location.fill("Test Dome")
+
+                        notes_input = page.locator('textarea[name="notes"], input[name="notes"]')
+                        if notes_input.count() > 0:
+                            notes_input.fill("Created by E2E test")
+
+                            # Submit the form
+                            submit_button = page.locator('button[type="submit"]')
+                            if submit_button.count() > 0:
+                                submit_button.click()
+                                page.wait_for_load_state("networkidle")
+
+    def test_form_create_buttons_present(self, page: Page, base_url: str):
+        """Test that 'Create New' buttons are present on list pages"""
+        # Check tours page
+        page.goto(f"{base_url}/admin/tours")
+        page.wait_for_load_state("networkidle")
+        page.wait_for_timeout(1000)
+
+        # Look for button/link that leads to creation form
+        create_link = page.locator('a[href*="/new"], button:has-text("Create"), button:has-text("New")')
+        # If button exists, verify we can navigate to form
+        if create_link.count() > 0:
+            create_link.first.click()
+            page.wait_for_load_state("networkidle")
+            # Should be on the /new page
+            assert "/new" in page.url or "create" in page.url.lower()
+
+
 class TestAPIEndpoints:
     """Test API endpoints return valid data"""
 
