@@ -127,17 +127,24 @@ def ensure_context_files_bucket(storage: Storage, bucket_id: str) -> None:
         storage.get_bucket(bucket_id=bucket_id)
         print("  ✓ Bucket exists")
     except AppwriteException as e:
-        if "not found" in str(e).lower():
+        error_msg = str(e).lower()
+        if "not found" in error_msg or "bucket with the requested id could not be found" in error_msg:
             print("  • Bucket not found, creating...")
-            storage.create_bucket(
-                bucket_id=bucket_id,
-                name=bucket_id,
-                permissions=[],
-                file_security=False,
-            )
-            print("  ✓ Bucket created")
+            try:
+                storage.create_bucket(
+                    bucket_id=bucket_id,
+                    name="Context Files",
+                    permissions=['read("any")'],  # Allow public read access
+                    file_security=False,
+                    enabled=True,
+                )
+                print("  ✓ Bucket created")
+            except AppwriteException as create_error:
+                print(f"  ⚠ Bucket creation error: {create_error}")
+                raise
         else:
             print(f"  ⚠ Bucket check error: {e}")
+            raise
 
 
 def setup_plants_collection(databases: Databases, database_id: str, collection_id: str) -> None:

@@ -16,6 +16,7 @@ from appwrite.services.storage import Storage
 from appwrite.services.users import Users
 from appwrite.query import Query
 from appwrite.id import ID
+from appwrite.input_file import InputFile
 
 # Suppress Appwrite SDK deprecation warnings since TablesDB is not yet available in Python SDK
 warnings.filterwarnings("ignore", message="Call to deprecated function", module="appwrite")
@@ -69,7 +70,9 @@ class AppwriteService:
             created = self.storage.create_file(
                 bucket_id=self.settings.context_files_bucket_id,
                 file_id=ID.unique(),
-                file=(filename, file_bytes, mime_type or "application/octet-stream"),
+                file=InputFile.from_bytes(
+                    file_bytes, filename=filename, mime_type=mime_type or "application/octet-stream"
+                ),
             )
             data = dict(created)
             data["id"] = data.pop("$id")

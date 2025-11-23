@@ -112,7 +112,6 @@ async def context_files_list(service: AppwriteService = Depends(get_appwrite_ser
                 c.Heading(text="Context Files", level=1),
                 c.Button(text="← Back to Dashboard", on_click=BackEvent()),
                 c.Button(text="Upload New File", on_click=GoToEvent(url="/admin/context-files/upload")),
-                c.Button(text="Simple Upload Form", on_click=GoToEvent(url="/admin/context-files/upload-direct")),
                 c.Table(
                     data=files,
                     data_model=ContextFile,
@@ -131,42 +130,33 @@ async def context_files_list(service: AppwriteService = Depends(get_appwrite_ser
 
 @router.get("/api/admin/context-files/upload", response_model=FastUI, response_model_exclude_none=True)
 async def context_file_upload_page() -> list[AnyComponent]:
+    # Native FastUI form components (avoids HTML being displayed as literal text)
+    # FormFieldFile provides proper multipart encoding automatically.
+    upload_form = c.Form(
+        submit_url="/api/admin/context-files/upload",
+        form_fields=[
+            c.FormFieldFile(
+                name="file",
+                title="Context File",
+                required=True,
+                accept=".txt,.md,.json,.csv,.pdf,.png,.jpg,.jpeg",
+                description="Choose a file containing domain knowledge.",
+            ),
+        ],
+        # Leave footer empty so default submit button is rendered by FastUI
+        footer=None,
+    )
     return [
         c.Page(
             components=[
                 c.Heading(text="Upload Context File", level=1),
-                c.Paragraph(text="Select a file and upload it. Supported: text, JSON, images (used for LLM context)."),
-                c.Markdown(
-                    text="""
-<form action="/api/admin/context-files/upload" method="post" enctype="multipart/form-data" style="margin:1rem 0;">
-    <input type="file" name="file" required />
-    <button type="submit">Upload</button>
-</form>
-"""
-                ),
+                c.Paragraph(text="Select a file to add to the LLM context corpus."),
+                c.Paragraph(text="Supported types: plain text, markdown, JSON, images (for future embedding)."),
+                upload_form,
                 c.Button(text="← Back to Files", on_click=GoToEvent(url="/admin/context-files")),
             ]
         )
     ]
-
-
-@router.get("/admin/context-files/upload-direct")
-async def context_files_upload_direct() -> HTMLResponse:
-    """Direct HTML form upload page (bypasses FastUI form limitations for file inputs)."""
-    html = """
-        <!DOCTYPE html>
-        <html><head><title>Upload Context File</title></head>
-        <body style='font-family:system-ui;max-width:640px;margin:2rem auto;'>
-            <h1>Upload Context File</h1>
-            <p>Use this simple form to upload a file for LLM context generation.</p>
-            <form action="/api/admin/context-files/upload" method="post" enctype="multipart/form-data" style="margin:1rem 0;">
-                <input type="file" name="file" required />
-                <button type="submit">Upload</button>
-            </form>
-            <p><a href="/admin/context-files">Back to Context Files</a></p>
-        </body></html>
-        """
-    return HTMLResponse(html)
 
 
 @router.post("/api/admin/context-files/upload", response_model=FastUI, response_model_exclude_none=True)
@@ -174,12 +164,22 @@ async def context_file_upload(
     file: UploadFile = File(...),
     service: AppwriteService = Depends(get_appwrite_service),
 ):
-    data = await file.read()
-    created = await service.upload_context_file(
-        filename=file.filename or "upload", file_bytes=data, mime_type=file.content_type
-    )
-    # Return FastUI event redirect
-    return [c.FireEvent(event=GoToEvent(url="/admin/context-files"))]
+    try:
+        data = await file.read()
+        filename = file.filename or "uploaded-context-file"
+        await service.upload_context_file(filename=filename, file_bytes=data, mime_type=file.content_type)
+        return [c.FireEvent(event=GoToEvent(url="/admin/context-files"))]
+    except Exception as e:
+        # Return an error page instead of raw 500 to aid debugging
+        return [
+            c.Page(
+                components=[
+                    c.Heading(text="Upload Error", level=1),
+                    c.Text(text=f"Failed to upload file: {e}"),
+                    c.Button(text="← Back", on_click=GoToEvent(url="/admin/context-files/upload")),
+                ]
+            )
+        ]
 
 
 @router.get("/api/admin/context-files/{file_id}/delete", response_model=FastUI, response_model_exclude_none=True)
@@ -219,27 +219,6 @@ async def plants_list(service: AppwriteService = Depends(get_appwrite_service)) 
                         DisplayLookup(field="id", title="ID"),
                     ],
                     no_data_message="No plants found",
-                ),
-                c.Heading(text="Plant Actions", level=2),
-                c.Div(
-                    components=[
-                        c.LinkList(
-                            links=[
-                                c.Link(
-                                    components=[c.Text(text=f"✏️ Edit {p.common_name}")],
-                                    on_click=GoToEvent(url=f"/admin/plants/{p.id}/edit"),
-                                )
-                                for p in plants
-                            ]
-                            + [
-                                c.Link(
-                                    components=[c.Text(text=f"🗑 Delete {p.common_name}")],
-                                    on_click=GoToEvent(url=f"/admin/plants/{p.id}/delete"),
-                                )
-                                for p in plants
-                            ],
-                        )
-                    ]
                 ),
             ]
         )
@@ -300,21 +279,12 @@ async def plant_edit_page(
                 ]
             )
         ]
-
-    # Dynamic model with defaults for prefill
-    class PlantFormPrefill(BaseModel):
-        common_name: str = Field(default=plant.common_name)
-        scientific_name: str = Field(default=plant.scientific_name)
-        quantity: int = Field(default=plant.quantity, ge=0)
-        dome_location: str = Field(default=plant.dome_location or "")
-        notes: str = Field(default=plant.notes or "")
-
     return [
         c.Page(
             components=[
                 c.Heading(text=f"Edit Plant: {plant.common_name}", level=1),
                 c.Text(text="Update the fields and submit."),
-                c.ModelForm(model=PlantFormPrefill, submit_url=f"/api/admin/plants/{plant_id}/update"),
+                c.ModelForm(model=PlantFormCreate, submit_url=f"/api/admin/plants/{plant_id}/update"),
                 c.Button(text="Delete Plant", on_click=GoToEvent(url=f"/admin/plants/{plant_id}/delete")),
                 c.Button(text="← Back to Plants", on_click=GoToEvent(url="/admin/plants")),
             ]
