@@ -2,6 +2,7 @@
 
 from typing import Annotated
 from fastapi import APIRouter, Depends
+from pydantic import BaseModel
 from fastapi.responses import HTMLResponse
 from fastui import FastUI, AnyComponent, prebuilt_html, components as c
 from fastui.components.display import DisplayMode, DisplayLookup
@@ -21,6 +22,11 @@ from app.services import AppwriteService
 from app.auth import get_current_active_user, User
 
 router = APIRouter()
+
+
+class MetricValue(BaseModel):
+    metric: str
+    value: int | float | str
 
 
 def get_appwrite_service(settings: Settings = Depends(get_settings)) -> AppwriteService:
@@ -57,15 +63,17 @@ async def admin_home(
                         c.Heading(text="Quick Stats", level=2),
                         c.Table(
                             data=[
-                                {"metric": "Total Tours", "value": analytics.total_tours},
-                                {"metric": "Total Scavenger Hunts", "value": analytics.total_scavenger_hunts},
-                                {"metric": "Total Plants", "value": analytics.total_plants},
-                                {"metric": "Active Visitors", "value": analytics.active_visitors},
+                                MetricValue(metric="Total Tours", value=analytics.total_tours),
+                                MetricValue(metric="Total Scavenger Hunts", value=analytics.total_scavenger_hunts),
+                                MetricValue(metric="Total Plants", value=analytics.total_plants),
+                                MetricValue(metric="Active Visitors", value=analytics.active_visitors),
                             ],
+                            data_model=MetricValue,
                             columns=[
                                 DisplayLookup(field="metric", title="Metric"),
                                 DisplayLookup(field="value", title="Value"),
                             ],
+                            no_data_message="No analytics data yet",
                         ),
                     ]
                 ),
@@ -120,6 +128,7 @@ async def tours_list(
                         DisplayLookup(field="description", title="Description"),
                         DisplayLookup(field="id", title="ID"),
                     ],
+                    no_data_message="No tours found",
                 ),
             ]
         )
@@ -148,6 +157,7 @@ async def scavenger_hunts_list(
                         DisplayLookup(field="difficulty", title="Difficulty"),
                         DisplayLookup(field="id", title="ID"),
                     ],
+                    no_data_message="No hunts found",
                 ),
             ]
         )
@@ -177,10 +187,34 @@ async def plants_list(
                         DisplayLookup(field="dome_location", title="Location"),
                         DisplayLookup(field="id", title="ID"),
                     ],
+                    no_data_message="No plants found",
                 ),
             ]
         )
     ]
+
+
+# Provide trailing-slash variants for FastUI JS fetches that may append '/'
+@router.get("/api/admin/", response_model=FastUI, response_model_exclude_none=True, include_in_schema=False)
+async def admin_home_slash(service: AppwriteService = Depends(get_appwrite_service)) -> list[AnyComponent]:
+    return await admin_home(service)
+
+
+@router.get("/api/admin/tours/", response_model=FastUI, response_model_exclude_none=True, include_in_schema=False)
+async def tours_list_slash(service: AppwriteService = Depends(get_appwrite_service)) -> list[AnyComponent]:
+    return await tours_list(service)
+
+
+@router.get(
+    "/api/admin/scavenger-hunts/", response_model=FastUI, response_model_exclude_none=True, include_in_schema=False
+)
+async def scavenger_hunts_list_slash(service: AppwriteService = Depends(get_appwrite_service)) -> list[AnyComponent]:
+    return await scavenger_hunts_list(service)
+
+
+@router.get("/api/admin/plants/", response_model=FastUI, response_model_exclude_none=True, include_in_schema=False)
+async def plants_list_slash(service: AppwriteService = Depends(get_appwrite_service)) -> list[AnyComponent]:
+    return await plants_list(service)
 
 
 @router.get("/admin/{path:path}")
