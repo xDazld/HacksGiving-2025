@@ -9,37 +9,40 @@ import {
 import { router } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
+import { useLocalization } from '@/contexts/LocalizationContext';
 
 interface DomeCard {
   id: string;
-  title: string;
+  titleKey: string;
   image: any;
 }
 
 const domes: DomeCard[] = [
   {
     id: 'arid',
-    title: 'The Arid Dome',
+    titleKey: 'botanicalTales.desertDome',
     image: require('@/assets/images/desertDome.png'),
   },
   {
     id: 'tropical',
-    title: 'The Tropical Dome',
+    titleKey: 'botanicalTales.tropicalDome',
     image: require('@/assets/images/tropicalDome.png'),
   },
   {
     id: 'floral',
-    title: 'The Floral Dome',
+    titleKey: 'botanicalTales.showDome',
     image: require('@/assets/images/showDome.png'),
   },
   {
     id: 'kids',
-    title: 'The Kids Dome',
+    titleKey: 'botanicalTales.kidsDome',
     image: require('@/assets/images/kidsDome.png'),
   },
 ];
 
 export default function BotanicalTalesScreen() {
+  const { t } = useLocalization();
+  
   const handleDomePress = (domeId: string) => {
     if (domeId === 'arid') {
       // Navigate to the Arid Dome audio tour list
@@ -55,9 +58,9 @@ export default function BotanicalTalesScreen() {
       <ThemedView style={styles.content}>
         {/* Welcome Section */}
         <View style={styles.welcomeSection}>
-          <ThemedText type="title" style={styles.welcomeTitle}>Welcome to the Domes!</ThemedText>
-          <ThemedText type="default" style={styles.welcomeSubtitle}>
-            Which environment would you like to explore?
+          <ThemedText style={styles.welcomeTitle}>{t('botanicalTales.welcome')}</ThemedText>
+          <ThemedText style={styles.welcomeSubtitle}>
+            {t('botanicalTales.selectDome')}
           </ThemedText>
         </View>
 
@@ -76,7 +79,7 @@ export default function BotanicalTalesScreen() {
                 imageStyle={styles.domeImageStyle}
               >
                 <View style={styles.domeOverlay}>
-                  <ThemedText style={styles.domeTitle}>{dome.title}</ThemedText>
+                  <ThemedText style={styles.domeTitle}>{t(dome.titleKey)}</ThemedText>
                 </View>
               </ImageBackground>
             </TouchableOpacity>

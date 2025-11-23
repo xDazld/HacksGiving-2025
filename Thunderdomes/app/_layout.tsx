@@ -7,6 +7,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { LocalizationProvider } from '@/contexts/LocalizationContext';
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
@@ -51,10 +52,12 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <SafeAreaProvider>
-      <AuthProvider>
+    <LocalizationProvider>
+      <SafeAreaProvider>
+        <AuthProvider>
           <RootLayoutNav />
-      </AuthProvider>
-    </SafeAreaProvider>
+        </AuthProvider>
+      </SafeAreaProvider>
+    </LocalizationProvider>
   );
 }

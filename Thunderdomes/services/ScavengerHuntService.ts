@@ -32,11 +32,13 @@ export class ScavengerHuntService {
    * Generates a creative description for the plant using AI.
    * @param plant The target plant
    * @param userAge Optional age of the user
+   * @param language Optional language code (e.g., 'en', 'es')
    * @returns A string description
    */
   async getPlantDescription(
     plant: PlantRecord,
     userAge?: number,
+    language: string = 'en',
   ): Promise<string> {
     const commonName = plant['Common Name'];
     const scientificName = plant['Scientific Name'];
@@ -52,12 +54,16 @@ export class ScavengerHuntService {
       }
     }
 
+    const languageInstruction = language === 'es' 
+      ? '\n\nIMPORTANT: Write the entire description in Spanish (Español). Use natural, fluent Spanish.'
+      : '';
+
     const prompt = `You are a scavenger hunt guide in a botanical garden. 
     Describe the plant "${commonName}" (${scientificName}) to a player so they can find it. 
     Include details like its appearance, color, shape, and origin if known. 
     Do NOT explicitly state the name of the plant in the description, make it a bit of a riddle but solvable.
     Target Audience: ${audienceContext}
-    Keep it under 50 words.`;
+    Keep it under 50 words.${languageInstruction}`;
 
     const messages = [
       {
@@ -74,12 +80,15 @@ export class ScavengerHuntService {
    * Generates a hint for the plant.
    * @param plant The target plant
    * @param userAge Optional age of the user
+   * @param previousContent Previous hints/descriptions given
+   * @param language Optional language code (e.g., 'en', 'es')
    * @returns A string hint
    */
   async getHint(
     plant: PlantRecord,
     userAge?: number,
     previousContent: string[] = [],
+    language: string = 'en',
   ): Promise<string> {
     const commonName = plant['Common Name'];
     const scientificName = plant['Scientific Name'];
@@ -100,11 +109,15 @@ export class ScavengerHuntService {
         ? `The user has already been told the following information, DO NOT REPEAT IT: "${previousContent.join(' ')}".`
         : '';
 
+    const languageInstruction = language === 'es' 
+      ? '\n\nIMPORTANT: Write the hint in Spanish (Español). Use natural, fluent Spanish.'
+      : '';
+
     const prompt = `Give a helpful hint for finding the plant "${commonName}" (${scientificName}). 
     Maybe mention its typical location in a dome or a distinctive feature. 
     Target Audience: ${audienceContext}
     ${historyContext}
-    Keep it short and fun.`;
+    Keep it short and fun.${languageInstruction}`;
 
     const messages = [
       {
@@ -121,14 +134,20 @@ export class ScavengerHuntService {
    * Verifies if the user's photo matches the target plant using JSON mode for reliable parsing.
    * @param imageBase64 Base64 encoded image string
    * @param plant The target plant
+   * @param language Optional language code (e.g., 'en', 'es')
    * @returns Object with isMatch boolean and feedback string
    */
   async verifyFind(
     imageBase64: string,
     plant: PlantRecord,
+    language: string = 'en',
   ): Promise<{ isMatch: boolean; feedback: string }> {
     const commonName = plant['Common Name'];
     const scientificName = plant['Scientific Name'];
+
+    const languageInstruction = language === 'es' 
+      ? '\n\nIMPORTANT: Write the feedback message in Spanish (Español). The JSON structure stays the same, but the "feedback" field should be in Spanish.'
+      : '';
 
     const prompt = `You are a plant identification expert. Analyze this image and determine if it shows a "${commonName}" (${scientificName}).
 
@@ -139,7 +158,7 @@ IMPORTANT: You must respond with a valid JSON object in this exact format:
   "feedback": "Brief explanation of why this is or isn't the correct plant"
 }
 
-Be specific in your feedback. If it's not the correct plant, explain what plant features you see and why they don't match.`;
+Be specific in your feedback. If it's not the correct plant, explain what plant features you see and why they don't match.${languageInstruction}`;
 
     let response: string;
 

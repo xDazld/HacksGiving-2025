@@ -12,9 +12,10 @@ export class PlantStoryService {
    * Generates an engaging story about the plant, tailored to the user's age.
    * @param plant The plant to generate a story for.
    * @param userAge Optional age of the user to tailor the content.
+   * @param language Optional language code (e.g., 'en', 'es') to generate the story in that language.
    * @returns A promise that resolves to the generated story.
    */
-  async generateStory(plant: PlantRecord, userAge?: number): Promise<string> {
+  async generateStory(plant: PlantRecord, userAge?: number, language: string = 'en'): Promise<string> {
     const commonName = plant['Common Name'] || 'Unknown Plant';
     const scientificName =
       plant['Scientific Name'] || 'Unknown Scientific Name';
@@ -31,6 +32,10 @@ export class PlantStoryService {
       }
     }
 
+    const languageInstruction = language === 'es' 
+      ? '\n\nIMPORTANT: Write the entire story in Spanish (Español). Use natural, fluent Spanish appropriate for the target audience.'
+      : '';
+
     const prompt = `You are a storyteller at a botanical garden.
     Write an engaging story related to the plant "${commonName}" (${scientificName}).
     
@@ -44,7 +49,7 @@ export class PlantStoryService {
     3. Connect the plant to the wider ecosystem or human culture.
     4. Cover the place of origin, how it was used, and how it is used today.
     
-    Do not start with "Once upon a time".`;
+    Do not start with "Once upon a time".${languageInstruction}`;
 
     const messages = [
       {

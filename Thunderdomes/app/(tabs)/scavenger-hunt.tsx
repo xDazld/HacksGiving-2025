@@ -24,11 +24,13 @@ import {
   filterPlants,
   PlantRecord,
 } from '@/utils/plantData';
+import { useLocalization } from '@/contexts/LocalizationContext';
 
 type GameStatus = 'initial' | 'playing' | 'verifying' | 'success' | 'completed';
 
 export default function ScavengerHuntScreen() {
   const { user } = useAuth();
+  const { t, locale } = useLocalization();
   const [status, setStatus] = useState<GameStatus>('initial');
   const [currentPlant, setCurrentPlant] = useState<PlantRecord | null>(null);
   const [foundPlantIds, setFoundPlantIds] = useState<string[]>([]);
@@ -77,7 +79,7 @@ export default function ScavengerHuntScreen() {
     if (!scavengerServiceRef.current) return;
 
     setIsLoading(true);
-    setLoadingMessage('Consulting the botanical spirits...');
+    setLoadingMessage(t('domeDetective.loading.consulting'));
 
     try {
       const plant = scavengerServiceRef.current.startGame(foundPlantIds);
@@ -94,6 +96,7 @@ export default function ScavengerHuntScreen() {
       const newRiddle = await scavengerServiceRef.current.getPlantDescription(
         plant,
         user?.age,
+        locale,
       );
       setRiddle(newRiddle);
       setHint(''); // Reset hint
@@ -112,7 +115,7 @@ export default function ScavengerHuntScreen() {
     if (!scavengerServiceRef.current || !currentPlant) return;
 
     setIsLoading(true);
-    setLoadingMessage('Whispering to the leaves...');
+    setLoadingMessage(t('domeDetective.loading.whispering'));
 
     try {
       const previousContent = [riddle, ...hintHistory];
@@ -120,6 +123,7 @@ export default function ScavengerHuntScreen() {
         currentPlant,
         user?.age,
         previousContent,
+        locale,
       );
       setHint(newHint);
       setHintHistory(prev => [...prev, newHint]);
@@ -144,12 +148,13 @@ export default function ScavengerHuntScreen() {
 
     setStatus('verifying');
     setIsLoading(true);
-    setLoadingMessage('Checking your guess...');
+    setLoadingMessage(t('domeDetective.loading.checking'));
 
     try {
       const result = await scavengerServiceRef.current.verifyFind(
         base64Image,
         currentPlant,
+        locale,
       );
 
       if (result.isMatch) {
@@ -164,6 +169,7 @@ export default function ScavengerHuntScreen() {
           const newStory = await storyServiceRef.current.generateStory(
             currentPlant,
             user?.age,
+            locale,
           );
           setStory(newStory);
         }
@@ -234,15 +240,15 @@ export default function ScavengerHuntScreen() {
     }
 
     Alert.alert(
-      'Start Activity',
-      'Starting Dome Detective will use your ticket. After completing this activity, you can scan a new ticket to start another. Continue?',
+      t('domeDetective.startActivity'),
+      t('domeDetective.startMessage'),
       [
         {
-          text: 'Cancel',
+          text: t('domeDetective.cancel'),
           style: 'cancel',
         },
         {
-          text: 'Start',
+          text: t('domeDetective.start'),
           onPress: startNewRound,
         },
       ],
@@ -262,15 +268,14 @@ export default function ScavengerHuntScreen() {
           lightColor="#2C2416"
           darkColor="#2C2416"
         >
-          Dome Detective
+          {t('domeDetective.title')}
         </ThemedText>
         <ThemedText
           style={styles.initialDescription}
           lightColor="#2C2416"
           darkColor="#2C2416"
         >
-          Identify plants using clues and your sleuthing skills... Are you ready
-          to be a detective?
+          {t('domeDetective.description')}
         </ThemedText>
         <Image
           source={require('@/assets/images/DomeDetectiveEntry.png')}
@@ -281,7 +286,7 @@ export default function ScavengerHuntScreen() {
           style={styles.letsGoButton}
           onPress={handleStartWithValidation}
         >
-          <ThemedText style={styles.letsGoButtonText}>Let's Go!</ThemedText>
+          <ThemedText style={styles.letsGoButtonText}>{t('domeDetective.letsGo')}</ThemedText>
         </TouchableOpacity>
       </ThemedView>
     );
@@ -291,22 +296,22 @@ export default function ScavengerHuntScreen() {
     return (
       <ThemedView style={styles.container}>
         <ThemedText type="title" style={styles.title}>
-          Hunt Complete!
+          {t('domeDetective.huntComplete')}
         </ThemedText>
         <ThemedText style={styles.description}>
-          Congratulations! You've found all the plants in this hunt.
+          {t('domeDetective.congratulations')}
         </ThemedText>
         <ThemedText style={styles.score}>
-          Total Plants Found: {foundPlantIds.length}
+          {t('domeDetective.totalFound')} {foundPlantIds.length}
         </ThemedText>
         <TouchableOpacity style={styles.primaryButton} onPress={handleRestart}>
-          <ThemedText style={styles.buttonText}>Play Again</ThemedText>
+          <ThemedText style={styles.buttonText}>{t('domeDetective.playAgain')}</ThemedText>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.secondaryButton, { marginTop: 10 }]}
           onPress={() => router.push('/settings')}
         >
-          <ThemedText style={styles.secondaryButtonText}>Exit</ThemedText>
+          <ThemedText style={styles.secondaryButtonText}>{t('domeDetective.exit')}</ThemedText>
         </TouchableOpacity>
       </ThemedView>
     );
@@ -334,7 +339,7 @@ export default function ScavengerHuntScreen() {
           lightColor="#2C2416"
           darkColor="#2C2416"
         >
-          Dome Detective
+          {t('domeDetective.title')}
         </ThemedText>
 
         {status === 'success' ? (
@@ -343,10 +348,10 @@ export default function ScavengerHuntScreen() {
             contentContainerStyle={styles.successContent}
           >
             <ThemedText type="title" style={styles.successTitle}>
-              Correct!
+              {t('domeDetective.correct')}
             </ThemedText>
             <ThemedText style={styles.plantName}>
-              It was the {currentPlant?.['Common Name']}
+              {t('domeDetective.itWasThe')} {currentPlant?.['Common Name']}
             </ThemedText>
             <ThemedText style={styles.scientificName}>
               ({currentPlant?.['Scientific Name']})
@@ -362,7 +367,7 @@ export default function ScavengerHuntScreen() {
                   activeOpacity={0.7}
                 >
                   <ThemedText style={styles.learnMoreText}>
-                    {isStoryExpanded ? 'Hide Story' : 'Learn More'}
+                    {isStoryExpanded ? t('domeDetective.hideStory') : t('domeDetective.learnMore')}
                   </ThemedText>
                   <Ionicons
                     name={isStoryExpanded ? 'chevron-up' : 'chevron-down'}
@@ -381,7 +386,7 @@ export default function ScavengerHuntScreen() {
               style={styles.primaryButton}
               onPress={handleNextPlant}
             >
-              <ThemedText style={styles.buttonText}>Next Plant</ThemedText>
+              <ThemedText style={styles.buttonText}>{t('domeDetective.nextPlant')}</ThemedText>
             </TouchableOpacity>
           </ScrollView>
         ) : (
@@ -419,7 +424,7 @@ export default function ScavengerHuntScreen() {
                 >
                   <View style={styles.getHintButtonContent}>
                     <ThemedText style={styles.getHintButtonText}>
-                      Get Another Hint
+                      {t('domeDetective.getAnotherHint')}
                     </ThemedText>
                     <View style={styles.checkmarkCircle}>
                       <ThemedText style={styles.questionMark}>?</ThemedText>
@@ -433,7 +438,7 @@ export default function ScavengerHuntScreen() {
                 onPress={handleFoundIt}
               >
                 <ThemedText style={styles.foundItButtonText}>
-                  I Think I Found It!
+                  {t('domeDetective.foundIt')}
                 </ThemedText>
               </TouchableOpacity>
             </View>
@@ -451,7 +456,7 @@ export default function ScavengerHuntScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <ThemedText type="title" style={styles.modalTitle}>
-              Not Quite...
+              {t('domeDetective.notQuite')}
             </ThemedText>
             <ThemedText style={styles.modalText}>
               {wrongAnswerFeedback}
@@ -460,7 +465,7 @@ export default function ScavengerHuntScreen() {
               style={styles.modalButton}
               onPress={() => setShowWrongModal(false)}
             >
-              <ThemedText style={styles.modalButtonText}>Try Again</ThemedText>
+              <ThemedText style={styles.modalButtonText}>{t('domeDetective.tryAgain')}</ThemedText>
             </TouchableOpacity>
           </View>
         </View>
