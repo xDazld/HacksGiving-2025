@@ -363,157 +363,159 @@ export default function ScannerScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <View style={styles.header}>
-        <ThemedText type="title" style={styles.title}>
-          Dome Floor Positioning
-        </ThemedText>
-        <ThemedText style={styles.subtitle}>
-          {isCalibrated 
-            ? `Tracking position in ${domeConfig?.totalBeacons}-beacon dome` 
-            : 'Stand at LocationContext_0 and calibrate'}
-        </ThemedText>
-        
-        {error && (
-          <View style={styles.errorContainer}>
-            <ThemedText style={styles.errorText}>{error}</ThemedText>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        <View style={styles.header}>
+          <ThemedText type="title" style={styles.title}>
+            Dome Floor Positioning
+          </ThemedText>
+          <ThemedText style={styles.subtitle}>
+            {isCalibrated 
+              ? `Tracking position in ${domeConfig?.totalBeacons}-beacon dome` 
+              : 'Stand at LocationContext_0 and calibrate'}
+          </ThemedText>
+          
+          {error && (
+            <View style={styles.errorContainer}>
+              <ThemedText style={styles.errorText}>{error}</ThemedText>
+            </View>
+          )}
+
+          <View style={styles.controls}>
+            <View style={styles.controlRow}>
+              {!isScanning ? (
+                <TouchableOpacity 
+                  style={[styles.button, styles.startButton]} 
+                  onPress={handleStartScanning}
+                >
+                  <ThemedText style={styles.buttonText}>Start Scanning</ThemedText>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity 
+                  style={[styles.button, styles.stopButton]} 
+                  onPress={handleStopScanning}
+                >
+                  <ThemedText style={styles.buttonText}>Stop Scanning</ThemedText>
+                </TouchableOpacity>
+              )}
+              
+              {!isCalibrated ? (
+                <TouchableOpacity 
+                  style={[styles.button, styles.calibrateButton]}
+                  onPress={handleCalibrate}
+                  disabled={!isScanning || beacons.length === 0}
+                >
+                  <ThemedText style={styles.buttonText}>Calibrate</ThemedText>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity 
+                  style={[styles.button, styles.resetButton]}
+                  onPress={handleResetCalibration}
+                >
+                  <ThemedText style={styles.buttonText}>Reset</ThemedText>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+
+          <View style={styles.statusContainer}>
+            <ThemedText style={styles.statusText}>
+              Status: {isScanning ? 'Scanning...' : 'Idle'} | 
+              {isCalibrated ? ' Calibrated ✓' : ' Not Calibrated'}
+            </ThemedText>
+            <ThemedText style={styles.statusText}>
+              Beacons: {beacons.length}
+            </ThemedText>
+          </View>
+        </View>
+
+        {isCalibrated && renderMethodSelector()}
+
+        <View style={tabContainerStyle}>
+          <TouchableOpacity
+            style={[
+              styles.tabButton,
+              { backgroundColor: tabInactiveBg },
+              activeView === 'floor' && styles.tabButtonActive,
+            ]}
+            onPress={() => setActiveView('floor')}
+          >
+            <ThemedText
+              style={[
+                styles.tabButtonText,
+                { color: tabInactiveText },
+                activeView === 'floor' && styles.tabButtonTextActive,
+              ]}
+            >
+              Floor View
+            </ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.tabButton,
+              { backgroundColor: tabInactiveBg },
+              activeView === 'list' && styles.tabButtonActive,
+            ]}
+            onPress={() => setActiveView('list')}
+          >
+            <ThemedText
+              style={[
+                styles.tabButtonText,
+                { color: tabInactiveText },
+                activeView === 'list' && styles.tabButtonTextActive,
+              ]}
+            >
+              Beacons
+            </ThemedText>
+          </TouchableOpacity>
+        </View>
+
+        {activeView === 'floor' ? (
+          <View style={styles.visualContainer}>
+            <View style={floorCardStyle}>
+              <ThemedText style={styles.sectionTitle}>
+                Dome Floor Map
+              </ThemedText>
+              {!isCalibrated ? (
+                <ThemedText style={styles.placeholderText}>
+                  Start scanning and calibrate at LocationContext_0 to see your position on the dome floor.
+                </ThemedText>
+              ) : domeConfig ? (
+                <>
+                  <DomeFloorView
+                    domeConfig={domeConfig}
+                    calibrationData={calibrationData}
+                    userPosition={userPosition}
+                    currentBeacons={currentBeaconSignals}
+                    theme={themeVariant}
+                  />
+                  {renderPositionMetrics()}
+                  <ThemedText style={styles.hintText}>
+                    The red dot shows your estimated position. Walk toward the orange TARGET beacon.
+                  </ThemedText>
+                </>
+              ) : (
+                <ThemedText style={styles.placeholderText}>
+                  Loading dome configuration...
+                </ThemedText>
+              )}
+            </View>
+          </View>
+        ) : (
+          <View style={styles.beaconListContainer}>
+            {beacons.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <ThemedText style={styles.emptyText}>
+                  {isScanning
+                    ? 'Scanning for beacons...'
+                    : 'No beacons detected. Start scanning to find LocationContext beacons.'}
+                </ThemedText>
+              </View>
+            ) : (
+              beacons.map(renderBeaconItem)
+            )}
           </View>
         )}
-
-        <View style={styles.controls}>
-          <View style={styles.controlRow}>
-            {!isScanning ? (
-              <TouchableOpacity 
-                style={[styles.button, styles.startButton]} 
-                onPress={handleStartScanning}
-              >
-                <ThemedText style={styles.buttonText}>Start Scanning</ThemedText>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity 
-                style={[styles.button, styles.stopButton]} 
-                onPress={handleStopScanning}
-              >
-                <ThemedText style={styles.buttonText}>Stop Scanning</ThemedText>
-              </TouchableOpacity>
-            )}
-            
-            {!isCalibrated ? (
-              <TouchableOpacity 
-                style={[styles.button, styles.calibrateButton]}
-                onPress={handleCalibrate}
-                disabled={!isScanning || beacons.length === 0}
-              >
-                <ThemedText style={styles.buttonText}>Calibrate</ThemedText>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity 
-                style={[styles.button, styles.resetButton]}
-                onPress={handleResetCalibration}
-              >
-                <ThemedText style={styles.buttonText}>Reset</ThemedText>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-
-        <View style={styles.statusContainer}>
-          <ThemedText style={styles.statusText}>
-            Status: {isScanning ? 'Scanning...' : 'Idle'} | 
-            {isCalibrated ? ' Calibrated ✓' : ' Not Calibrated'}
-          </ThemedText>
-          <ThemedText style={styles.statusText}>
-            Beacons: {beacons.length}
-          </ThemedText>
-        </View>
-      </View>
-
-      {isCalibrated && renderMethodSelector()}
-
-      <View style={tabContainerStyle}>
-        <TouchableOpacity
-          style={[
-            styles.tabButton,
-            { backgroundColor: tabInactiveBg },
-            activeView === 'floor' && styles.tabButtonActive,
-          ]}
-          onPress={() => setActiveView('floor')}
-        >
-          <ThemedText
-            style={[
-              styles.tabButtonText,
-              { color: tabInactiveText },
-              activeView === 'floor' && styles.tabButtonTextActive,
-            ]}
-          >
-            Floor View
-          </ThemedText>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.tabButton,
-            { backgroundColor: tabInactiveBg },
-            activeView === 'list' && styles.tabButtonActive,
-          ]}
-          onPress={() => setActiveView('list')}
-        >
-          <ThemedText
-            style={[
-              styles.tabButtonText,
-              { color: tabInactiveText },
-              activeView === 'list' && styles.tabButtonTextActive,
-            ]}
-          >
-            Beacons
-          </ThemedText>
-        </TouchableOpacity>
-      </View>
-
-      {activeView === 'floor' ? (
-        <ScrollView style={styles.visualContainer}>
-          <View style={floorCardStyle}>
-            <ThemedText style={styles.sectionTitle}>
-              Dome Floor Map
-            </ThemedText>
-            {!isCalibrated ? (
-              <ThemedText style={styles.placeholderText}>
-                Start scanning and calibrate at LocationContext_0 to see your position on the dome floor.
-              </ThemedText>
-            ) : domeConfig ? (
-              <>
-                <DomeFloorView
-                  domeConfig={domeConfig}
-                  calibrationData={calibrationData}
-                  userPosition={userPosition}
-                  currentBeacons={currentBeaconSignals}
-                  theme={themeVariant}
-                />
-                {renderPositionMetrics()}
-                <ThemedText style={styles.hintText}>
-                  The red dot shows your estimated position. Walk toward the orange TARGET beacon.
-                </ThemedText>
-              </>
-            ) : (
-              <ThemedText style={styles.placeholderText}>
-                Loading dome configuration...
-              </ThemedText>
-            )}
-          </View>
-        </ScrollView>
-      ) : (
-        <ScrollView style={styles.beaconList}>
-          {beacons.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <ThemedText style={styles.emptyText}>
-                {isScanning
-                  ? 'Scanning for beacons...'
-                  : 'No beacons detected. Start scanning to find LocationContext beacons.'}
-              </ThemedText>
-            </View>
-          ) : (
-            beacons.map(renderBeaconItem)
-          )}
-        </ScrollView>
-      )}
+      </ScrollView>
     </ThemedView>
   );
 }
@@ -521,6 +523,13 @@ export default function ScannerScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 20,
   },
   header: {
     padding: 20,
@@ -649,7 +658,6 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   visualContainer: {
-    flex: 1,
     paddingHorizontal: 20,
     paddingTop: 15,
   },
@@ -706,8 +714,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  beaconList: {
-    flex: 1,
+  beaconListContainer: {
     padding: 20,
   },
   emptyContainer: {

@@ -5,7 +5,7 @@ const DOME_CIRCUMFERENCE = 145; // meters
 const DOME_RADIUS = DOME_CIRCUMFERENCE / (2 * Math.PI); // ≈ 23.08 meters
 const PATH_LOSS_EXPONENT = 2.5; // Indoor environment
 const REFERENCE_RSSI_AT_1M = -59; // Typical BLE beacon RSSI at 1 meter
-const SMOOTHING_WINDOW_MS = 1500; // 1.5 seconds smoothing window
+const SMOOTHING_WINDOW_MS = 3000; // 3 seconds smoothing window
 const MAX_POSITION_SAMPLES = 30; // Maximum samples to keep in history
 
 // State
