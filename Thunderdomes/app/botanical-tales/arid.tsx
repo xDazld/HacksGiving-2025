@@ -181,13 +181,15 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
+    paddingTop: 30,
     paddingBottom: 40,
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 10,
+    marginBottom: 15,
+    paddingBottom: 5,
     color: '#333',
   },
   subtitle: {
