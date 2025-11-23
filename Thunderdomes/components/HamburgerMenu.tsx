@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, ScrollView, Linking, Animated, Dimensions, Platform } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text, ScrollView, Linking, Animated, Dimensions, Platform, Image } from 'react-native';
 import { router } from 'expo-router';
 import { useLocalization } from '@/contexts/LocalizationContext';
 
@@ -120,7 +120,7 @@ export function HamburgerMenu({ visible, onClose }: HamburgerMenuProps) {
               onPress={() => handleMenuItemPress('accessibility')}
             >
               <Text style={styles.menuText}>{t('menu.accessibility')}</Text>
-              <Text style={styles.menuIcon}>ⓘ</Text>
+              <Image source={require('@/assets/images/Settings.png')} style={styles.menuIcon} resizeMode="contain" />
             </TouchableOpacity>
 
             {/* Language */}
@@ -129,7 +129,7 @@ export function HamburgerMenu({ visible, onClose }: HamburgerMenuProps) {
               onPress={() => setLanguageExpanded(!languageExpanded)}
             >
               <Text style={styles.menuText}>{t('menu.language')}</Text>
-              <Text style={styles.menuIcon}>🌐</Text>
+              <Image source={require('@/assets/images/language.png')} style={styles.menuIcon} resizeMode="contain" />
             </TouchableOpacity>
 
             {/* Language Submenu */}
@@ -153,7 +153,7 @@ export function HamburgerMenu({ visible, onClose }: HamburgerMenuProps) {
               onPress={() => handleMenuItemPress('member')}
             >
               <Text style={styles.menuText}>{t('menu.becomeMember')}</Text>
-              <Text style={styles.menuIcon}>📋</Text>
+              <Image source={require('@/assets/images/BAM.png')} style={styles.menuIcon} resizeMode="contain" />
             </TouchableOpacity>
 
             {/* Make a Donation */}
@@ -162,7 +162,7 @@ export function HamburgerMenu({ visible, onClose }: HamburgerMenuProps) {
               onPress={() => handleMenuItemPress('donate')}
             >
               <Text style={styles.menuText}>{t('menu.makeDonation')}</Text>
-              <Text style={styles.menuIcon}>💝</Text>
+              <Image source={require('@/assets/images/MAD.png')} style={styles.menuIcon} resizeMode="contain" />
             </TouchableOpacity>
 
             {/* View Our Calendar */}
@@ -171,7 +171,7 @@ export function HamburgerMenu({ visible, onClose }: HamburgerMenuProps) {
               onPress={() => handleMenuItemPress('calendar')}
             >
               <Text style={styles.menuText}>{t('menu.viewCalendar')}</Text>
-              <Text style={styles.menuIcon}>📅</Text>
+              <Image source={require('@/assets/images/calendar.png')} style={styles.menuIcon} resizeMode="contain" />
             </TouchableOpacity>
 
             {/* Visit Our Website */}
@@ -180,7 +180,7 @@ export function HamburgerMenu({ visible, onClose }: HamburgerMenuProps) {
               onPress={() => handleMenuItemPress('website')}
             >
               <Text style={styles.menuText}>{t('menu.visitWebsite')}</Text>
-              <Text style={styles.menuIcon}>🏛️</Text>
+              <Image source={require('@/assets/images/website.png')} style={styles.menuIcon} resizeMode="contain" />
             </TouchableOpacity>
           </ScrollView>
         </Animated.View>
@@ -238,7 +238,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   menuIcon: {
-    fontSize: 24,
+    width: 24,
+    height: 24,
     marginLeft: 10,
   },
   submenu: {
