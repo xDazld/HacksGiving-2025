@@ -6,7 +6,7 @@ import { BotanicalTalesIcon, DomeDetectiveIcon, SipAndSeekIcon, VoiceChatIcon } 
 const TAB_BAR_COLOR = '#458E5E'; // Main green
 const TAB_ACTIVE_BG = '#6BA57E'; // Lighter green for active state
 const TEXT_COLOR = '#FFFFFF';
-const INACTIVE_COLOR = 'rgba(255, 255, 255, 0.7)';
+const INACTIVE_COLOR = '#FFFFFF';
 
 export function CustomBottomNav() {
   const router = useRouter();
