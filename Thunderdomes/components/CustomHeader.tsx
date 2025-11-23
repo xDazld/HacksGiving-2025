@@ -1,15 +1,18 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Image, SafeAreaView, Platform } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Image, Platform } from 'react-native';
 import { router } from 'expo-router';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Blue header color based on description (adjust as needed)
 const HEADER_BG_COLOR = '#64B5F6'; 
 
 export function CustomHeader() {
+  const insets = useSafeAreaInsets();
+
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={[styles.safeArea, { paddingTop: insets.top }]}>
       <View style={styles.container}>
         {/* Left spacer to balance the settings icon */}
         <View style={styles.spacer} />
@@ -35,15 +38,14 @@ export function CustomHeader() {
               resizeMode="contain"
             />
         </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+    </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
     backgroundColor: '#68A4D2', // Matching the blue tone
-    paddingTop: Platform.OS === 'android' ? 35 : 0,
   },
   container: {
     height: 60,

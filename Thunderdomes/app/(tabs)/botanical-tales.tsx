@@ -55,8 +55,8 @@ export default function BotanicalTalesScreen() {
       <ThemedView style={styles.content}>
         {/* Welcome Section */}
         <View style={styles.welcomeSection}>
-          <ThemedText style={styles.welcomeTitle}>Welcome to the Domes!</ThemedText>
-          <ThemedText style={styles.welcomeSubtitle}>
+          <ThemedText type="title" style={styles.welcomeTitle}>Welcome to the Domes!</ThemedText>
+          <ThemedText type="default" style={styles.welcomeSubtitle}>
             Which environment would you like to explore?
           </ThemedText>
         </View>
@@ -90,15 +90,17 @@ export default function BotanicalTalesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#fff',
   },
   content: {
     padding: 20,
-    paddingTop: 30,
+    paddingTop: 24,
     paddingBottom: 40,
   },
   welcomeSection: {
     marginBottom: 30,
     paddingHorizontal: 10,
+    marginTop: 0,
   },
   welcomeTitle: {
     fontSize: 28,

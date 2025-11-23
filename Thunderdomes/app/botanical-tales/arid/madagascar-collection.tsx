@@ -189,7 +189,7 @@ export default function MadagascarCollectionScreen() {
       >
         <ThemedView style={styles.content}>
           {/* Title */}
-          <ThemedText style={styles.title}>Madagascar Collection</ThemedText>
+          <ThemedText type="title" style={styles.title}>Madagascar Collection</ThemedText>
 
           {/* Tour Image */}
           <View style={styles.imageContainer}>
@@ -245,6 +245,7 @@ export default function MadagascarCollectionScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#fff',
   },
   headerSafeArea: {
     backgroundColor: '#68A4D2',
@@ -297,7 +298,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
-    paddingTop: 30,
+    paddingTop: 24,
   },
   fixedButtonContainer: {
     position: 'absolute',

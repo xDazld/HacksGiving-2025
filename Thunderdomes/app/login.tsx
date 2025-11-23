@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { StyleSheet, TextInput, TouchableOpacity, Alert, ActivityIndicator, View, Keyboard } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { router } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
@@ -100,10 +101,11 @@ export default function LoginScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ThemedView style={styles.content}>
-        <ThemedText type="title" style={styles.title}>
-          Welcome to Mitchell Park Domes
-        </ThemedText>
+      <SafeAreaView style={styles.container}>
+        <ThemedView style={styles.content}>
+          <ThemedText type="title" style={styles.title}>
+            Welcome to Mitchell Park Domes
+          </ThemedText>
         <ThemedText style={styles.subtitle}>
           Enter your age and ticket barcode to get started
         </ThemedText>
@@ -184,8 +186,9 @@ export default function LoginScreen() {
               <ThemedText style={styles.loginButtonText}>Login</ThemedText>
             )}
           </TouchableOpacity>
-        </View>
-      </ThemedView>
+          </View>
+        </ThemedView>
+      </SafeAreaView>
     </ThemedView>
   );
 }
