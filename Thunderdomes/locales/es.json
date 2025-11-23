@@ -1,0 +1,129 @@
+{
+  "common": {
+    "loading": "Cargando...",
+    "comingSoon": "Próximamente"
+  },
+  "navigation": {
+    "voiceChat": "Chat de Voz",
+    "botanicalTales": "Cuentos Botánicos",
+    "domeDetective": "Detective de Domos",
+    "sipAndSeek": "Sorber y Buscar"
+  },
+  "menu": {
+    "accessibility": "Accesibilidad",
+    "language": "Idioma",
+    "becomeMember": "Hazte Miembro",
+    "makeDonation": "Hacer una Donación",
+    "viewCalendar": "Ver Nuestro Calendario",
+    "visitWebsite": "Visitar Nuestro Sitio Web"
+  },
+  "languages": {
+    "en": "Inglés (English)",
+    "es": "Español",
+    "zh": "Chino (中文)",
+    "hi": "Hindi (हिन्दी)",
+    "ar": "Árabe (العربية)",
+    "fr": "Francés (Français)",
+    "de": "Alemán (Deutsch)",
+    "ja": "Japonés (日本語)",
+    "pt": "Portugués (Português)",
+    "ru": "Ruso (Русский)"
+  },
+  "botanicalTales": {
+    "title": "Cuentos Botánicos",
+    "welcome": "¡Bienvenido a los Domos!",
+    "selectDome": "¿Qué ambiente te gustaría explorar?",
+    "desertDome": "El Domo Árido",
+    "kidsDome": "El Domo de Niños",
+    "tropicalDome": "El Domo Tropical",
+    "showDome": "El Domo Floral"
+  },
+  "aridDome": {
+    "title": "Tours del Domo Árido",
+    "availableTours": "Tours de Audio Disponibles",
+    "madagascarCollection": "Colección de Madagascar",
+    "madagascarDesc": "Viaje a través de la flora única de la isla",
+    "worldOfCacti": "Mundo de Cactus",
+    "cactiDesc": "Explora diversos cactus del desierto",
+    "desertBloom": "Florecimiento del Desierto",
+    "bloomDesc": "Presencia flores estacionales del desierto",
+    "canaryIsland": "Colección de las Islas Canarias",
+    "canaryDesc": "Descubre plantas de las islas del Atlántico"
+  },
+  "madagascarTour": {
+    "title": "Colección de Madagascar",
+    "featuredPlantStory": "Historia de Planta Destacada",
+    "generating": "Generando tu historia de planta personalizada...",
+    "audioLoading": "Preparando audio...",
+    "audioReady": "¡Audio listo! Presiona reproducir para comenzar.",
+    "errorLoading": "Error al cargar la historia. Por favor, inténtalo de nuevo.",
+    "playButton": "▶",
+    "pauseButton": "⏸"
+  },
+  "sipAndSeek": {
+    "title": "Sorber y Buscar",
+    "description": "Compra comida o una bebida de nuestra cafetería para desbloquear una aventura de bebida personalizada. ¡Escanea el código de barras para comenzar tu tour!",
+    "featuredBeverages": "Bebidas Destacadas",
+    "scanButton": "Escanear",
+    "scannerTitle": "Escanear Código de Barras",
+    "scanInstruction": "Apunta la cámara al código de barras para escanear",
+    "cameraPermission": "Permiso de Cámara",
+    "cameraPermissionMessage": "Se requiere acceso a la cámara para escanear códigos de barras.",
+    "barcodeScanned": "¡Código de Barras Escaneado!",
+    "codeLabel": "Código:",
+    "drinks": {
+      "pricklyPear": "Refresco de Tuna",
+      "pricklyPearDesc": "Bebida magenta vibrante hecha de fruta de cactus del desierto",
+      "hibiscus": "Paraíso de Hibisco",
+      "hibiscusDesc": "Té de flores tropicales rojo profundo con un toque ácido",
+      "lavender": "Serenidad de Lavanda",
+      "lavenderDesc": "Café con leche floral púrpura relajante con notas de miel",
+      "vanilla": "Batido de Vainilla",
+      "vanillaDesc": "Batido cremoso con granos de vainilla de Madagascar"
+    }
+  },
+  "voiceChat": {
+    "speaking": "🔊 Hablando (Toca para Detener)",
+    "listening": "🔴 Escuchando...",
+    "thinking": "✨ Pensando...",
+    "tapToChat": "Toca para Chatear",
+    "tapToSend": "Toca para Enviar",
+    "tapToInterrupt": "Toca para Interrumpir",
+    "tapToSpeak": "Toca para Hablar"
+  },
+  "domeDetective": {
+    "title": "Detective de Domos",
+    "description": "Identifica plantas usando pistas y tus habilidades de detective... ¿Estás listo para ser un detective?",
+    "letsGo": "¡Vamos!",
+    "loading": {
+      "consulting": "Consultando a los espíritus botánicos...",
+      "whispering": "Susurrando a las hojas...",
+      "checking": "Comprobando tu respuesta..."
+    },
+    "huntComplete": "¡Búsqueda Completa!",
+    "congratulations": "¡Felicidades! Has encontrado todas las plantas en esta búsqueda.",
+    "totalFound": "Total de Plantas Encontradas:",
+    "playAgain": "Jugar de Nuevo",
+    "exit": "Salir",
+    "correct": "¡Correcto!",
+    "itWasThe": "Era el",
+    "learnMore": "Aprender Más",
+    "hideStory": "Ocultar Historia",
+    "nextPlant": "Siguiente Planta",
+    "getAnotherHint": "Obtener Otra Pista",
+    "foundIt": "¡Creo que lo Encontré!",
+    "notQuite": "No Exactamente...",
+    "tryAgain": "Intentar de Nuevo",
+    "startActivity": "Iniciar Actividad",
+    "startMessage": "Iniciar Detective de Domos usará tu boleto. Después de completar esta actividad, puedes escanear un nuevo boleto para comenzar otra. ¿Continuar?",
+    "cancel": "Cancelar",
+    "start": "Iniciar"
+  },
+  "settings": {
+    "title": "Configuración de Accesibilidad",
+    "textSize": "Tamaño del Texto",
+    "highContrast": "Modo de Alto Contraste",
+    "screenReader": "Soporte de Lector de Pantalla"
+  }
+}
+

@@ -6,6 +6,7 @@ import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { VoiceChatService } from '@/services/voiceChat';
+import { useLocalization } from '@/contexts/LocalizationContext';
 
 const PRIMARY_COLOR = '#458E5E';
 
@@ -16,6 +17,7 @@ export default function VoiceChatScreen() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [permissionResponse, requestPermission] = Audio.usePermissions();
+  const { t } = useLocalization();
   
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const animationRef = useRef<Animated.CompositeAnimation | null>(null);
@@ -290,8 +292,8 @@ export default function VoiceChatScreen() {
           
           <ThemedText type="subtitle" style={styles.status}>
             {isPlaying 
-              ? "🔊 Speaking (Tap to Stop)" 
-              : (isRecording ? "🔴 Listening..." : (isProcessing ? "✨ Thinking..." : "Tap to Chat"))}
+              ? t('voiceChat.speaking')
+              : (isRecording ? t('voiceChat.listening') : (isProcessing ? t('voiceChat.thinking') : t('voiceChat.tapToChat')))}
           </ThemedText>
           
           {isProcessing && (
@@ -319,7 +321,7 @@ export default function VoiceChatScreen() {
              />
           </TouchableOpacity>
           <ThemedText style={styles.actionHint}>
-            {isRecording ? "Tap to Send" : (isPlaying ? "Tap to Interrupt" : "Tap to Speak")}
+            {isRecording ? t('voiceChat.tapToSend') : (isPlaying ? t('voiceChat.tapToInterrupt') : t('voiceChat.tapToSpeak'))}
           </ThemedText>
         </View>
       </View>

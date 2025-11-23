@@ -11,6 +11,15 @@ export class TextToSpeechService {
   private currentAudioUri: string | null = null;
   private isPreloading: boolean = false;
   private preloadAbortController: AbortController | null = null;
+  private language: string = 'en';
+
+  /**
+   * Set the language for text-to-speech
+   * @param language Language code (e.g., 'en', 'es')
+   */
+  setLanguage(language: string): void {
+    this.language = language;
+  }
 
   /**
    * Preload audio for the given text without playing it
@@ -208,6 +217,10 @@ export class TextToSpeechService {
     try {
       console.log('🎤 Generating speech with OpenAI TTS...');
 
+      // Select voice based on language
+      // For Spanish, use 'nova' which has a better Spanish pronunciation
+      const voice = this.language === 'es' ? 'nova' : 'alloy';
+
       const response = await fetch('https://api.openai.com/v1/audio/speech', {
         method: 'POST',
         headers: {
@@ -216,7 +229,7 @@ export class TextToSpeechService {
         },
         body: JSON.stringify({
           model: 'tts-1',
-          voice: 'alloy',
+          voice: voice,
           input: text,
         }),
         signal,

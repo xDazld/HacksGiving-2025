@@ -2,6 +2,7 @@ import React from 'react';
 import { View, TouchableOpacity, StyleSheet, Text } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { BotanicalTalesIcon, DomeDetectiveIcon, SipAndSeekIcon, VoiceChatIcon } from '@/components/icons';
+import { useLocalization } from '@/contexts/LocalizationContext';
 
 const TAB_BAR_COLOR = '#458E5E'; // Main green
 const TAB_ACTIVE_BG = '#6BA57E'; // Lighter green for active state
@@ -11,31 +12,32 @@ const INACTIVE_COLOR = 'rgba(255, 255, 255, 0.7)';
 export function CustomBottomNav() {
   const router = useRouter();
   const pathname = usePathname();
+  const { t } = useLocalization();
 
   const tabs = [
     {
       name: 'voice-chat',
       path: '/(tabs)/voice-chat',
       icon: VoiceChatIcon,
-      label: 'Voice Chat',
+      labelKey: 'navigation.voiceChat',
     },
     {
       name: 'botanical-tales',
       path: '/(tabs)/botanical-tales',
       icon: BotanicalTalesIcon,
-      label: 'Botanical Tales',
+      labelKey: 'navigation.botanicalTales',
     },
     {
       name: 'scavenger-hunt',
       path: '/(tabs)/scavenger-hunt',
       icon: DomeDetectiveIcon,
-      label: 'Dome Detective',
+      labelKey: 'navigation.domeDetective',
     },
     {
       name: 'sip-and-seek',
       path: '/(tabs)/sip-and-seek',
       icon: SipAndSeekIcon,
-      label: 'Sip & Seek',
+      labelKey: 'navigation.sipAndSeek',
     },
   ];
 
@@ -64,7 +66,7 @@ export function CustomBottomNav() {
               styles.label,
               { color: isActive ? TEXT_COLOR : INACTIVE_COLOR }
             ]}>
-              {tab.label}
+              {t(tab.labelKey)}
             </Text>
           </TouchableOpacity>
         );

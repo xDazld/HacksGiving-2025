@@ -1,0 +1,129 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "comingSoon": "Coming Soon"
+  },
+  "navigation": {
+    "voiceChat": "Voice Chat",
+    "botanicalTales": "Botanical Tales",
+    "domeDetective": "Dome Detective",
+    "sipAndSeek": "Sip & Seek"
+  },
+  "menu": {
+    "accessibility": "Accessibility",
+    "language": "Language",
+    "becomeMember": "Become a Member",
+    "makeDonation": "Make a Donation",
+    "viewCalendar": "View Our Calendar",
+    "visitWebsite": "Visit Our Website"
+  },
+  "languages": {
+    "en": "English",
+    "es": "Spanish (Español)",
+    "zh": "Chinese (中文)",
+    "hi": "Hindi (हिन्दी)",
+    "ar": "Arabic (العربية)",
+    "fr": "French (Français)",
+    "de": "German (Deutsch)",
+    "ja": "Japanese (日本語)",
+    "pt": "Portuguese (Português)",
+    "ru": "Russian (Русский)"
+  },
+  "botanicalTales": {
+    "title": "Botanical Tales",
+    "welcome": "Welcome to the Domes!",
+    "selectDome": "Which environment would you like to explore?",
+    "desertDome": "The Arid Dome",
+    "kidsDome": "The Kids Dome",
+    "tropicalDome": "The Tropical Dome",
+    "showDome": "The Floral Dome"
+  },
+  "aridDome": {
+    "title": "Arid Dome Tours",
+    "availableTours": "Available Audio Tours",
+    "madagascarCollection": "Madagascar Collection",
+    "madagascarDesc": "Journey through unique island flora",
+    "worldOfCacti": "World of Cacti",
+    "cactiDesc": "Explore diverse desert cacti",
+    "desertBloom": "Desert Bloom",
+    "bloomDesc": "Witness seasonal desert flowers",
+    "canaryIsland": "Canary Island Collection",
+    "canaryDesc": "Discover Atlantic island plants"
+  },
+  "madagascarTour": {
+    "title": "Madagascar Collection",
+    "featuredPlantStory": "Featured Plant Story",
+    "generating": "Generating your personalized plant story...",
+    "audioLoading": "Preparing audio...",
+    "audioReady": "Audio ready! Press play to begin.",
+    "errorLoading": "Error loading story. Please try again.",
+    "playButton": "▶",
+    "pauseButton": "⏸"
+  },
+  "sipAndSeek": {
+    "title": "Sip & Seek",
+    "description": "Purchase food or a beverage from our café to unlock a custom drink adventure. Scan the barcode to begin your tour!",
+    "featuredBeverages": "Featured Beverages",
+    "scanButton": "Scan",
+    "scannerTitle": "Scan Barcode",
+    "scanInstruction": "Point camera at barcode to scan",
+    "cameraPermission": "Camera Permission",
+    "cameraPermissionMessage": "Camera access is required to scan barcodes.",
+    "barcodeScanned": "Barcode Scanned!",
+    "codeLabel": "Code:",
+    "drinks": {
+      "pricklyPear": "Prickly Pear Cooler",
+      "pricklyPearDesc": "Vibrant magenta drink made from desert cactus fruit",
+      "hibiscus": "Hibiscus Paradise",
+      "hibiscusDesc": "Deep red tropical flower tea with a tangy twist",
+      "lavender": "Lavender Serenity",
+      "lavenderDesc": "Soothing purple floral latte with honey notes",
+      "vanilla": "Vanilla Bean Milkshake",
+      "vanillaDesc": "Creamy shake with Madagascar vanilla beans"
+    }
+  },
+  "voiceChat": {
+    "speaking": "🔊 Speaking (Tap to Stop)",
+    "listening": "🔴 Listening...",
+    "thinking": "✨ Thinking...",
+    "tapToChat": "Tap to Chat",
+    "tapToSend": "Tap to Send",
+    "tapToInterrupt": "Tap to Interrupt",
+    "tapToSpeak": "Tap to Speak"
+  },
+  "domeDetective": {
+    "title": "Dome Detective",
+    "description": "Identify plants using clues and your sleuthing skills... Are you ready to be a detective?",
+    "letsGo": "Let's Go!",
+    "loading": {
+      "consulting": "Consulting the botanical spirits...",
+      "whispering": "Whispering to the leaves...",
+      "checking": "Checking your guess..."
+    },
+    "huntComplete": "Hunt Complete!",
+    "congratulations": "Congratulations! You've found all the plants in this hunt.",
+    "totalFound": "Total Plants Found:",
+    "playAgain": "Play Again",
+    "exit": "Exit",
+    "correct": "Correct!",
+    "itWasThe": "It was the",
+    "learnMore": "Learn More",
+    "hideStory": "Hide Story",
+    "nextPlant": "Next Plant",
+    "getAnotherHint": "Get Another Hint",
+    "foundIt": "I Think I Found It!",
+    "notQuite": "Not Quite...",
+    "tryAgain": "Try Again",
+    "startActivity": "Start Activity",
+    "startMessage": "Starting Dome Detective will use your ticket. After completing this activity, you can scan a new ticket to start another. Continue?",
+    "cancel": "Cancel",
+    "start": "Start"
+  },
+  "settings": {
+    "title": "Accessibility Settings",
+    "textSize": "Text Size",
+    "highContrast": "High Contrast Mode",
+    "screenReader": "Screen Reader Support"
+  }
+}
+

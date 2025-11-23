@@ -7,6 +7,7 @@ import 'react-native-reanimated';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { PositionProvider } from '@/contexts/PositionContext';
+import { LocalizationProvider } from '@/contexts/LocalizationContext';
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
@@ -51,10 +52,12 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <PositionProvider>
-        <RootLayoutNav />
-      </PositionProvider>
-    </AuthProvider>
+    <LocalizationProvider>
+      <AuthProvider>
+        <PositionProvider>
+          <RootLayoutNav />
+        </PositionProvider>
+      </AuthProvider>
+    </LocalizationProvider>
   );
 }
