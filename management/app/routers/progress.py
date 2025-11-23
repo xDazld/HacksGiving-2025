@@ -1,11 +1,14 @@
 """Progress tracking and barcode validation API router"""
 
-from fastapi import APIRouter, Depends
+import logging
 
 from app.config import Settings, get_settings
-from app.models import BeaconData, ProgressResponse, BarcodeValidationRequest, BarcodeValidationResponse
+from app.models import BeaconData, ProgressResponse, BarcodeValidationRequest, \
+    BarcodeValidationResponse
 from app.services import AppwriteService
+from fastapi import APIRouter, Depends, HTTPException, status
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/progress", tags=["Progress & Validation"])
 
 
@@ -18,6 +21,7 @@ def get_appwrite_service(settings: Settings = Depends(get_settings)) -> Appwrite
 async def calculate_progress(
     beacon_data: BeaconData,
     service: AppwriteService = Depends(get_appwrite_service),
+    settings: Settings = Depends(get_settings),
 ) -> ProgressResponse:
     """
     Calculate visitor progress based on BLE beacon data.
@@ -25,6 +29,22 @@ async def calculate_progress(
     This endpoint processes beacon proximity data to determine how far
     a visitor has progressed through the dome exhibits.
     """
+    # Validate input
+    if not beacon_data.ids or not beacon_data.rssi:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Beacon IDs and RSSI values must not be empty"
+        )
+
+    if len(beacon_data.ids) != len(beacon_data.rssi):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Beacon IDs and RSSI arrays must have the same length"
+        )
+
+    # Validate RSSI values are in valid range
+    if not all(-100 <= rssi <= 0 for rssi in beacon_data.rssi):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="RSSI values must be between -100 and 0")
+
     # Simple algorithm: use the number of unique beacons detected and their RSSI
     # In production, this should use a more sophisticated algorithm that considers:
     # - Beacon locations and sequencing
@@ -32,13 +52,12 @@ async def calculate_progress(
     # - Historical visitor paths
 
     unique_beacons = len(set(beacon_data.ids))
-    # Assume there are about 10 beacons total in the dome
-    total_beacons = 10
+    total_beacons = settings.total_beacons
     progress_percentage = min(100.0, (unique_beacons / total_beacons) * 100)
 
     # Find the nearest beacon (highest RSSI)
-    nearest_idx = beacon_data.rssi.index(max(beacon_data.rssi)) if beacon_data.rssi else 0
-    nearest_location = beacon_data.ids[nearest_idx] if beacon_data.ids else None
+    nearest_idx = beacon_data.rssi.index(max(beacon_data.rssi))
+    nearest_location = beacon_data.ids[nearest_idx]
 
     return ProgressResponse(
         progress=progress_percentage,

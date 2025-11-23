@@ -1,7 +1,5 @@
 """End-to-end tests using Playwright"""
 
-import re
-
 import pytest
 from playwright.sync_api import Page, expect
 
@@ -123,13 +121,13 @@ class TestAdminForms:
         expect(page).not_to_have_title("404")
 
         # Wait for content to render
-        page.wait_for_timeout(1000)
+        page.wait_for_selector("body", state="visible")
 
     def test_tour_creation_form_submission(self, page: Page, base_url: str):
         """Test tour creation form submission workflow"""
         page.goto(f"{base_url}/admin/tours/new")
         page.wait_for_load_state("networkidle")
-        page.wait_for_timeout(1000)
+        page.wait_for_selector("body", state="visible")
 
         # Find and fill form fields (FastUI renders forms dynamically)
         # Look for input fields by their placeholder or label text
@@ -160,13 +158,13 @@ class TestAdminForms:
         # Check that form page loaded (no 404)
         expect(page).not_to_have_title("404")
 
-        page.wait_for_timeout(1000)
+        page.wait_for_selector("body", state="visible")
 
     def test_scavenger_hunt_creation_form_submission(self, page: Page, base_url: str):
         """Test scavenger hunt creation form submission workflow"""
         page.goto(f"{base_url}/admin/scavenger-hunts/new")
         page.wait_for_load_state("networkidle")
-        page.wait_for_timeout(1000)
+        page.wait_for_selector("body", state="visible")
 
         # Find and fill form fields
         title_input = page.locator('input[name="title"]')
@@ -199,13 +197,13 @@ class TestAdminForms:
         # Check that form page loaded (no 404)
         expect(page).not_to_have_title("404")
 
-        page.wait_for_timeout(1000)
+        page.wait_for_selector("body", state="visible")
 
     def test_plant_creation_form_submission(self, page: Page, base_url: str):
         """Test plant creation form submission workflow"""
         page.goto(f"{base_url}/admin/plants/new")
         page.wait_for_load_state("networkidle")
-        page.wait_for_timeout(1000)
+        page.wait_for_selector("body", state="visible")
 
         # Find and fill form fields
         common_name = page.locator('input[name="common_name"]')
@@ -239,7 +237,7 @@ class TestAdminForms:
         # Check tours page
         page.goto(f"{base_url}/admin/tours")
         page.wait_for_load_state("networkidle")
-        page.wait_for_timeout(1000)
+        page.wait_for_selector("body", state="visible")
 
         # Look for button/link that leads to creation form
         create_link = page.locator('a[href*="/new"], button:has-text("Create"), button:has-text("New")')

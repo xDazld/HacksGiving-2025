@@ -8,6 +8,7 @@ from appwrite.services.databases import Databases
 from appwrite.exception import AppwriteException
 
 from app.config import Settings
+from app.auth import initialize_admin_password
 
 
 def create_string_attribute(
@@ -206,6 +207,11 @@ def initialize_database(settings: Settings) -> bool:
     print("\n" + "=" * 60)
     print("🚀 Initializing Appwrite Database")
     print("=" * 60)
+
+    # Initialize admin password hash
+    print("\n🔐 Initializing admin authentication")
+    initialize_admin_password(settings)
+    print("  ✓ Admin password hash initialized")
 
     try:
         # Setup client

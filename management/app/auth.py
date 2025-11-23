@@ -1,6 +1,6 @@
 """Authentication utilities"""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -12,6 +12,9 @@ from app.models import TokenData, User, UserInDB
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login")
+
+# Module-level hashed password for admin user
+_admin_hashed_password = None
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -28,31 +31,35 @@ def create_access_token(data: dict, settings: Settings, expires_delta: Optional[
     """Create a JWT access token"""
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=settings.access_token_expire_minutes)
+        expire = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_expire_minutes)
 
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.algorithm)
     return encoded_jwt
 
 
-# Module-level cache for admin hashed password
-_admin_hashed_password_cache = {}
-
 def get_user(username: str, settings: Settings) -> Optional[UserInDB]:
     """Get user from database (currently only supports admin user from settings)"""
+    global _admin_hashed_password
     if username == settings.admin_username:
-        # Cache the hashed password for the admin user per settings instance
-        cache_key = id(settings)
-        if cache_key not in _admin_hashed_password_cache:
-            _admin_hashed_password_cache[cache_key] = get_password_hash(settings.admin_password)
+        # Use pre-hashed password from startup
+        if _admin_hashed_password is None:
+            # Fallback for testing or if startup didn't run
+            _admin_hashed_password = get_password_hash(settings.admin_password)
         return UserInDB(
             username=settings.admin_username,
-            hashed_password=_admin_hashed_password_cache[cache_key],
+            hashed_password=_admin_hashed_password,
             disabled=False,
         )
     return None
+
+
+def initialize_admin_password(settings: Settings) -> None:
+    """Initialize admin password hash at startup"""
+    global _admin_hashed_password
+    _admin_hashed_password = get_password_hash(settings.admin_password)
 
 
 async def authenticate_user(username: str, password: str, settings: Settings) -> Optional[UserInDB]:

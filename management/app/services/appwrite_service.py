@@ -7,6 +7,7 @@ Appwrite server, not the SDK. The API is fully functional and supported.
 
 import warnings
 import json
+import logging
 from datetime import datetime
 from typing import Optional, Any
 from appwrite.client import Client
@@ -18,6 +19,8 @@ from appwrite.id import ID
 
 # Suppress Appwrite SDK deprecation warnings since TablesDB is not yet available in Python SDK
 warnings.filterwarnings("ignore", message="Call to deprecated function", module="appwrite")
+
+logger = logging.getLogger(__name__)
 
 from app.config import Settings
 from app.models import (
@@ -73,7 +76,8 @@ class AppwriteService:
                     doc_dict["parts"] = json.loads(doc_dict["parts"])
                 tours.append(Tour(**doc_dict))
             return tours
-        except Exception:
+        except Exception as e:
+            logger.error(f"Error fetching tours: {e}")
             return []
 
     async def get_tour(self, tour_id: str) -> Optional[Tour]:
@@ -169,7 +173,8 @@ class AppwriteService:
                     doc_dict["items"] = json.loads(doc_dict["items"])
                 hunts.append(ScavengerHunt(**doc_dict))
             return hunts
-        except Exception:
+        except Exception as e:
+            logger.error(f"Error fetching scavenger hunts: {e}")
             return []
 
     async def get_scavenger_hunt(self, hunt_id: str) -> Optional[ScavengerHunt]:
@@ -253,7 +258,8 @@ class AppwriteService:
                 queries=[Query.limit(limit), Query.offset(offset)],
             )
             return [CafeTour(**doc) for doc in result["documents"]]
-        except Exception:
+        except Exception as e:
+            logger.error(f"Error fetching cafe tours: {e}")
             return []
 
     async def get_cafe_tour(self, tour_id: str) -> Optional[CafeTour]:
@@ -330,7 +336,8 @@ class AppwriteService:
                 doc_dict.pop("$permissions", None)
                 plants.append(Plant(**doc_dict))
             return plants
-        except Exception:
+        except Exception as e:
+            logger.error(f"Error fetching plants: {e}")
             return []
 
     async def get_plant(self, plant_id: str) -> Optional[Plant]:

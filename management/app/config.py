@@ -46,6 +46,9 @@ class Settings(BaseSettings):
     admin_username: str = "admin"
     admin_password: str  # Should be set via environment variable
 
+    # Progress tracking settings
+    total_beacons: int = 10
+
 
 @lru_cache
 def get_settings() -> Settings:

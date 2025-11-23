@@ -1,5 +1,6 @@
 """Tours API router"""
 
+import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.config import Settings, get_settings
@@ -7,6 +8,7 @@ from app.models import Tour, TourCreate, TourUpdate
 from app.services import AppwriteService
 from app.auth import get_current_active_user
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/tours", tags=["Tours"])
 
 
