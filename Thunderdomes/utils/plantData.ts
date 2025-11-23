@@ -31,8 +31,8 @@ export async function fetchPlantsCsvText(): Promise<string> {
   }
 }
 
-export function parsePlantsCsv(csvText: string): PlantRecord[] {
-  if (!csvText.trim()) return [];
+export function parsePlantsCsv(csvText: string | null | undefined): PlantRecord[] {
+  if (!csvText || !csvText.trim()) return [];
   // d3-dsv handles quotes, commas, newlines robustly
   const rows = csvParse(csvText) as unknown as PlantRecord[];
   return rows;

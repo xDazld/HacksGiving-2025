@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet,
   ScrollView,
@@ -16,6 +16,7 @@ import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
 import { OpenAIClient } from '@/services/OpenAIClient';
 import { PlantStoryService } from '@/services/PlantStoryService';
+import { TextToSpeechService } from '@/services/TextToSpeechService';
 import {
   fetchPlantsCsvText,
   parsePlantsCsv,
@@ -30,10 +31,18 @@ export default function MadagascarCollectionScreen() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [plantStory, setPlantStory] = useState<string>('');
   const [isStoryLoading, setIsStoryLoading] = useState<boolean>(false);
+  const [isAudioReady, setIsAudioReady] = useState<boolean>(false);
+  const [isAudioLoading, setIsAudioLoading] = useState<boolean>(false);
+  const ttsService = useRef<TextToSpeechService>(new TextToSpeechService());
 
   useEffect(() => {
     // Generate a plant story when the screen loads
     generatePlantStory();
+
+    // Cleanup TTS service when component unmounts
+    return () => {
+      ttsService.current.cleanup();
+    };
   }, []);
 
   async function generatePlantStory() {
@@ -64,6 +73,22 @@ export default function MadagascarCollectionScreen() {
       const story = await service.generateStory(pick);
 
       setPlantStory(story);
+
+      // Preload audio in the background after story is generated
+      if (story) {
+        console.log('🔄 Starting audio preload...');
+        setIsAudioLoading(true);
+        try {
+          await ttsService.current.preloadAudio(story);
+          setIsAudioReady(true);
+          console.log('✅ Audio ready for playback');
+        } catch (err) {
+          console.error('⚠️ Audio preload failed:', err);
+          setIsAudioReady(false);
+        } finally {
+          setIsAudioLoading(false);
+        }
+      }
     } catch (e) {
       console.error('Error generating story:', e);
       // Fallback to sample
@@ -71,14 +96,54 @@ export default function MadagascarCollectionScreen() {
       const service = new PlantStoryService(client);
       const story = await service.generateStory(getSamplePlant());
       setPlantStory(story);
+
+      // Preload audio for fallback story too
+      if (story) {
+        setIsAudioLoading(true);
+        try {
+          await ttsService.current.preloadAudio(story);
+          setIsAudioReady(true);
+          console.log('✅ Audio ready for playback');
+        } catch (err) {
+          console.error('⚠️ Audio preload failed:', err);
+          setIsAudioReady(false);
+        } finally {
+          setIsAudioLoading(false);
+        }
+      }
     } finally {
       setIsStoryLoading(false);
     }
   }
 
-  const handlePlayPause = () => {
-    setIsPlaying(!isPlaying);
-    // TODO: Implement actual audio playback
+  const handlePlayPause = async () => {
+    try {
+      if (!plantStory) {
+        console.log('⚠️ No story to play');
+        return;
+      }
+
+      if (isPlaying) {
+        // Currently playing, so pause it
+        await ttsService.current.pause();
+        setIsPlaying(false);
+      } else {
+        // Currently paused or not started, so play/resume
+        await ttsService.current.speak(plantStory);
+        setIsPlaying(true);
+
+        // Monitor playback status to update UI when finished
+        const checkPlayback = setInterval(() => {
+          if (!ttsService.current.isPlaying()) {
+            setIsPlaying(false);
+            clearInterval(checkPlayback);
+          }
+        }, 500);
+      }
+    } catch (error) {
+      console.error('❌ Play/Pause Error:', error);
+      setIsPlaying(false);
+    }
   };
 
   const handleBack = () => {
@@ -156,13 +221,21 @@ export default function MadagascarCollectionScreen() {
       {/* Fixed Play/Pause Button */}
       <View style={styles.fixedButtonContainer}>
         <TouchableOpacity
-          style={styles.playButton}
+          style={[
+            styles.playButton,
+            (!isAudioReady || isAudioLoading) && styles.playButtonDisabled,
+          ]}
           onPress={handlePlayPause}
           activeOpacity={0.8}
+          disabled={!isAudioReady || isAudioLoading}
         >
-          <ThemedText style={styles.playIcon}>
-            {isPlaying ? '\u23f8' : '\u25b6'}
-          </ThemedText>
+          {isAudioLoading ? (
+            <ActivityIndicator size="large" color="#FFFFFF" />
+          ) : (
+            <ThemedText style={styles.playIcon}>
+              {isPlaying ? '\u23f8' : '\u25b6'}
+            </ThemedText>
+          )}
         </TouchableOpacity>
       </View>
     </View>
@@ -266,6 +339,10 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
     pointerEvents: 'auto',
+  },
+  playButtonDisabled: {
+    backgroundColor: '#B0B0B0',
+    opacity: 0.6,
   },
   playIcon: {
     fontSize: 28,
