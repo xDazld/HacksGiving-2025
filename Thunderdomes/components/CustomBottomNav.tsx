@@ -26,8 +26,8 @@ export function CustomBottomNav() {
       label: 'Dome Detective',
     },
     {
-      name: 'cafe-tour',
-      path: '/(tabs)/cafe-tour',
+      name: 'sip-and-seek',
+      path: '/(tabs)/sip-and-seek',
       icon: SipAndSeekIcon,
       label: 'Sip & Seek',
     },
