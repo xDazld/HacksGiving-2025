@@ -89,12 +89,12 @@ class TestHomePage:
         """Test that home page has expected links"""
         page.goto(base_url)
 
-        # Check for admin dashboard link
-        admin_link = page.get_by_role("link", name="Admin Dashboard")
+        # Check for admin dashboard link - updated to match new accessible label
+        admin_link = page.get_by_role("button", name="Access Admin Dashboard")
         expect(admin_link).to_be_visible()
 
-        # Check for API docs link
-        docs_link = page.get_by_role("link", name="API Documentation")
+        # Check for API docs link - updated to match new accessible label
+        docs_link = page.get_by_role("button", name="View API Documentation")
         expect(docs_link).to_be_visible()
 
 
