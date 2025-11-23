@@ -42,6 +42,7 @@ export default function ScavengerHuntScreen() {
   const [showWrongModal, setShowWrongModal] = useState(false);
   const [wrongAnswerFeedback, setWrongAnswerFeedback] = useState('');
   const [showCameraModal, setShowCameraModal] = useState(false);
+  const [isStoryExpanded, setIsStoryExpanded] = useState(false);
 
   // Initialize service
   // Initialize services
@@ -195,6 +196,7 @@ export default function ScavengerHuntScreen() {
     setHint('');
     setHintHistory([]);
     setFeedback('');
+    setIsStoryExpanded(false);
   };
 
   if (isLoading) {
@@ -350,8 +352,29 @@ export default function ScavengerHuntScreen() {
               ({currentPlant?.['Scientific Name']})
             </ThemedText>
             <ThemedText style={styles.feedbackText}>{feedback}</ThemedText>
+
+            {/* Collapsible Story Section */}
             {story ? (
-              <ThemedText style={styles.storyText}>{story}</ThemedText>
+              <View style={styles.storyContainer}>
+                <TouchableOpacity
+                  style={styles.learnMoreButton}
+                  onPress={() => setIsStoryExpanded(!isStoryExpanded)}
+                  activeOpacity={0.7}
+                >
+                  <ThemedText style={styles.learnMoreText}>
+                    {isStoryExpanded ? 'Hide Story' : 'Learn More'}
+                  </ThemedText>
+                  <Ionicons
+                    name={isStoryExpanded ? 'chevron-up' : 'chevron-down'}
+                    size={20}
+                    color="#5A6A5D"
+                  />
+                </TouchableOpacity>
+
+                {isStoryExpanded && (
+                  <ThemedText style={styles.storyText}>{story}</ThemedText>
+                )}
+              </View>
             ) : null}
 
             <TouchableOpacity
@@ -721,15 +744,37 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
+  storyContainer: {
+    marginBottom: 20,
+  },
+  learnMoreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#5A6A5D',
+    borderRadius: 25,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    marginBottom: 10,
+  },
+  learnMoreText: {
+    color: '#5A6A5D',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   storyText: {
     fontSize: 16,
     lineHeight: 24,
     textAlign: 'left',
-    marginBottom: 20,
+    marginTop: 10,
     color: '#2C2416',
-    fontStyle: 'italic',
-    padding: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-    borderRadius: 8,
+    padding: 15,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#D4C5A0',
   },
 });
