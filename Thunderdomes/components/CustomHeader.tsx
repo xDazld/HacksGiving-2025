@@ -1,54 +1,100 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Image, SafeAreaView, Platform, Modal, Text, ScrollView, Linking } from 'react-native';
-import { router } from 'expo-router';
-import { useLocalization } from '@/contexts/LocalizationContext';
+import React, { useEffect, useRef } from 'react';
+import { View, StyleSheet, TouchableOpacity, Image, SafeAreaView, Platform, Animated } from 'react-native';
 
-const LANGUAGES = [
-  { code: 'en', nameKey: 'languages.en' },
-  { code: 'es', nameKey: 'languages.es' },
-  { code: 'zh', nameKey: 'languages.zh' },
-  { code: 'hi', nameKey: 'languages.hi' },
-  { code: 'ar', nameKey: 'languages.ar' },
-  { code: 'fr', nameKey: 'languages.fr' },
-  { code: 'de', nameKey: 'languages.de' },
-  { code: 'ja', nameKey: 'languages.ja' },
-  { code: 'pt', nameKey: 'languages.pt' },
-  { code: 'ru', nameKey: 'languages.ru' },
-];
+interface CustomHeaderProps {
+  menuVisible: boolean;
+  onMenuToggle: () => void;
+}
 
-export function CustomHeader() {
-  const [menuVisible, setMenuVisible] = useState(false);
-  const [languageExpanded, setLanguageExpanded] = useState(false);
-  const { t, setLocale } = useLocalization();
+export function CustomHeader({ menuVisible, onMenuToggle }: CustomHeaderProps) {
+  // Animation values for hamburger to X transformation
+  const topLineRotate = useRef(new Animated.Value(0)).current;
+  const topLineTranslate = useRef(new Animated.Value(0)).current;
+  const middleLineOpacity = useRef(new Animated.Value(1)).current;
+  const bottomLineRotate = useRef(new Animated.Value(0)).current;
+  const bottomLineTranslate = useRef(new Animated.Value(0)).current;
 
-  const handleMenuItemPress = (item: string) => {
-    switch (item) {
-      case 'accessibility':
-        // Navigate to settings/accessibility page
-        router.push('/settings');
-        setMenuVisible(false);
-        break;
-      case 'member':
-        Linking.openURL('https://milwaukeedomes.org/membership');
-        break;
-      case 'donate':
-        Linking.openURL('https://milwaukeedomes.org/donate');
-        break;
-      case 'calendar':
-        Linking.openURL('https://milwaukeedomes.org/calendar');
-        break;
-      case 'website':
-        Linking.openURL('https://milwaukeedomes.org');
-        break;
+  useEffect(() => {
+    if (menuVisible) {
+      // Transform to X
+      Animated.parallel([
+        Animated.timing(topLineRotate, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(topLineTranslate, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(middleLineOpacity, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(bottomLineRotate, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(bottomLineTranslate, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      // Transform back to hamburger
+      Animated.parallel([
+        Animated.timing(topLineRotate, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(topLineTranslate, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(middleLineOpacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(bottomLineRotate, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(bottomLineTranslate, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
     }
-    setMenuVisible(false);
-  };
+  }, [menuVisible]);
 
-  const handleLanguageSelect = async (code: string) => {
-    await setLocale(code);
-    setLanguageExpanded(false);
-    setMenuVisible(false);
-  };
+  const topLineRotateInterpolate = topLineRotate.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '45deg'],
+  });
+
+  const topLineTranslateInterpolate = topLineTranslate.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 9],
+  });
+
+  const bottomLineRotateInterpolate = bottomLineRotate.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '-45deg'],
+  });
+
+  const bottomLineTranslateInterpolate = bottomLineTranslate.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -9],
+  });
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -58,125 +104,60 @@ export function CustomHeader() {
 
         {/* Center Logo */}
         <View style={styles.logoContainer}>
-            <Image 
-              source={require('@/assets/images/DomesLogo.png')} 
-              style={{ width: 100, height: 40 }}
-              resizeMode="contain"
-            />
+          <Image 
+            source={require('@/assets/images/DomesLogo.png')} 
+            style={{ width: 100, height: 40 }}
+            resizeMode="contain"
+          />
         </View>
 
-        {/* Right Hamburger Menu Button */}
+        {/* Right Hamburger/X Menu Button */}
         <TouchableOpacity 
           style={styles.hamburgerButton} 
-          onPress={() => setMenuVisible(true)}
+          onPress={onMenuToggle}
         >
-          <View style={styles.hamburgerLine} />
-          <View style={styles.hamburgerLine} />
-          <View style={styles.hamburgerLine} />
+          {/* Top Line */}
+          <Animated.View 
+            style={[
+              styles.hamburgerLine,
+              {
+                transform: [
+                  { translateY: topLineTranslateInterpolate },
+                  { rotate: topLineRotateInterpolate },
+                ],
+              },
+            ]}
+          />
+          
+          {/* Middle Line */}
+          <Animated.View 
+            style={[
+              styles.hamburgerLine,
+              { opacity: middleLineOpacity },
+            ]}
+          />
+          
+          {/* Bottom Line */}
+          <Animated.View 
+            style={[
+              styles.hamburgerLine,
+              {
+                transform: [
+                  { translateY: bottomLineTranslateInterpolate },
+                  { rotate: bottomLineRotateInterpolate },
+                ],
+              },
+            ]}
+          />
         </TouchableOpacity>
       </View>
-
-      {/* Sidebar Menu Modal */}
-      <Modal
-        visible={menuVisible}
-        animationType="fade"
-        transparent={true}
-        onRequestClose={() => setMenuVisible(false)}
-      >
-        <TouchableOpacity 
-          style={styles.overlay}
-          activeOpacity={1}
-          onPress={() => setMenuVisible(false)}
-        >
-          <View style={styles.sidebar} onStartShouldSetResponder={() => true}>
-            {/* Close Button */}
-            <TouchableOpacity 
-              style={styles.closeButton}
-              onPress={() => setMenuVisible(false)}
-            >
-              <Text style={styles.closeButtonText}>✕</Text>
-            </TouchableOpacity>
-
-            <ScrollView style={styles.menuContent}>
-              {/* Accessibility */}
-              <TouchableOpacity 
-                style={styles.menuItem}
-                onPress={() => handleMenuItemPress('accessibility')}
-              >
-                <Text style={styles.menuText}>{t('menu.accessibility')}</Text>
-                <Text style={styles.menuIcon}>ⓘ</Text>
-              </TouchableOpacity>
-
-              {/* Language */}
-              <TouchableOpacity 
-                style={styles.menuItem}
-                onPress={() => setLanguageExpanded(!languageExpanded)}
-              >
-                <Text style={styles.menuText}>{t('menu.language')}</Text>
-                <Text style={styles.menuIcon}>🌐</Text>
-              </TouchableOpacity>
-
-              {/* Language Submenu */}
-              {languageExpanded && (
-                <View style={styles.submenu}>
-                  {LANGUAGES.map((lang) => (
-                    <TouchableOpacity
-                      key={lang.code}
-                      style={styles.submenuItem}
-                      onPress={() => handleLanguageSelect(lang.code)}
-                    >
-                      <Text style={styles.submenuText}>{t(lang.nameKey)}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
-
-              {/* Become a Member */}
-              <TouchableOpacity 
-                style={styles.menuItem}
-                onPress={() => handleMenuItemPress('member')}
-              >
-                <Text style={styles.menuText}>{t('menu.becomeMember')}</Text>
-                <Text style={styles.menuIcon}>📋</Text>
-              </TouchableOpacity>
-
-              {/* Make a Donation */}
-              <TouchableOpacity 
-                style={styles.menuItem}
-                onPress={() => handleMenuItemPress('donate')}
-              >
-                <Text style={styles.menuText}>{t('menu.makeDonation')}</Text>
-                <Text style={styles.menuIcon}>💝</Text>
-              </TouchableOpacity>
-
-              {/* View Our Calendar */}
-              <TouchableOpacity 
-                style={styles.menuItem}
-                onPress={() => handleMenuItemPress('calendar')}
-              >
-                <Text style={styles.menuText}>{t('menu.viewCalendar')}</Text>
-                <Text style={styles.menuIcon}>📅</Text>
-              </TouchableOpacity>
-
-              {/* Visit Our Website */}
-              <TouchableOpacity 
-                style={styles.menuItem}
-                onPress={() => handleMenuItemPress('website')}
-              >
-                <Text style={styles.menuText}>{t('menu.visitWebsite')}</Text>
-                <Text style={styles.menuIcon}>🏛️</Text>
-              </TouchableOpacity>
-            </ScrollView>
-          </View>
-        </TouchableOpacity>
-      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
-    backgroundColor: '#68A4D2', // Matching the blue tone
+    backgroundColor: '#68A4D2',
     paddingTop: Platform.OS === 'android' ? 35 : 0,
   },
   container: {
@@ -188,21 +169,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#68A4D2',
   },
   spacer: {
-    width: 40, // Width of the settings button to center the logo
+    width: 40,
   },
   logoContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 10,
-  },
-  logoPlaceholder: {
-    width: 100,
-    height: 40,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   hamburgerButton: {
     width: 40,
@@ -217,67 +190,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     marginVertical: 3,
     borderRadius: 2,
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-start',
-    alignItems: 'flex-end',
-  },
-  sidebar: {
-    width: '85%',
-    height: '100%',
-    backgroundColor: '#5A7D6D',
-    paddingTop: Platform.OS === 'android' ? 60 : 40,
-  },
-  closeButton: {
-    alignSelf: 'flex-end',
-    padding: 20,
-    marginRight: 10,
-  },
-  closeButtonText: {
-    color: '#FFFFFF',
-    fontSize: 32,
-    fontWeight: '300',
-  },
-  menuContent: {
-    flex: 1,
-    paddingHorizontal: 10,
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
-    padding: 18,
-    marginVertical: 8,
-    borderRadius: 8,
-  },
-  menuText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-    flex: 1,
-  },
-  menuIcon: {
-    fontSize: 24,
-    marginLeft: 10,
-  },
-  submenu: {
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    borderRadius: 8,
-    marginVertical: 5,
-    marginLeft: 15,
-    overflow: 'hidden',
-  },
-  submenuItem: {
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  submenuText: {
-    color: '#FFFFFF',
-    fontSize: 14,
   },
 });
 
