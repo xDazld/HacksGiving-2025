@@ -3,6 +3,69 @@
 import pytest
 from playwright.sync_api import Page, expect
 
+# Test timeout constants
+DEFAULT_TIMEOUT = 5000
+REDOC_LOAD_TIMEOUT = 15000
+
+
+def fill_form_field(page: Page, selector: str, value: str) -> bool:
+    """Fill a form field if it exists.
+
+    Args:
+        page: Playwright page object
+        selector: CSS selector for the form field
+        value: Value to fill
+
+    Returns:
+        True if field was found and filled, False otherwise
+    """
+    element = page.locator(selector)
+    if element.count() > 0:
+        element.fill(value)
+        return True
+    return False
+
+
+def select_form_option(page: Page, selector: str, value: str) -> bool:
+    """Select an option in a form field if it exists.
+
+    Args:
+        page: Playwright page object
+        selector: CSS selector for the form field
+        value: Value to select or fill
+
+    Returns:
+        True if field was found and filled, False otherwise
+    """
+    element = page.locator(selector)
+    if element.count() > 0:
+        # Check if it's a select element by evaluating the tag name
+        tag_name = element.evaluate("el => el.tagName.toLowerCase()")
+        if tag_name == "select":
+            element.select_option(value)
+        else:
+            # For text inputs, just fill the value
+            element.fill(value)
+        return True
+    return False
+
+
+def submit_form(page: Page) -> bool:
+    """Submit a form if submit button exists.
+
+    Args:
+        page: Playwright page object
+
+    Returns:
+        True if submit button was found and clicked, False otherwise
+    """
+    submit_button = page.locator('button[type="submit"]')
+    if submit_button.count() > 0:
+        submit_button.click()
+        page.wait_for_load_state("networkidle")
+        return True
+    return False
+
 
 @pytest.fixture(scope="session")
 def base_url():
@@ -52,8 +115,8 @@ class TestAPIDocumentation:
 
     def test_redoc_loads(self, page: Page, base_url: str):
         """Test that ReDoc loads (content-based smoke test with timeout)."""
-        page.set_default_timeout(5000)
-        response = page.goto(f"{base_url}/redoc", timeout=15000, wait_until="domcontentloaded")
+        page.set_default_timeout(DEFAULT_TIMEOUT)
+        response = page.goto(f"{base_url}/redoc", timeout=REDOC_LOAD_TIMEOUT, wait_until="domcontentloaded")
         assert response is not None and response.status == 200
         # Content-based assertion avoids flaky visibility waits on custom element.
         html = page.content()
@@ -129,26 +192,17 @@ class TestAdminForms:
         page.wait_for_load_state("networkidle")
         page.wait_for_selector("body", state="visible")
 
-        # Find and fill form fields (FastUI renders forms dynamically)
-        # Look for input fields by their placeholder or label text
-        title_input = page.locator('input[name="title"]')
-        if title_input.count() > 0:
-            title_input.fill("E2E Test Tour")
+        # Fill form fields using helper functions
+        title_filled = fill_form_field(page, 'input[name="title"]', "E2E Test Tour")
+        description_filled = fill_form_field(
+            page, 'textarea[name="description"], input[name="description"]', "A tour created by E2E test"
+        )
 
-            description_input = page.locator('textarea[name="description"], input[name="description"]')
-            if description_input.count() > 0:
-                description_input.fill("A tour created by E2E test")
-
-                # Submit the form
-                submit_button = page.locator('button[type="submit"]')
-                if submit_button.count() > 0:
-                    submit_button.click()
-
-                    # Wait for navigation or response
-                    page.wait_for_load_state("networkidle")
-
-                    # Should redirect to tours list or show success
-                    # (exact behavior depends on FastUI configuration)
+        # Only attempt submission if fields were found and filled
+        if title_filled and description_filled:
+            submit_form(page)
+            # Should redirect to tours list or show success
+            # (exact behavior depends on FastUI configuration)
 
     def test_scavenger_hunt_creation_form_loads(self, page: Page, base_url: str):
         """Test that scavenger hunt creation form loads"""
@@ -166,28 +220,16 @@ class TestAdminForms:
         page.wait_for_load_state("networkidle")
         page.wait_for_selector("body", state="visible")
 
-        # Find and fill form fields
-        title_input = page.locator('input[name="title"]')
-        if title_input.count() > 0:
-            title_input.fill("E2E Test Hunt")
+        # Fill form fields using helper functions
+        title_filled = fill_form_field(page, 'input[name="title"]', "E2E Test Hunt")
+        description_filled = fill_form_field(
+            page, 'textarea[name="description"], input[name="description"]', "A hunt created by E2E test"
+        )
+        difficulty_filled = select_form_option(page, 'select[name="difficulty"], input[name="difficulty"]', "easy")
 
-            description_input = page.locator('textarea[name="description"], input[name="description"]')
-            if description_input.count() > 0:
-                description_input.fill("A hunt created by E2E test")
-
-                difficulty_select = page.locator('select[name="difficulty"], input[name="difficulty"]')
-                if difficulty_select.count() > 0:
-                    # Try to select 'easy' if it's a select, or fill if it's an input
-                    if page.locator('select[name="difficulty"]').count() > 0:
-                        difficulty_select.select_option("easy")
-                    else:
-                        difficulty_select.fill("easy")
-
-                    # Submit the form
-                    submit_button = page.locator('button[type="submit"]')
-                    if submit_button.count() > 0:
-                        submit_button.click()
-                        page.wait_for_load_state("networkidle")
+        # Only attempt submission if fields were found and filled
+        if title_filled and description_filled and difficulty_filled:
+            submit_form(page)
 
     def test_plant_creation_form_loads(self, page: Page, base_url: str):
         """Test that plant creation form loads"""
@@ -205,32 +247,16 @@ class TestAdminForms:
         page.wait_for_load_state("networkidle")
         page.wait_for_selector("body", state="visible")
 
-        # Find and fill form fields
-        common_name = page.locator('input[name="common_name"]')
-        if common_name.count() > 0:
-            common_name.fill("E2E Test Plant")
+        # Fill form fields using helper functions
+        common_name_filled = fill_form_field(page, 'input[name="common_name"]', "E2E Test Plant")
+        scientific_name_filled = fill_form_field(page, 'input[name="scientific_name"]', "Testus e2eus")
+        quantity_filled = fill_form_field(page, 'input[name="quantity"]', "10")
+        dome_location_filled = fill_form_field(page, 'input[name="dome_location"]', "Test Dome")
+        notes_filled = fill_form_field(page, 'textarea[name="notes"], input[name="notes"]', "Created by E2E test")
 
-            scientific_name = page.locator('input[name="scientific_name"]')
-            if scientific_name.count() > 0:
-                scientific_name.fill("Testus e2eus")
-
-                quantity_input = page.locator('input[name="quantity"]')
-                if quantity_input.count() > 0:
-                    quantity_input.fill("10")
-
-                    dome_location = page.locator('input[name="dome_location"]')
-                    if dome_location.count() > 0:
-                        dome_location.fill("Test Dome")
-
-                        notes_input = page.locator('textarea[name="notes"], input[name="notes"]')
-                        if notes_input.count() > 0:
-                            notes_input.fill("Created by E2E test")
-
-                            # Submit the form
-                            submit_button = page.locator('button[type="submit"]')
-                            if submit_button.count() > 0:
-                                submit_button.click()
-                                page.wait_for_load_state("networkidle")
+        # Only attempt submission if required fields were found and filled
+        if common_name_filled and scientific_name_filled:
+            submit_form(page)
 
     def test_form_create_buttons_present(self, page: Page, base_url: str):
         """Test that 'Create New' buttons are present on list pages"""

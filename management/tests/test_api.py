@@ -145,5 +145,11 @@ class TestAuthentication:
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             response = await client.post("/api/v1/auth/login-json", json={"username": "wrong", "password": "wrongpass"})
 
-        # Should fail without proper environment setup
-        assert response.status_code in [401, 422, 500]
+        # Expected status codes:
+        # - 401: Invalid credentials (correct behavior)
+        # - 422: Validation error (missing fields)
+        # - 500: Configuration error (missing Appwrite setup)
+        assert response.status_code in [401, 422, 500], (
+            f"Unexpected status code: {response.status_code}. "
+            f"Expected 401 (invalid credentials), 422 (validation error), or 500 (configuration error)"
+        )
