@@ -106,6 +106,7 @@ async def admin_home(service: AppwriteService = Depends(get_appwrite_service)) -
 @router.get("/api/admin/context-files", response_model=FastUI, response_model_exclude_none=True)
 async def context_files_list(service: AppwriteService = Depends(get_appwrite_service)) -> list[AnyComponent]:
     files = await service.list_context_files()
+
     return [
         c.Page(
             components=[
@@ -117,12 +118,25 @@ async def context_files_list(service: AppwriteService = Depends(get_appwrite_ser
                     data_model=ContextFile,
                     columns=[
                         DisplayLookup(field="name", title="Name"),
-                        DisplayLookup(field="mime_type", title="MIME Type"),
-                        DisplayLookup(field="size_original", title="Size"),
-                        DisplayLookup(field="id", title="ID"),
+                        DisplayLookup(field="mime_type", title="Type"),
+                        DisplayLookup(field="size_original", title="Size (bytes)"),
                     ],
                     no_data_message="No context files uploaded",
                 ),
+                c.Paragraph(text="Manage files using the buttons below:"),
+                *[
+                    c.Div(
+                        components=[
+                            c.Button(
+                                text=f"View {f.name}", on_click=GoToEvent(url=f"/admin/context-files/{f.id}/view")
+                            ),
+                            c.Button(
+                                text=f"Delete {f.name}", on_click=GoToEvent(url=f"/admin/context-files/{f.id}/delete")
+                            ),
+                        ]
+                    )
+                    for f in files
+                ],
             ]
         )
     ]
@@ -182,6 +196,39 @@ async def context_file_upload(
         ]
 
 
+@router.get("/api/admin/context-files/{file_id}/view", response_model=FastUI, response_model_exclude_none=True)
+async def context_file_view(
+    file_id: str, service: AppwriteService = Depends(get_appwrite_service)
+) -> list[AnyComponent]:
+    """View context file details"""
+    files = await service.list_context_files()
+    file = next((f for f in files if f.id == file_id), None)
+
+    if not file:
+        return [
+            c.Page(
+                components=[
+                    c.Heading(text="File Not Found", level=1),
+                    c.Button(text="← Back", on_click=GoToEvent(url="/admin/context-files")),
+                ]
+            )
+        ]
+
+    return [
+        c.Page(
+            components=[
+                c.Heading(text=f"Context File: {file.name}", level=1),
+                c.Paragraph(text=f"**Type:** {file.mime_type}"),
+                c.Paragraph(text=f"**Size:** {file.size_original} bytes"),
+                c.Paragraph(text=f"**ID:** {file.id}"),
+                c.Paragraph(text=f"**Created:** {file.created_at}"),
+                c.Button(text="Delete File", on_click=GoToEvent(url=f"/admin/context-files/{file_id}/delete")),
+                c.Button(text="← Back to Files", on_click=GoToEvent(url="/admin/context-files")),
+            ]
+        )
+    ]
+
+
 @router.get("/api/admin/context-files/{file_id}/delete", response_model=FastUI, response_model_exclude_none=True)
 async def context_file_delete(
     file_id: str, service: AppwriteService = Depends(get_appwrite_service)
@@ -216,10 +263,23 @@ async def plants_list(service: AppwriteService = Depends(get_appwrite_service)) 
                         DisplayLookup(field="scientific_name", title="Scientific Name"),
                         DisplayLookup(field="quantity", title="Quantity"),
                         DisplayLookup(field="dome_location", title="Location"),
-                        DisplayLookup(field="id", title="ID"),
                     ],
                     no_data_message="No plants found",
                 ),
+                c.Paragraph(text="Manage your plant records below:"),
+                *[
+                    c.Div(
+                        components=[
+                            c.Button(
+                                text=f"Edit {p.common_name}", on_click=GoToEvent(url=f"/admin/plants/{p.id}/edit")
+                            ),
+                            c.Button(
+                                text=f"Delete {p.common_name}", on_click=GoToEvent(url=f"/admin/plants/{p.id}/delete")
+                            ),
+                        ]
+                    )
+                    for p in plants
+                ],
             ]
         )
     ]
@@ -279,12 +339,25 @@ async def plant_edit_page(
                 ]
             )
         ]
+    # Pre-populate form with existing data
+    initial_data = {
+        "common_name": plant.common_name,
+        "scientific_name": plant.scientific_name,
+        "quantity": plant.quantity,
+        "dome_location": plant.dome_location or "",
+        "notes": plant.notes or "",
+    }
+
     return [
         c.Page(
             components=[
                 c.Heading(text=f"Edit Plant: {plant.common_name}", level=1),
                 c.Text(text="Update the fields and submit."),
-                c.ModelForm(model=PlantFormCreate, submit_url=f"/api/admin/plants/{plant_id}/update"),
+                c.ModelForm(
+                    model=PlantFormCreate,
+                    submit_url=f"/api/admin/plants/{plant_id}/update",
+                    initial=initial_data,
+                ),
                 c.Button(text="Delete Plant", on_click=GoToEvent(url=f"/admin/plants/{plant_id}/delete")),
                 c.Button(text="← Back to Plants", on_click=GoToEvent(url="/admin/plants")),
             ]
