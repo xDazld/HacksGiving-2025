@@ -104,7 +104,7 @@ export function PlantCameraModal({ onPhotoTaken, onClose }: PlantCameraModalProp
         lightColor="#2C2416"
         darkColor="#2C2416"
       >
-        Point your camera at the plant that you have found! Are you a investigative genius?
+        Point your camera at the plant that you have found! Are you an investigative genius?
       </ThemedText>
 
       <View style={styles.cameraContainer}>

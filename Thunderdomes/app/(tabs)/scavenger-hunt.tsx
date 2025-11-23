@@ -9,6 +9,7 @@ import {
   Modal,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
@@ -318,9 +319,14 @@ export default function ScavengerHuntScreen() {
                   style={styles.getHintButton} 
                   onPress={handleGetHint}
                 >
-                  <ThemedText style={styles.getHintButtonText}>
-                    Get Another Hint ❓
-                  </ThemedText>
+                  <View style={styles.getHintButtonContent}>
+                    <ThemedText style={styles.getHintButtonText}>
+                      Get Another Hint
+                    </ThemedText>
+                    <View style={styles.checkmarkCircle}>
+                      <ThemedText style={styles.questionMark}>?</ThemedText>
+                    </View>
+                  </View>
                 </TouchableOpacity>
               )}
 
@@ -466,18 +472,37 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderWidth: 2,
     borderColor: '#8BB4D0',
-    borderRadius: 25,
+    borderRadius: 10,
     paddingVertical: 14,
     alignItems: 'center',
+  },
+  getHintButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   getHintButtonText: {
     color: '#8BB4D0',
     fontSize: 18,
     fontWeight: '600',
   },
+  checkmarkCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#8BB4D0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  questionMark: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+    lineHeight: 20,
+  },
   foundItButton: {
     backgroundColor: '#5A6A5D',
-    borderRadius: 25,
+    borderRadius: 10,
     paddingVertical: 14,
     alignItems: 'center',
     shadowColor: '#000',
