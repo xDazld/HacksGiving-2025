@@ -125,7 +125,7 @@ export function PlantCameraModal({ onPhotoTaken, onClose }: PlantCameraModalProp
           <ThemedText style={styles.scanButtonText}>
             {isCapturing ? 'Taking Picture...' : 'Scan'}
           </ThemedText>
-          {!isCapturing && <MaterialIcons name="camera-alt" size={20} color="#FFFFFF" style={{marginLeft: 8}} />}
+          {!isCapturing && <MaterialIcons name="camera-alt" size={20} color="#FFFFFF" style={styles.cameraIconStyle} />}
         </View>
       </TouchableOpacity>
     </ThemedView>
@@ -186,6 +186,9 @@ const styles = StyleSheet.create({
     color: '#F5F1E3',
     fontSize: 20,
     fontWeight: 'bold',
+  },
+  cameraIconStyle: {
+    marginLeft: 8,
   },
 });
 
