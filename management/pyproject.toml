@@ -1,0 +1,44 @@
+[project]
+name = "management"
+version = "0.1.0"
+description = "Milwaukee Domes Management Interface and API"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "appwrite>=6.0.0",
+    "fastapi>=0.121.3",
+    "uvicorn[standard]>=0.38.0",
+    "fastui>=0.6.0",
+    "pydantic>=2.10.0",
+    "pydantic-settings>=2.7.0",
+    "python-multipart>=0.0.18",
+    "python-jose[cryptography]>=3.3.0",
+    "passlib[bcrypt]>=1.7.4",
+    "pandas>=2.2.0",
+    "httpx>=0.28.1",
+    "playwright>=1.49.0",
+    "openai>=2.8.1",
+]
+
+[dependency-groups]
+dev = [
+    "black>=25.11.0",
+    "pytest>=9.0.1",
+    "pytest-playwright>=0.3.0",
+    "pytest-asyncio>=0.25.2",
+    "pytest-cov>=6.0.0",
+    "ruff>=0.9.2",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.black]
+line-length = 120
+target-version = ["py311"]
