@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet, Text } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
-import { BotanicalTalesIcon, DomeDetectiveIcon, SipAndSeekIcon } from '@/components/icons';
+import { BotanicalTalesIcon, DomeDetectiveIcon, SipAndSeekIcon, VoiceChatIcon } from '@/components/icons';
 
 const TAB_BAR_COLOR = '#458E5E'; // Main green
 const TAB_ACTIVE_BG = '#6BA57E'; // Lighter green for active state
@@ -13,6 +13,12 @@ export function CustomBottomNav() {
   const pathname = usePathname();
 
   const tabs = [
+    {
+      name: 'voice-chat',
+      path: '/(tabs)/voice-chat',
+      icon: VoiceChatIcon,
+      label: 'Voice Chat',
+    },
     {
       name: 'audio-tour',
       path: '/(tabs)/audio-tour',
