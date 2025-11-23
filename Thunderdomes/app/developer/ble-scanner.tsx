@@ -32,7 +32,7 @@ export default function ScannerScreen() {
   const [error, setError] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<'floor' | 'list'>('floor');
   const [isCalibrated, setIsCalibrated] = useState(false);
-  const [calculationMethod, setCalculationMethod] = useState<CalculationMethod>('trilateration');
+  const [calculationMethod, setCalculationMethod] = useState<CalculationMethod>('rssi-to-meters');
   const [userPosition, setUserPosition] = useState<UserPosition | null>(null);
   const [domeConfig, setDomeConfig] = useState<DomeConfig | null>(null);
   const [calibrationData, setCalibrationData] = useState<CalibrationData[]>([]);

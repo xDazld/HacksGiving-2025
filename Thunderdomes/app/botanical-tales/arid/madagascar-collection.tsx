@@ -171,7 +171,7 @@ export default function MadagascarCollectionScreen() {
   useEffect(() => {
     const calibrationStatus = isPositionSystemCalibrated();
     if (calibrationStatus && beacons.length > 0) {
-      calculatePosition(beacons, 'trilateration', true);
+      calculatePosition(beacons, 'rssi-to-meters', true);
     }
   }, [beacons]);
 
@@ -241,7 +241,7 @@ export default function MadagascarCollectionScreen() {
     
     if (success) {
       // Trigger an immediate position calculation
-      calculatePosition(beacons, 'trilateration', true);
+      calculatePosition(beacons, 'rssi-to-meters', true);
     }
     
     setAutoCalibrationAttempted(true);
