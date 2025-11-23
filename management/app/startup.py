@@ -178,6 +178,8 @@ def setup_plants_collection(databases: Databases, database_id: str, collection_i
     create_boolean_attribute(databases, database_id, collection_id, "move_requires_consult", default=False)
 
     create_string_attribute(databases, database_id, collection_id, "notes", 2000)
+    create_string_attribute(databases, database_id, collection_id, "dome_location", 255)
+    create_string_attribute(databases, database_id, collection_id, "image_url", 500)
 
     # Timestamps
     create_datetime_attribute(databases, database_id, collection_id, "created_at")

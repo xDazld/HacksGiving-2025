@@ -6,6 +6,7 @@ Appwrite server, not the SDK. The API is fully functional and supported.
 """
 
 import warnings
+import json
 from datetime import datetime
 from typing import Optional, Any
 from appwrite.client import Client
@@ -58,7 +59,20 @@ class AppwriteService:
                 collection_id=self.settings.tours_collection_id,
                 queries=[Query.limit(limit), Query.offset(offset)],
             )
-            return [Tour(**doc) for doc in result["documents"]]
+            tours = []
+            for doc in result["documents"]:
+                doc_dict = dict(doc)
+                doc_dict["id"] = doc_dict.pop("$id")
+                doc_dict.pop("$collectionId", None)
+                doc_dict.pop("$databaseId", None)
+                doc_dict.pop("$createdAt", None)
+                doc_dict.pop("$updatedAt", None)
+                doc_dict.pop("$permissions", None)
+                # Deserialize parts if needed
+                if "parts" in doc_dict and isinstance(doc_dict["parts"], str):
+                    doc_dict["parts"] = json.loads(doc_dict["parts"])
+                tours.append(Tour(**doc_dict))
+            return tours
         except Exception:
             return []
 
@@ -80,13 +94,30 @@ class AppwriteService:
         data["created_at"] = datetime.now().isoformat()
         data["updated_at"] = datetime.now().isoformat()
 
+        # Serialize parts array to JSON string for Appwrite
+        if "parts" in data:
+            data["parts"] = json.dumps(data["parts"])
+
         doc = self.databases.create_document(
             database_id=self.settings.appwrite_database_id,
             collection_id=self.settings.tours_collection_id,
             document_id=ID.unique(),
             data=data,
         )
-        return Tour(**doc)
+
+        # Map Appwrite fields ($id, $createdAt, etc.) to our model fields
+        result = dict(doc)
+        result["id"] = result.pop("$id")
+        result.pop("$collectionId", None)
+        result.pop("$databaseId", None)
+        result.pop("$createdAt", None)
+        result.pop("$updatedAt", None)
+        result.pop("$permissions", None)
+
+        # Deserialize parts back to list for response
+        if "parts" in result and isinstance(result["parts"], str):
+            result["parts"] = json.loads(result["parts"])
+        return Tour(**result)
 
     async def update_tour(self, tour_id: str, tour: TourUpdate) -> Optional[Tour]:
         """Update a tour"""
@@ -125,7 +156,19 @@ class AppwriteService:
                 collection_id=self.settings.scavenger_hunts_collection_id,
                 queries=[Query.limit(limit), Query.offset(offset)],
             )
-            return [ScavengerHunt(**doc) for doc in result["documents"]]
+            hunts = []
+            for doc in result["documents"]:
+                doc_dict = dict(doc)
+                doc_dict["id"] = doc_dict.pop("$id")
+                doc_dict.pop("$collectionId", None)
+                doc_dict.pop("$databaseId", None)
+                doc_dict.pop("$createdAt", None)
+                doc_dict.pop("$updatedAt", None)
+                doc_dict.pop("$permissions", None)
+                if "items" in doc_dict and isinstance(doc_dict["items"], str):
+                    doc_dict["items"] = json.loads(doc_dict["items"])
+                hunts.append(ScavengerHunt(**doc_dict))
+            return hunts
         except Exception:
             return []
 
@@ -147,13 +190,30 @@ class AppwriteService:
         data["created_at"] = datetime.now().isoformat()
         data["updated_at"] = datetime.now().isoformat()
 
+        # Serialize items array to JSON string for Appwrite
+        if "items" in data:
+            data["items"] = json.dumps(data["items"])
+
         doc = self.databases.create_document(
             database_id=self.settings.appwrite_database_id,
             collection_id=self.settings.scavenger_hunts_collection_id,
             document_id=ID.unique(),
             data=data,
         )
-        return ScavengerHunt(**doc)
+
+        # Map Appwrite fields ($id, $createdAt, etc.) to our model fields
+        result = dict(doc)
+        result["id"] = result.pop("$id")
+        result.pop("$collectionId", None)
+        result.pop("$databaseId", None)
+        result.pop("$createdAt", None)
+        result.pop("$updatedAt", None)
+        result.pop("$permissions", None)
+
+        # Deserialize items back to list for response
+        if "items" in result and isinstance(result["items"], str):
+            result["items"] = json.loads(result["items"])
+        return ScavengerHunt(**result)
 
     async def update_scavenger_hunt(self, hunt_id: str, hunt: ScavengerHuntUpdate) -> Optional[ScavengerHunt]:
         """Update a scavenger hunt"""
@@ -259,7 +319,17 @@ class AppwriteService:
                 collection_id=self.settings.plants_collection_id,
                 queries=[Query.limit(limit), Query.offset(offset)],
             )
-            return [Plant(**doc) for doc in result["documents"]]
+            plants = []
+            for doc in result["documents"]:
+                doc_dict = dict(doc)
+                doc_dict["id"] = doc_dict.pop("$id")
+                doc_dict.pop("$collectionId", None)
+                doc_dict.pop("$databaseId", None)
+                doc_dict.pop("$createdAt", None)
+                doc_dict.pop("$updatedAt", None)
+                doc_dict.pop("$permissions", None)
+                plants.append(Plant(**doc_dict))
+            return plants
         except Exception:
             return []
 
@@ -287,7 +357,17 @@ class AppwriteService:
             document_id=ID.unique(),
             data=data,
         )
-        return Plant(**doc)
+
+        # Map Appwrite fields ($id, $createdAt, etc.) to our model fields
+        result = dict(doc)
+        result["id"] = result.pop("$id")
+        result.pop("$collectionId", None)
+        result.pop("$databaseId", None)
+        result.pop("$createdAt", None)
+        result.pop("$updatedAt", None)
+        result.pop("$permissions", None)
+
+        return Plant(**result)
 
     async def update_plant(self, plant_id: str, plant: PlantUpdate) -> Optional[Plant]:
         """Update a plant"""
