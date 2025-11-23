@@ -60,10 +60,21 @@ export default function ScannerScreen() {
 
   useEffect(() => {
     checkBLEAvailability();
+    checkExistingCalibration();
     return () => {
       stopScanning();
     };
   }, []);
+
+  const checkExistingCalibration = async () => {
+    const calibrationStatus = await isPositionSystemCalibrated();
+    if (calibrationStatus) {
+      setIsCalibrated(true);
+      setDomeConfig(getDomeConfig());
+      setCalibrationData(getCalibrationData());
+      console.log('✅ Loaded existing calibration on BLE scanner mount');
+    }
+  };
 
   // Update position when beacons change
   useEffect(() => {
@@ -166,8 +177,9 @@ export default function ScannerScreen() {
     performCalibration();
   };
 
-  const performCalibration = () => {
-    const success = calibrate(beacons);
+  const performCalibration = async () => {
+    // Manual calibration from BLE Debugging screen DOES persist to storage (saveToStorage = true)
+    const success = await calibrate(beacons, true);
     
     if (success) {
       setIsCalibrated(true);
@@ -175,7 +187,7 @@ export default function ScannerScreen() {
       setCalibrationData(getCalibrationData());
       Alert.alert(
         'Calibration Complete',
-        `System calibrated with ${beacons.length} beacons. Total expected beacons: ${getDomeConfig()?.totalBeacons}`
+        `System calibrated and saved! Total beacons detected: ${beacons.length}. Total expected: ${getDomeConfig()?.totalBeacons}\n\nThis calibration will persist across app sessions.`
       );
     } else {
       Alert.alert('Calibration Failed', 'Unable to calibrate. Please ensure beacons are detected.');
@@ -185,18 +197,19 @@ export default function ScannerScreen() {
   const handleResetCalibration = () => {
     Alert.alert(
       'Reset Calibration',
-      'Are you sure you want to reset the calibration? You will need to recalibrate at LocationContext_0.',
+      'Are you sure you want to reset the calibration? This will also remove the saved calibration from storage. You will need to recalibrate at LocationContext_0.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Reset',
           style: 'destructive',
-          onPress: () => {
-            resetCalibration();
+          onPress: async () => {
+            await resetCalibration(true); // clearStorage = true
             setIsCalibrated(false);
             setUserPosition(null);
             setDomeConfig(null);
             setCalibrationData([]);
+            Alert.alert('Reset Complete', 'Calibration has been cleared from memory and storage.');
           },
         },
       ]

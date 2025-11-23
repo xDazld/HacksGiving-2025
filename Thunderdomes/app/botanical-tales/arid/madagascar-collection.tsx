@@ -154,25 +154,32 @@ export default function MadagascarCollectionScreen() {
     };
   }, [locale]);
 
-  // Auto-calibrate after beacons are detected
+  // Auto-calibrate after beacons are detected (only if no existing calibration)
   useEffect(() => {
-    const calibrationStatus = isPositionSystemCalibrated();
-    
-    if (!autoCalibrationAttempted && beacons.length > 0 && !calibrationStatus) {
-      // Wait 500ms to ensure all beacons are detected
-      const timer = setTimeout(() => {
-        performAutoCalibration();
-      }, 500);
-      return () => clearTimeout(timer);
+    async function checkAndAutoCalibrate() {
+      const calibrationStatus = await isPositionSystemCalibrated();
+      
+      if (!autoCalibrationAttempted && beacons.length > 0 && !calibrationStatus) {
+        // Wait 500ms to ensure all beacons are detected
+        setTimeout(() => {
+          performAutoCalibration();
+        }, 500);
+      }
     }
+    
+    checkAndAutoCalibrate();
   }, [beacons, autoCalibrationAttempted]);
 
   // Update position when beacons change (if calibrated)
   useEffect(() => {
-    const calibrationStatus = isPositionSystemCalibrated();
-    if (calibrationStatus && beacons.length > 0) {
-      calculatePosition(beacons, 'rssi-to-meters', true);
+    async function updatePosition() {
+      const calibrationStatus = await isPositionSystemCalibrated();
+      if (calibrationStatus && beacons.length > 0) {
+        calculatePosition(beacons, 'trilateration', true);
+      }
     }
+    
+    updatePosition();
   }, [beacons]);
 
   // Monitor progress to unlock parts
@@ -223,8 +230,9 @@ export default function MadagascarCollectionScreen() {
 
   /**
    * Auto-calibrate position system (assumes user is at LocationContext_0)
+   * This auto-calibration does NOT persist to storage, so it's temporary for this session only
    */
-  function performAutoCalibration() {
+  async function performAutoCalibration() {
     if (beacons.length === 0) {
       setAutoCalibrationAttempted(true);
       return;
@@ -237,9 +245,11 @@ export default function MadagascarCollectionScreen() {
       return;
     }
     
-    const success = calibrate(beacons);
+    // Auto-calibrate with saveToStorage = false (temporary calibration)
+    const success = await calibrate(beacons, false);
     
     if (success) {
+      console.log('✅ Auto-calibrated (temporary, not persisted)');
       // Trigger an immediate position calculation
       calculatePosition(beacons, 'rssi-to-meters', true);
     }

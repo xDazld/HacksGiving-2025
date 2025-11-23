@@ -1,4 +1,5 @@
 import { BeaconData, CalibrationData, UserPosition, DomeConfig } from '@/types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Constants
 const DOME_CIRCUMFERENCE = 145; // meters
@@ -7,12 +8,14 @@ const PATH_LOSS_EXPONENT = 2.5; // Indoor environment
 const REFERENCE_RSSI_AT_1M = -59; // Typical BLE beacon RSSI at 1 meter
 const SMOOTHING_WINDOW_MS = 3000; // 3 seconds smoothing window
 const MAX_POSITION_SAMPLES = 30; // Maximum samples to keep in history
+const CALIBRATION_STORAGE_KEY = '@thunderdomes:calibration';
 
 // State
 let calibrationData: CalibrationData[] = [];
 let domeConfig: DomeConfig | null = null;
 let isCalibrated = false;
 let currentPosition: UserPosition | null = null;
+let calibrationLoadAttempted = false;
 
 // Position history for smoothing
 interface PositionSample {
@@ -48,10 +51,56 @@ const distance = (x1: number, y1: number, x2: number, y2: number): number => {
 };
 
 /**
+ * Load calibration from persistent storage
+ */
+async function loadCalibrationFromStorage(): Promise<boolean> {
+  try {
+    const stored = await AsyncStorage.getItem(CALIBRATION_STORAGE_KEY);
+    if (!stored) {
+      return false;
+    }
+
+    const data = JSON.parse(stored);
+    calibrationData = data.calibrationData;
+    domeConfig = data.domeConfig;
+    isCalibrated = data.isCalibrated;
+    
+    console.log('✅ Loaded calibration from storage:', {
+      isCalibrated,
+      totalBeacons: domeConfig?.totalBeacons,
+    });
+    
+    return isCalibrated;
+  } catch (error) {
+    console.error('Failed to load calibration from storage:', error);
+    return false;
+  }
+}
+
+/**
+ * Save calibration to persistent storage
+ */
+async function saveCalibrationToStorage(): Promise<void> {
+  try {
+    const data = {
+      calibrationData,
+      domeConfig,
+      isCalibrated,
+      timestamp: Date.now(),
+    };
+    await AsyncStorage.setItem(CALIBRATION_STORAGE_KEY, JSON.stringify(data));
+    console.log('✅ Saved calibration to storage');
+  } catch (error) {
+    console.error('Failed to save calibration to storage:', error);
+  }
+}
+
+/**
  * Calibrate the positioning system
  * User should be standing at LocationContext_0 when calling this
+ * @param saveToStorage If true, persists calibration for future sessions (default: true)
  */
-export function calibrate(beacons: BeaconData[]): boolean {
+export async function calibrate(beacons: BeaconData[], saveToStorage: boolean = true): Promise<boolean> {
   if (beacons.length === 0) {
     console.warn('No beacons detected for calibration');
     return false;
@@ -111,6 +160,11 @@ export function calibrate(beacons: BeaconData[]): boolean {
     beaconSpacingDeg,
     calibrationData,
   });
+
+  // Save to storage if requested
+  if (saveToStorage) {
+    await saveCalibrationToStorage();
+  }
 
   return true;
 }
@@ -767,8 +821,21 @@ export function getUserPosition(): UserPosition | null {
 
 /**
  * Check if the positioning system is calibrated
+ * Attempts to load from storage if not yet loaded
  */
-export function isPositionSystemCalibrated(): boolean {
+export async function isPositionSystemCalibrated(): Promise<boolean> {
+  if (!calibrationLoadAttempted) {
+    calibrationLoadAttempted = true;
+    await loadCalibrationFromStorage();
+  }
+  return isCalibrated;
+}
+
+/**
+ * Check if the positioning system is calibrated (synchronous version)
+ * Does NOT attempt to load from storage - use isPositionSystemCalibrated() for that
+ */
+export function isPositionSystemCalibratedSync(): boolean {
   return isCalibrated;
 }
 
@@ -788,13 +855,23 @@ export function getCalibrationData(): CalibrationData[] {
 
 /**
  * Reset calibration
+ * @param clearStorage If true, also removes calibration from persistent storage (default: true)
  */
-export function resetCalibration(): void {
+export async function resetCalibration(clearStorage: boolean = true): Promise<void> {
   calibrationData = [];
   domeConfig = null;
   isCalibrated = false;
   currentPosition = null;
   positionHistory = [];
+  
+  if (clearStorage) {
+    try {
+      await AsyncStorage.removeItem(CALIBRATION_STORAGE_KEY);
+      console.log('✅ Cleared calibration from storage');
+    } catch (error) {
+      console.error('Failed to clear calibration from storage:', error);
+    }
+  }
 }
 
 /**

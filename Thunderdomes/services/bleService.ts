@@ -100,16 +100,34 @@ async function requestPermissions(): Promise<boolean> {
  */
 export async function initializeBLE(): Promise<boolean> {
   if (!ensureManagerInitialized() || !manager) {
-    console.warn('BLE not available on this platform');
+    console.warn('⚠️ BLE not available on this platform');
     return false;
   }
 
   try {
-    const state = await manager.state();
+    // Wait for BLE to be ready by subscribing to state changes
+    const state = await new Promise<string>((resolve) => {
+      const subscription = manager!.onStateChange((newState: string) => {
+        console.log('📡 BLE State changed to:', newState);
+        if (newState !== 'Unknown') {
+          subscription.remove();
+          resolve(newState);
+        }
+      }, true); // true = emit current state immediately
+    });
+    
+    console.log('📡 Final BLE State:', state, 'Expected:', (State as { [key: string]: string }).PoweredOn);
     isInitialized = state === (State as { [key: string]: string }).PoweredOn;
+    
+    if (!isInitialized) {
+      console.warn(`⚠️ BLE not ready. Current state: ${state}. Please ensure Bluetooth is on and app has permission.`);
+    } else {
+      console.log('✅ BLE initialized successfully');
+    }
+    
     return isInitialized;
   } catch (error) {
-    console.error('Failed to initialize BLE:', error);
+    console.error('❌ Failed to initialize BLE:', error);
     return false;
   }
 }
