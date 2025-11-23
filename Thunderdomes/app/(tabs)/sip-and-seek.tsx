@@ -210,7 +210,8 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 15,
+    marginBottom: 20,
+    paddingBottom: 5,
     color: '#333',
   },
   description: {

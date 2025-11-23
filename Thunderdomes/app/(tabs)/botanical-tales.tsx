@@ -104,7 +104,8 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 10,
+    marginBottom: 15,
+    paddingBottom: 5,
     color: '#333',
   },
   welcomeSubtitle: {

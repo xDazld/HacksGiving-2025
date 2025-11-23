@@ -312,7 +312,8 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 25,
+    paddingBottom: 5,
     color: '#333',
   },
   imageContainer: {
