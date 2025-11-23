@@ -55,3 +55,28 @@ export interface BeaconAPIFormat {
   rssi: number[];
 }
 
+export interface CalibrationData {
+  beaconIndex: number;
+  name: string;
+  baselineRSSI: number;
+  angleDeg: number;
+  position: { x: number; y: number };
+}
+
+export interface UserPosition {
+  x: number; // meters from dome center
+  y: number; // meters from dome center
+  nearestBeaconIndex: number;
+  distanceFromStart: number; // meters from LC_0
+  progressPercentage: number; // 0-100, progress toward opposite beacon
+  confidence: number; // 0-1, confidence in position estimate
+  calculationMethod: 'relative' | 'rssi-to-meters' | 'trilateration';
+}
+
+export interface DomeConfig {
+  circumference: number; // 145 meters
+  radius: number; // calculated from circumference
+  totalBeacons: number;
+  beaconSpacingDeg: number;
+}
+

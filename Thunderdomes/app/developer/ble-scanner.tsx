@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, ScrollView, View, TouchableOpacity, Alert, useColorScheme } from 'react-native';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
@@ -11,177 +11,36 @@ import {
   isBLEAvailable,
   getBLEState
 } from '@/services/bleService';
-import { BeaconData } from '@/types';
-import BeaconCompass, { BeaconCompassSlot } from '@/components/BeaconCompass';
+import {
+  calibrate,
+  calculatePosition,
+  isPositionSystemCalibrated,
+  getDomeConfig,
+  getCalibrationData,
+  resetCalibration,
+  getUserPosition,
+} from '@/services/positionService';
+import { BeaconData, UserPosition, CalibrationData, DomeConfig } from '@/types';
+import DomeFloorView from '@/components/DomeFloorView';
 
-const RSSI_HISTORY_WINDOW_MS = 5000;
-const MAX_SAMPLES_PER_BEACON = 60;
-const RSSI_MIN = -100;
-const RSSI_MAX = -40;
-
-interface BeaconSample {
-  id: string; // string ID of the beacon
-  index: number; // numeric index parsed from name, if needed
-  name: string;
-  samples: { rssi: number; timestamp: number }[];
-}
-
-type BeaconSampleMap = Record<string, BeaconSample>;
-
-const parseLocationContextIndex = (name: string): number | null => {
-  const match = name.match(/^LocationContext_(\d+)$/);
-  return match ? parseInt(match[1], 10) : null;
-};
-
-const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
-
-const normalizeRssi = (rssi: number): number => {
-  const clamped = clamp(rssi, RSSI_MIN, RSSI_MAX);
-  return (clamped - RSSI_MIN) / (RSSI_MAX - RSSI_MIN);
-};
-
-const buildCompassModel = (history: BeaconSampleMap) => {
-  const entries = Object.values(history);
-
-  if (entries.length === 0) {
-    return {
-      totalSlots: 0,
-      slots: [] as BeaconCompassSlot[],
-      estimatedAngleDeg: null,
-      confidence: 0,
-    };
-  }
-
-  const maxIndex = entries.reduce((max, entry) => Math.max(max, entry.index), 0);
-  const totalSlots = maxIndex + 1;
-  const stats = new Map<number, { strength: number }>();
-
-  entries.forEach((entry) => {
-    if (entry.samples.length === 0) {
-      return;
-    }
-    const avgRssi = entry.samples.reduce((sum, sample) => sum + sample.rssi, 0) / entry.samples.length;
-    stats.set(entry.index, { strength: normalizeRssi(avgRssi) });
-  });
-
-  const slots: BeaconCompassSlot[] = Array.from({ length: totalSlots }, (_, index) => {
-    const angleDeg = totalSlots > 0 ? (index / totalSlots) * 360 : 0;
-    const stat = stats.get(index);
-    return {
-      index,
-      angleDeg,
-      strength: stat ? stat.strength : 0,
-      present: Boolean(stat),
-    };
-  });
-
-  const activeSlots = slots.filter((slot) => slot.present && slot.strength > 0);
-  let estimatedAngleDeg: number | null = null;
-  let confidence = 0;
-
-  if (activeSlots.length >= 2) {
-    const sumWeights = activeSlots.reduce((sum, slot) => sum + slot.strength, 0);
-    if (sumWeights > 0) {
-      let x = 0;
-      let y = 0;
-
-      activeSlots.forEach((slot) => {
-        const angleRad = (slot.angleDeg * Math.PI) / 180;
-        x += slot.strength * Math.cos(angleRad);
-        y += slot.strength * Math.sin(angleRad);
-      });
-
-      const angle = (Math.atan2(y, x) * 180) / Math.PI;
-      estimatedAngleDeg = (angle + 360) % 360;
-      const magnitude = Math.sqrt(x * x + y * y);
-      confidence = Math.min(1, magnitude / sumWeights);
-    }
-  }
-
-  return {
-    totalSlots,
-    slots,
-    estimatedAngleDeg,
-    confidence,
-  };
-};
-
-const updateBeaconSamples = (
-  history: BeaconSampleMap,
-  newBeacons: BeaconData[]
-): BeaconSampleMap => {
-  const now = Date.now();
-  const next: BeaconSampleMap = {};
-
-  Object.values(history).forEach((entry) => {
-    const filtered = entry.samples.filter(
-      (sample) => now - sample.timestamp <= RSSI_HISTORY_WINDOW_MS
-    );
-    if (filtered.length > 0) {
-      next[entry.index] = {
-        ...entry,
-        samples: filtered.slice(-MAX_SAMPLES_PER_BEACON),
-      };
-    }
-  });
-
-  newBeacons.forEach((beacon) => {
-    const index = parseLocationContextIndex(beacon.name);
-    if (index === null) {
-      return;
-    }
-
-    const existing = next[index] ?? {
-      index,
-      name: beacon.name,
-      samples: [],
-    };
-
-    const samples = [
-      ...existing.samples,
-      { rssi: beacon.rssi, timestamp: now },
-    ].slice(-MAX_SAMPLES_PER_BEACON);
-
-    next[index] = {
-      index,
-      name: beacon.name,
-      samples,
-    };
-  });
-
-  return next;
-};
+type CalculationMethod = 'relative' | 'rssi-to-meters' | 'trilateration';
 
 export default function ScannerScreen() {
   const [beacons, setBeacons] = useState<BeaconData[]>([]);
-  const [beaconSamples, setBeaconSamples] = useState<BeaconSampleMap>({});
   const [isScanning, setIsScanning] = useState(false);
   const [bleState, setBleState] = useState<string>('Unknown');
   const [error, setError] = useState<string | null>(null);
-  const [activeView, setActiveView] = useState<'compass' | 'list'>('compass');
+  const [activeView, setActiveView] = useState<'floor' | 'list'>('floor');
+  const [isCalibrated, setIsCalibrated] = useState(false);
+  const [calculationMethod, setCalculationMethod] = useState<CalculationMethod>('trilateration');
+  const [userPosition, setUserPosition] = useState<UserPosition | null>(null);
+  const [domeConfig, setDomeConfig] = useState<DomeConfig | null>(null);
+  const [calibrationData, setCalibrationData] = useState<CalibrationData[]>([]);
+  const [smoothingEnabled, setSmoothingEnabled] = useState(true);
+  
   const colorScheme = useColorScheme();
   const themeVariant = colorScheme === 'dark' ? 'dark' : 'light';
 
-  const compassModel = useMemo(
-    () => buildCompassModel(beaconSamples),
-    [beaconSamples]
-  );
-
-  const activeBeaconCount = compassModel.slots.filter(
-    (slot) => slot.present
-  ).length;
-  const headingText =
-    compassModel.estimatedAngleDeg !== null
-      ? `${compassModel.estimatedAngleDeg.toFixed(0)} deg`
-      : 'Need >=2 beacons';
-  const confidenceText = `${Math.round(compassModel.confidence * 100)}%`;
-  const compassCardStyle = [
-    styles.compassCard,
-    {
-      backgroundColor: colorScheme === 'dark' ? '#1d1d1d' : '#ffffff',
-      borderColor: colorScheme === 'dark' ? '#2f2f2f' : '#e0e0e0',
-    },
-  ];
   const tabInactiveBg = colorScheme === 'dark' ? '#1f1f1f' : '#f0f0f0';
   const tabInactiveText = colorScheme === 'dark' ? '#d0d0d0' : '#555';
   const tabContainerStyle = [
@@ -191,13 +50,28 @@ export default function ScannerScreen() {
     },
   ];
 
+  const floorCardStyle = [
+    styles.floorCard,
+    {
+      backgroundColor: colorScheme === 'dark' ? '#1d1d1d' : '#ffffff',
+      borderColor: colorScheme === 'dark' ? '#2f2f2f' : '#e0e0e0',
+    },
+  ];
+
   useEffect(() => {
     checkBLEAvailability();
     return () => {
-      // Cleanup scanning when component unmounts
       stopScanning();
     };
   }, []);
+
+  // Update position when beacons change
+  useEffect(() => {
+    if (isCalibrated && beacons.length > 0) {
+      const position = calculatePosition(beacons, calculationMethod, smoothingEnabled);
+      setUserPosition(position);
+    }
+  }, [beacons, isCalibrated, calculationMethod, smoothingEnabled]);
 
   const checkBLEAvailability = async () => {
     if (!isBLEAvailable()) {
@@ -215,23 +89,18 @@ export default function ScannerScreen() {
 
   const handleStartScanning = async () => {
     setError(null);
-    setBeaconSamples({});
     setBeacons([]);
     
     try {
-      // Initialize BLE
       const initialized = await initializeBLE();
       if (!initialized) {
         setError('Failed to initialize BLE. Please check if Bluetooth is enabled.');
         return;
       }
 
-      // Start scanning
       await startScanning((detectedBeacons: BeaconData[]) => {
-        // Filter to only show LocationContext beacons
         const filteredBeacons = getLocationContextBeacons(detectedBeacons);
         setBeacons(filteredBeacons);
-        setBeaconSamples((prev) => updateBeaconSamples(prev, filteredBeacons));
       });
 
       setIsScanning(true);
@@ -250,6 +119,90 @@ export default function ScannerScreen() {
     }
   };
 
+  const handleCalibrate = () => {
+    if (beacons.length === 0) {
+      Alert.alert('Calibration Error', 'No beacons detected. Start scanning first.');
+      return;
+    }
+
+    // Check if LocationContext_0 is present and has strong signal
+    const lc0 = beacons.find((b) => b.name === 'LocationContext_0');
+    if (!lc0) {
+      Alert.alert(
+        'Calibration Warning',
+        'LocationContext_0 not detected. Make sure you are standing next to the starting beacon.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Calibrate Anyway', 
+            onPress: () => performCalibration(),
+            style: 'destructive'
+          },
+        ]
+      );
+      return;
+    }
+
+    // Check if LC_0 has the strongest signal
+    const strongestBeacon = beacons.reduce((prev, current) => 
+      (current.rssi > prev.rssi) ? current : prev
+    );
+
+    if (strongestBeacon.name !== 'LocationContext_0') {
+      Alert.alert(
+        'Calibration Warning',
+        `LocationContext_0 is not the strongest signal. Strongest is ${strongestBeacon.name}. Make sure you are standing at the starting beacon (LC_0).`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Calibrate Anyway', 
+            onPress: () => performCalibration(),
+          },
+        ]
+      );
+      return;
+    }
+
+    performCalibration();
+  };
+
+  const performCalibration = () => {
+    const success = calibrate(beacons);
+    
+    if (success) {
+      setIsCalibrated(true);
+      setDomeConfig(getDomeConfig());
+      setCalibrationData(getCalibrationData());
+      Alert.alert(
+        'Calibration Complete',
+        `System calibrated with ${beacons.length} beacons. Total expected beacons: ${getDomeConfig()?.totalBeacons}`
+      );
+    } else {
+      Alert.alert('Calibration Failed', 'Unable to calibrate. Please ensure beacons are detected.');
+    }
+  };
+
+  const handleResetCalibration = () => {
+    Alert.alert(
+      'Reset Calibration',
+      'Are you sure you want to reset the calibration? You will need to recalibrate at LocationContext_0.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: () => {
+            resetCalibration();
+            setIsCalibrated(false);
+            setUserPosition(null);
+            setDomeConfig(null);
+            setCalibrationData([]);
+          },
+        },
+      ]
+    );
+  };
+
   const renderBeaconItem = (beacon: BeaconData) => {
     const signalQuality = getSignalQuality(beacon.rssi);
     const signalColor = 
@@ -258,6 +211,10 @@ export default function ScannerScreen() {
       signalQuality === 'Fair' ? '#ff9800' : '#f44336';
 
     const cardBgColor = colorScheme === 'dark' ? '#2a2a2a' : '#f5f5f5';
+
+    // Parse beacon index
+    const match = beacon.name.match(/^LocationContext_(\d+)$/);
+    const beaconIndex = match ? parseInt(match[1], 10) : null;
 
     return (
       <View key={beacon.id} style={[styles.beaconCard, { backgroundColor: cardBgColor }]}>
@@ -269,20 +226,151 @@ export default function ScannerScreen() {
         </View>
         <View style={styles.beaconDetails}>
           <ThemedText style={styles.beaconInfo}>RSSI: {beacon.rssi} dBm</ThemedText>
-          <ThemedText style={styles.beaconInfo}>ID: {beacon.id}</ThemedText>
+          <ThemedText style={styles.beaconInfo}>ID: {beacon.id.substring(0, 8)}</ThemedText>
+        </View>
+        {isCalibrated && beaconIndex !== null && calibrationData[beaconIndex] && (
+          <ThemedText style={styles.beaconInfo}>
+            Baseline: {calibrationData[beaconIndex].baselineRSSI} dBm | 
+            Angle: {calibrationData[beaconIndex].angleDeg.toFixed(0)}°
+          </ThemedText>
+        )}
+      </View>
+    );
+  };
+
+  const renderMethodSelector = () => {
+    const methods: Array<{ id: CalculationMethod; label: string }> = [
+      { id: 'relative', label: 'Relative' },
+      { id: 'rssi-to-meters', label: 'RSSI→Meters' },
+      { id: 'trilateration', label: 'Trilateration' },
+    ];
+
+    return (
+      <View style={styles.methodSelector}>
+        <View style={styles.methodRow}>
+          <ThemedText style={styles.methodLabel}>Calculation Method:</ThemedText>
+          <TouchableOpacity
+            style={[
+              styles.smoothingToggle,
+              {
+                backgroundColor: smoothingEnabled
+                  ? '#10b981'
+                  : colorScheme === 'dark'
+                  ? '#2a2a2a'
+                  : '#e0e0e0',
+              },
+            ]}
+            onPress={() => setSmoothingEnabled(!smoothingEnabled)}
+          >
+            <ThemedText
+              style={[
+                styles.smoothingToggleText,
+                {
+                  color: smoothingEnabled ? '#fff' : colorScheme === 'dark' ? '#d0d0d0' : '#555',
+                },
+              ]}
+            >
+              {smoothingEnabled ? '✓ Smoothing' : 'Smoothing'}
+            </ThemedText>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.methodButtons}>
+          {methods.map((method) => (
+            <TouchableOpacity
+              key={method.id}
+              style={[
+                styles.methodButton,
+                {
+                  backgroundColor: 
+                    calculationMethod === method.id
+                      ? '#2196f3'
+                      : colorScheme === 'dark'
+                      ? '#2a2a2a'
+                      : '#e0e0e0',
+                },
+              ]}
+              onPress={() => setCalculationMethod(method.id)}
+            >
+              <ThemedText
+                style={[
+                  styles.methodButtonText,
+                  {
+                    color: calculationMethod === method.id ? '#fff' : 
+                           colorScheme === 'dark' ? '#d0d0d0' : '#555',
+                  },
+                ]}
+              >
+                {method.label}
+              </ThemedText>
+            </TouchableOpacity>
+          ))}
         </View>
       </View>
     );
   };
 
+  const renderPositionMetrics = () => {
+    if (!userPosition || !domeConfig) return null;
+
+    return (
+      <View style={styles.metricsContainer}>
+        <View style={styles.metricRow}>
+          <View style={styles.metricBox}>
+            <ThemedText style={styles.metricLabel}>Distance from Start</ThemedText>
+            <ThemedText style={styles.metricValue}>
+              {userPosition.distanceFromStart.toFixed(1)}m
+            </ThemedText>
+          </View>
+          <View style={styles.metricBox}>
+            <ThemedText style={styles.metricLabel}>Progress</ThemedText>
+            <ThemedText style={styles.metricValue}>
+              {userPosition.progressPercentage.toFixed(0)}%
+            </ThemedText>
+          </View>
+        </View>
+        <View style={styles.metricRow}>
+          <View style={styles.metricBox}>
+            <ThemedText style={styles.metricLabel}>Nearest Beacon</ThemedText>
+            <ThemedText style={styles.metricValue}>
+              LC_{userPosition.nearestBeaconIndex}
+            </ThemedText>
+          </View>
+          <View style={styles.metricBox}>
+            <ThemedText style={styles.metricLabel}>Confidence</ThemedText>
+            <ThemedText style={styles.metricValue}>
+              {(userPosition.confidence * 100).toFixed(0)}%
+            </ThemedText>
+          </View>
+        </View>
+        <View style={styles.metricRow}>
+          <View style={styles.metricBoxFull}>
+            <ThemedText style={styles.metricLabel}>Position (x, y)</ThemedText>
+            <ThemedText style={styles.metricValue}>
+              ({userPosition.x.toFixed(1)}m, {userPosition.y.toFixed(1)}m)
+            </ThemedText>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
+  // Prepare current beacon data for visualization
+  const currentBeaconSignals = beacons.map((beacon) => {
+    const match = beacon.name.match(/^LocationContext_(\d+)$/);
+    const index = match ? parseInt(match[1], 10) : -1;
+    return { index, rssi: beacon.rssi };
+  }).filter(b => b.index >= 0);
+
   return (
     <ThemedView style={styles.container}>
       <View style={styles.header}>
         <ThemedText type="title" style={styles.title}>
-          BLE Beacon Scanner
+          Dome Floor Positioning
         </ThemedText>
         <ThemedText style={styles.subtitle}>
-          Scanning for LocationContext beacons
+          {isCalibrated 
+            ? `Tracking position in ${domeConfig?.totalBeacons}-beacon dome` 
+            : 'Stand at LocationContext_0 and calibrate'}
         </ThemedText>
         
         {error && (
@@ -292,49 +380,72 @@ export default function ScannerScreen() {
         )}
 
         <View style={styles.controls}>
-          {!isScanning ? (
-            <TouchableOpacity 
-              style={styles.startButton} 
-              onPress={handleStartScanning}
-            >
-              <ThemedText style={styles.buttonText}>Start Scanning</ThemedText>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity 
-              style={styles.stopButton} 
-              onPress={handleStopScanning}
-            >
-              <ThemedText style={styles.buttonText}>Stop Scanning</ThemedText>
-            </TouchableOpacity>
-          )}
+          <View style={styles.controlRow}>
+            {!isScanning ? (
+              <TouchableOpacity 
+                style={[styles.button, styles.startButton]} 
+                onPress={handleStartScanning}
+              >
+                <ThemedText style={styles.buttonText}>Start Scanning</ThemedText>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity 
+                style={[styles.button, styles.stopButton]} 
+                onPress={handleStopScanning}
+              >
+                <ThemedText style={styles.buttonText}>Stop Scanning</ThemedText>
+              </TouchableOpacity>
+            )}
+            
+            {!isCalibrated ? (
+              <TouchableOpacity 
+                style={[styles.button, styles.calibrateButton]}
+                onPress={handleCalibrate}
+                disabled={!isScanning || beacons.length === 0}
+              >
+                <ThemedText style={styles.buttonText}>Calibrate</ThemedText>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity 
+                style={[styles.button, styles.resetButton]}
+                onPress={handleResetCalibration}
+              >
+                <ThemedText style={styles.buttonText}>Reset</ThemedText>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         <View style={styles.statusContainer}>
           <ThemedText style={styles.statusText}>
-            Status: {isScanning ? 'Scanning...' : 'Idle'}
+            Status: {isScanning ? 'Scanning...' : 'Idle'} | 
+            {isCalibrated ? ' Calibrated ✓' : ' Not Calibrated'}
           </ThemedText>
           <ThemedText style={styles.statusText}>
-            Beacons Found: {beacons.length}
+            Beacons: {beacons.length}
           </ThemedText>
         </View>
       </View>
+
+      {isCalibrated && renderMethodSelector()}
+
       <View style={tabContainerStyle}>
         <TouchableOpacity
           style={[
             styles.tabButton,
             { backgroundColor: tabInactiveBg },
-            activeView === 'compass' && styles.tabButtonActive,
+            activeView === 'floor' && styles.tabButtonActive,
           ]}
-          onPress={() => setActiveView('compass')}
+          onPress={() => setActiveView('floor')}
         >
           <ThemedText
             style={[
               styles.tabButtonText,
               { color: tabInactiveText },
-              activeView === 'compass' && styles.tabButtonTextActive,
+              activeView === 'floor' && styles.tabButtonTextActive,
             ]}
           >
-            Compass
+            Floor View
           </ThemedText>
         </TouchableOpacity>
         <TouchableOpacity
@@ -357,44 +468,37 @@ export default function ScannerScreen() {
         </TouchableOpacity>
       </View>
 
-      {activeView === 'compass' ? (
-        <View style={styles.visualContainer}>
-          <View style={compassCardStyle}>
+      {activeView === 'floor' ? (
+        <ScrollView style={styles.visualContainer}>
+          <View style={floorCardStyle}>
             <ThemedText style={styles.sectionTitle}>
-              Beacon Dome Overview
+              Dome Floor Map
             </ThemedText>
-            {compassModel.totalSlots === 0 ? (
-              <ThemedText style={styles.compassPlaceholder}>
-                Start scanning for LocationContext beacons to populate the
-                compass.
+            {!isCalibrated ? (
+              <ThemedText style={styles.placeholderText}>
+                Start scanning and calibrate at LocationContext_0 to see your position on the dome floor.
               </ThemedText>
-            ) : (
+            ) : domeConfig ? (
               <>
-                <BeaconCompass
-                  slots={compassModel.slots}
-                  estimatedAngleDeg={compassModel.estimatedAngleDeg}
-                  confidence={compassModel.confidence}
+                <DomeFloorView
+                  domeConfig={domeConfig}
+                  calibrationData={calibrationData}
+                  userPosition={userPosition}
+                  currentBeacons={currentBeaconSignals}
                   theme={themeVariant}
                 />
-                <View style={styles.compassMeta}>
-                  <ThemedText style={styles.compassMetaText}>
-                    Heading: {headingText}
-                  </ThemedText>
-                  <ThemedText style={styles.compassMetaText}>
-                    Confidence: {confidenceText}
-                  </ThemedText>
-                  <ThemedText style={styles.compassMetaText}>
-                    Active: {activeBeaconCount} / {compassModel.totalSlots}
-                  </ThemedText>
-                </View>
-                <ThemedText style={styles.compassHint}>
-                  The dot estimates your position inside the beacon circle
-                  using recent RSSI readings.
+                {renderPositionMetrics()}
+                <ThemedText style={styles.hintText}>
+                  The red dot shows your estimated position. Walk toward the orange TARGET beacon.
                 </ThemedText>
               </>
+            ) : (
+              <ThemedText style={styles.placeholderText}>
+                Loading dome configuration...
+              </ThemedText>
             )}
           </View>
-        </View>
+        </ScrollView>
       ) : (
         <ScrollView style={styles.beaconList}>
           {beacons.length === 0 ? (
@@ -447,17 +551,27 @@ const styles = StyleSheet.create({
   controls: {
     marginBottom: 15,
   },
-  startButton: {
-    backgroundColor: '#2196f3',
+  controlRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  button: {
+    flex: 1,
     borderRadius: 8,
     padding: 15,
     alignItems: 'center',
   },
+  startButton: {
+    backgroundColor: '#2196f3',
+  },
   stopButton: {
     backgroundColor: '#f44336',
-    borderRadius: 8,
-    padding: 15,
-    alignItems: 'center',
+  },
+  calibrateButton: {
+    backgroundColor: '#10b981',
+  },
+  resetButton: {
+    backgroundColor: '#f59e0b',
   },
   buttonText: {
     color: '#fff',
@@ -473,6 +587,44 @@ const styles = StyleSheet.create({
     fontSize: 14,
     opacity: 0.8,
   },
+  methodSelector: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  methodRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  methodLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  smoothingToggle: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+  },
+  smoothingToggleText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  methodButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  methodButton: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  methodButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
   tabSwitcher: {
     flexDirection: 'row',
     marginHorizontal: 20,
@@ -480,13 +632,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#d0d0d0',
   },
   tabButton: {
     flex: 1,
     paddingVertical: 10,
     alignItems: 'center',
-    backgroundColor: '#f0f0f0',
   },
   tabButtonActive: {
     backgroundColor: '#2196f3',
@@ -494,10 +644,67 @@ const styles = StyleSheet.create({
   tabButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#555',
   },
   tabButtonTextActive: {
     color: '#fff',
+  },
+  visualContainer: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 15,
+  },
+  floorCard: {
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  placeholderText: {
+    fontSize: 14,
+    opacity: 0.7,
+    textAlign: 'center',
+    paddingVertical: 20,
+  },
+  hintText: {
+    fontSize: 12,
+    opacity: 0.6,
+    marginTop: 12,
+    textAlign: 'center',
+  },
+  metricsContainer: {
+    marginTop: 16,
+    gap: 8,
+  },
+  metricRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  metricBox: {
+    flex: 1,
+    padding: 10,
+    backgroundColor: 'rgba(33, 150, 243, 0.1)',
+    borderRadius: 8,
+  },
+  metricBoxFull: {
+    flex: 1,
+    padding: 10,
+    backgroundColor: 'rgba(33, 150, 243, 0.1)',
+    borderRadius: 8,
+  },
+  metricLabel: {
+    fontSize: 11,
+    opacity: 0.7,
+    marginBottom: 4,
+  },
+  metricValue: {
+    fontSize: 16,
+    fontWeight: '600',
   },
   beaconList: {
     flex: 1,
@@ -511,42 +718,6 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     opacity: 0.6,
-    textAlign: 'center',
-  },
-  visualContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 10,
-  },
-  compassCard: {
-    borderRadius: 14,
-    padding: 16,
-    borderWidth: 1,
-    marginBottom: 10,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  compassMeta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 12,
-  },
-  compassMetaText: {
-    fontSize: 13,
-    opacity: 0.8,
-  },
-  compassHint: {
-    fontSize: 12,
-    opacity: 0.6,
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  compassPlaceholder: {
-    fontSize: 14,
-    opacity: 0.7,
     textAlign: 'center',
   },
   beaconCard: {
@@ -589,4 +760,3 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
 });
-
