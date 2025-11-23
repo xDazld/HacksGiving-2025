@@ -14,8 +14,8 @@ export function CustomBottomNav() {
 
   const tabs = [
     {
-      name: 'audio-tour',
-      path: '/(tabs)/audio-tour',
+      name: 'botanical-tales',
+      path: '/(tabs)/botanical-tales',
       icon: BotanicalTalesIcon,
       label: 'Botanical Tales',
     },

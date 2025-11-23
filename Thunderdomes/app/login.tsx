@@ -58,7 +58,7 @@ export default function LoginScreen() {
     try {
       const success = await login(ageNum, barcodeToUse);
       if (success) {
-        router.replace('/(tabs)/audio-tour');
+        router.replace('/(tabs)/botanical-tales');
       } else {
         Alert.alert('Login Failed', 'Invalid barcode. Please try again.');
       }
