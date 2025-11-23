@@ -9,7 +9,7 @@ import {
   Modal,
   View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
@@ -369,8 +369,8 @@ export default function ScavengerHuntScreen() {
                   <ThemedText style={styles.learnMoreText}>
                     {isStoryExpanded ? t('domeDetective.hideStory') : t('domeDetective.learnMore')}
                   </ThemedText>
-                  <Ionicons
-                    name={isStoryExpanded ? 'chevron-up' : 'chevron-down'}
+                  <MaterialIcons
+                    name={isStoryExpanded ? 'expand-less' : 'expand-more'}
                     size={20}
                     color="#5A6A5D"
                   />

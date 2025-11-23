@@ -1,5 +1,5 @@
 import * as React from 'react';
-import Svg, { Path } from 'react-native-svg';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 interface IconProps {
   size?: number;
@@ -8,15 +8,6 @@ interface IconProps {
 
 export function VoiceChatIcon({ size = 40, color = '#FFFFFF' }: IconProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M12 14C13.66 14 15 12.66 15 11V5C15 3.34 13.66 2 12 2C10.34 2 9 3.34 9 5V11C9 12.66 10.34 14 12 14Z"
-        fill={color}
-      />
-      <Path
-        d="M17 11C17 13.76 14.76 16 12 16C9.24 16 7 13.76 7 11H5C5 14.53 7.61 17.43 11 17.92V21H13V17.92C16.39 17.43 19 14.53 19 11H17Z"
-        fill={color}
-      />
-    </Svg>
+    <MaterialCommunityIcons name="microphone" size={size} color={color} />
   );
 }
