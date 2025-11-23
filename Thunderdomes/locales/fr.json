@@ -1,0 +1,144 @@
+{
+  "common": {
+    "loading": "Chargement...",
+    "comingSoon": "Bientôt disponible"
+  },
+  "navigation": {
+    "voiceChat": "Chat vocal",
+    "botanicalTales": "Contes botaniques",
+    "domeDetective": "Détective des dômes",
+    "sipAndSeek": "Siroter et chercher"
+  },
+  "menu": {
+    "accessibility": "Accessibilité",
+    "language": "Langue",
+    "becomeMember": "Devenir membre",
+    "makeDonation": "Faire un don",
+    "viewCalendar": "Voir notre calendrier",
+    "visitWebsite": "Visiter notre site"
+  },
+  "languages": {
+    "en": "Anglais (English)",
+    "es": "Espagnol (Español)",
+    "zh": "Chinois (中文)",
+    "hi": "Hindi (हिन्दी)",
+    "ar": "Arabe (العربية)",
+    "fr": "Français",
+    "de": "Allemand (Deutsch)",
+    "ja": "Japonais (日本語)",
+    "pt": "Portugais (Português)",
+    "ru": "Russe (Русский)"
+  },
+  "botanicalTales": {
+    "title": "Contes botaniques",
+    "welcome": "Bienvenue aux dômes !",
+    "selectDome": "Quel environnement souhaitez-vous explorer ?",
+    "desertDome": "Le dôme aride",
+    "kidsDome": "Le dôme des enfants",
+    "tropicalDome": "Le dôme tropical",
+    "showDome": "Le dôme floral"
+  },
+  "aridDome": {
+    "title": "Visites du dôme aride",
+    "availableTours": "Visites audio disponibles",
+    "madagascarCollection": "Collection de Madagascar",
+    "madagascarDesc": "Voyage à travers la flore unique de l'île",
+    "worldOfCacti": "Monde des cactus",
+    "cactiDesc": "Explorez divers cactus du désert",
+    "desertBloom": "Floraison du désert",
+    "bloomDesc": "Témoin de fleurs du désert saisonnières",
+    "canaryIsland": "Collection des îles Canaries",
+    "canaryDesc": "Découvrez les plantes des îles atlantiques"
+  },
+  "madagascarTour": {
+    "title": "Collection de Madagascar",
+    "featuredPlantStory": "Histoire de plante en vedette",
+    "generating": "Génération de votre histoire de plante personnalisée...",
+    "audioLoading": "Préparation audio...",
+    "audioReady": "Audio prêt ! Appuyez sur lecture pour commencer.",
+    "errorLoading": "Erreur de chargement de l'histoire. Veuillez réessayer.",
+    "playButton": "▶",
+    "pauseButton": "⏸"
+  },
+  "sipAndSeek": {
+    "title": "Siroter et chercher",
+    "description": "Achetez de la nourriture ou une boisson de notre café pour débloquer une aventure de boisson personnalisée. Scannez le code-barres pour commencer votre visite !",
+    "featuredBeverages": "Boissons en vedette",
+    "scanButton": "Scanner",
+    "scannerTitle": "Scanner le code-barres",
+    "scanInstruction": "Pointez la caméra sur le code-barres pour scanner",
+    "cameraPermission": "Autorisation de caméra",
+    "cameraPermissionMessage": "L'accès à la caméra est requis pour scanner les codes-barres.",
+    "barcodeScanned": "Code-barres scanné !",
+    "codeLabel": "Code :",
+    "drinks": {
+      "pricklyPear": "Rafraîchissement de figue de Barbarie",
+      "pricklyPearDesc": "Boisson magenta vibrante à base de fruit de cactus du désert",
+      "hibiscus": "Paradis d'hibiscus",
+      "hibiscusDesc": "Thé de fleur tropicale rouge foncé avec une touche acidulée",
+      "lavender": "Sérénité de lavande",
+      "lavenderDesc": "Latte floral violet apaisant avec des notes de miel",
+      "vanilla": "Milkshake à la vanille",
+      "vanillaDesc": "Shake crémeux avec des gousses de vanille de Madagascar"
+    }
+  },
+  "voiceChat": {
+    "speaking": "🔊 Parle (Touchez pour arrêter)",
+    "listening": "🔴 Écoute...",
+    "thinking": "✨ Réfléchit...",
+    "tapToChat": "Touchez pour discuter",
+    "tapToSend": "Touchez pour envoyer",
+    "tapToInterrupt": "Touchez pour interrompre",
+    "tapToSpeak": "Touchez pour parler"
+  },
+  "domeDetective": {
+    "title": "Détective des dômes",
+    "description": "Identifiez les plantes en utilisant des indices et vos compétences de détective... Êtes-vous prêt à être un détective ?",
+    "letsGo": "Allons-y !",
+    "loading": {
+      "consulting": "Consultation des esprits botaniques...",
+      "whispering": "Chuchotant aux feuilles...",
+      "checking": "Vérification de votre réponse..."
+    },
+    "huntComplete": "Chasse terminée !",
+    "congratulations": "Félicitations ! Vous avez trouvé toutes les plantes de cette chasse.",
+    "totalFound": "Total de plantes trouvées :",
+    "playAgain": "Rejouer",
+    "exit": "Sortir",
+    "correct": "Correct !",
+    "itWasThe": "C'était",
+    "learnMore": "En savoir plus",
+    "hideStory": "Masquer l'histoire",
+    "nextPlant": "Plante suivante",
+    "getAnotherHint": "Obtenir un autre indice",
+    "foundIt": "Je pense l'avoir trouvé !",
+    "notQuite": "Pas tout à fait...",
+    "tryAgain": "Réessayer",
+    "startActivity": "Démarrer l'activité",
+    "startMessage": "Démarrer le Détective des dômes utilisera votre billet. Après avoir terminé cette activité, vous pouvez scanner un nouveau billet pour en commencer une autre. Continuer ?",
+    "cancel": "Annuler",
+    "start": "Démarrer"
+  },
+  "settings": {
+    "title": "Paramètres d'accessibilité",
+    "textSize": "Taille du texte",
+    "highContrast": "Mode contraste élevé",
+    "screenReader": "Support de lecteur d'écran"
+  },
+  "login": {
+    "welcome": "Bienvenue aux dômes de Mitchell Park",
+    "subtitle": "Entrez votre âge et le code-barres du billet pour commencer",
+    "age": "Âge",
+    "agePlaceholder": "Entrez votre âge",
+    "done": "Terminé",
+    "barcode": "Code-barres du billet (Optionnel)",
+    "barcodeManualPlaceholder": "Entrez le code-barres manuellement",
+    "scan": "Scanner",
+    "scanBarcode": "Scanner le code-barres",
+    "orEnterManually": "Ou entrer manuellement",
+    "loginButton": "Se connecter",
+    "close": "Fermer",
+    "scanInstructions": "Positionnez le code-barres dans le cadre"
+  }
+}
+

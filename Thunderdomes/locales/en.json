@@ -124,6 +124,21 @@
     "textSize": "Text Size",
     "highContrast": "High Contrast Mode",
     "screenReader": "Screen Reader Support"
+  },
+  "login": {
+    "welcome": "Welcome to Mitchell Park Domes",
+    "subtitle": "Enter your age and ticket barcode to get started",
+    "age": "Age",
+    "agePlaceholder": "Enter your age",
+    "done": "Done",
+    "barcode": "Ticket Barcode (Optional)",
+    "barcodeManualPlaceholder": "Enter barcode manually",
+    "scan": "Scan",
+    "scanBarcode": "Scan Barcode",
+    "orEnterManually": "Or enter manually",
+    "loginButton": "Login",
+    "close": "Close",
+    "scanInstructions": "Position the barcode within the frame"
   }
 }
 

@@ -1,0 +1,144 @@
+{
+  "common": {
+    "loading": "Carregando...",
+    "comingSoon": "Em breve"
+  },
+  "navigation": {
+    "voiceChat": "Chat de voz",
+    "botanicalTales": "Contos botânicos",
+    "domeDetective": "Detetive da cúpula",
+    "sipAndSeek": "Saborear e procurar"
+  },
+  "menu": {
+    "accessibility": "Acessibilidade",
+    "language": "Idioma",
+    "becomeMember": "Torne-se membro",
+    "makeDonation": "Fazer uma doação",
+    "viewCalendar": "Ver nosso calendário",
+    "visitWebsite": "Visitar nosso site"
+  },
+  "languages": {
+    "en": "Inglês (English)",
+    "es": "Espanhol (Español)",
+    "zh": "Chinês (中文)",
+    "hi": "Hindi (हिन्दी)",
+    "ar": "Árabe (العربية)",
+    "fr": "Francês (Français)",
+    "de": "Alemão (Deutsch)",
+    "ja": "Japonês (日本語)",
+    "pt": "Português",
+    "ru": "Russo (Русский)"
+  },
+  "botanicalTales": {
+    "title": "Contos botânicos",
+    "welcome": "Bem-vindo às cúpulas!",
+    "selectDome": "Qual ambiente você gostaria de explorar?",
+    "desertDome": "A cúpula árida",
+    "kidsDome": "A cúpula das crianças",
+    "tropicalDome": "A cúpula tropical",
+    "showDome": "A cúpula floral"
+  },
+  "aridDome": {
+    "title": "Tours da cúpula árida",
+    "availableTours": "Tours de áudio disponíveis",
+    "madagascarCollection": "Coleção de Madagascar",
+    "madagascarDesc": "Jornada pela flora única da ilha",
+    "worldOfCacti": "Mundo dos cactos",
+    "cactiDesc": "Explore diversos cactos do deserto",
+    "desertBloom": "Floração do deserto",
+    "bloomDesc": "Testemunhe flores sazonais do deserto",
+    "canaryIsland": "Coleção das Ilhas Canárias",
+    "canaryDesc": "Descubra plantas das ilhas do Atlântico"
+  },
+  "madagascarTour": {
+    "title": "Coleção de Madagascar",
+    "featuredPlantStory": "História de planta em destaque",
+    "generating": "Gerando sua história personalizada de planta...",
+    "audioLoading": "Preparando áudio...",
+    "audioReady": "Áudio pronto! Pressione play para começar.",
+    "errorLoading": "Erro ao carregar história. Por favor, tente novamente.",
+    "playButton": "▶",
+    "pauseButton": "⏸"
+  },
+  "sipAndSeek": {
+    "title": "Saborear e procurar",
+    "description": "Compre comida ou uma bebida do nosso café para desbloquear uma aventura de bebida personalizada. Escaneie o código de barras para começar seu tour!",
+    "featuredBeverages": "Bebidas em destaque",
+    "scanButton": "Escanear",
+    "scannerTitle": "Escanear código de barras",
+    "scanInstruction": "Aponte a câmera para o código de barras para escanear",
+    "cameraPermission": "Permissão da câmera",
+    "cameraPermissionMessage": "O acesso à câmera é necessário para escanear códigos de barras.",
+    "barcodeScanned": "Código de barras escaneado!",
+    "codeLabel": "Código:",
+    "drinks": {
+      "pricklyPear": "Refresco de figo-da-índia",
+      "pricklyPearDesc": "Bebida magenta vibrante feita de fruta de cacto do deserto",
+      "hibiscus": "Paraíso de hibisco",
+      "hibiscusDesc": "Chá de flor tropical vermelho profundo com um toque picante",
+      "lavender": "Serenidade de lavanda",
+      "lavenderDesc": "Latte floral roxo calmante com notas de mel",
+      "vanilla": "Milkshake de baunilha",
+      "vanillaDesc": "Shake cremoso com vagens de baunilha de Madagascar"
+    }
+  },
+  "voiceChat": {
+    "speaking": "🔊 Falando (Toque para parar)",
+    "listening": "🔴 Ouvindo...",
+    "thinking": "✨ Pensando...",
+    "tapToChat": "Toque para conversar",
+    "tapToSend": "Toque para enviar",
+    "tapToInterrupt": "Toque para interromper",
+    "tapToSpeak": "Toque para falar"
+  },
+  "domeDetective": {
+    "title": "Detetive da cúpula",
+    "description": "Identifique plantas usando pistas e suas habilidades de detetive... Você está pronto para ser um detetive?",
+    "letsGo": "Vamos lá!",
+    "loading": {
+      "consulting": "Consultando os espíritos botânicos...",
+      "whispering": "Sussurrando para as folhas...",
+      "checking": "Verificando seu palpite..."
+    },
+    "huntComplete": "Caça completa!",
+    "congratulations": "Parabéns! Você encontrou todas as plantas nesta caça.",
+    "totalFound": "Total de plantas encontradas:",
+    "playAgain": "Jogar novamente",
+    "exit": "Sair",
+    "correct": "Correto!",
+    "itWasThe": "Era o",
+    "learnMore": "Saiba mais",
+    "hideStory": "Ocultar história",
+    "nextPlant": "Próxima planta",
+    "getAnotherHint": "Obter outra dica",
+    "foundIt": "Acho que encontrei!",
+    "notQuite": "Não exatamente...",
+    "tryAgain": "Tente novamente",
+    "startActivity": "Iniciar atividade",
+    "startMessage": "Iniciar o Detetive da cúpula usará seu ingresso. Após completar esta atividade, você pode escanear um novo ingresso para começar outra. Continuar?",
+    "cancel": "Cancelar",
+    "start": "Iniciar"
+  },
+  "settings": {
+    "title": "Configurações de acessibilidade",
+    "textSize": "Tamanho do texto",
+    "highContrast": "Modo de alto contraste",
+    "screenReader": "Suporte a leitor de tela"
+  },
+  "login": {
+    "welcome": "Bem-vindo às cúpulas de Mitchell Park",
+    "subtitle": "Insira sua idade e o código de barras do ingresso para começar",
+    "age": "Idade",
+    "agePlaceholder": "Insira sua idade",
+    "done": "Concluído",
+    "barcode": "Código de barras do ingresso (Opcional)",
+    "barcodeManualPlaceholder": "Insira o código de barras manualmente",
+    "scan": "Escanear",
+    "scanBarcode": "Escanear código de barras",
+    "orEnterManually": "Ou inserir manualmente",
+    "loginButton": "Entrar",
+    "close": "Fechar",
+    "scanInstructions": "Posicione o código de barras dentro do quadro"
+  }
+}
+

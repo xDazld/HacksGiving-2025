@@ -1,0 +1,144 @@
+{
+  "common": {
+    "loading": "Lädt...",
+    "comingSoon": "Demnächst"
+  },
+  "navigation": {
+    "voiceChat": "Sprach-Chat",
+    "botanicalTales": "Botanische Geschichten",
+    "domeDetective": "Kuppel-Detektiv",
+    "sipAndSeek": "Nippen und suchen"
+  },
+  "menu": {
+    "accessibility": "Barrierefreiheit",
+    "language": "Sprache",
+    "becomeMember": "Mitglied werden",
+    "makeDonation": "Spenden",
+    "viewCalendar": "Kalender anzeigen",
+    "visitWebsite": "Website besuchen"
+  },
+  "languages": {
+    "en": "Englisch (English)",
+    "es": "Spanisch (Español)",
+    "zh": "Chinesisch (中文)",
+    "hi": "Hindi (हिन्दी)",
+    "ar": "Arabisch (العربية)",
+    "fr": "Französisch (Français)",
+    "de": "Deutsch",
+    "ja": "Japanisch (日本語)",
+    "pt": "Portugiesisch (Português)",
+    "ru": "Russisch (Русский)"
+  },
+  "botanicalTales": {
+    "title": "Botanische Geschichten",
+    "welcome": "Willkommen in den Kuppeln!",
+    "selectDome": "Welche Umgebung möchten Sie erkunden?",
+    "desertDome": "Die Trockenkuppel",
+    "kidsDome": "Die Kinderkuppel",
+    "tropicalDome": "Die Tropenkuppel",
+    "showDome": "Die Blumenkuppel"
+  },
+  "aridDome": {
+    "title": "Trockenkuppel-Touren",
+    "availableTours": "Verfügbare Audio-Touren",
+    "madagascarCollection": "Madagaskar-Sammlung",
+    "madagascarDesc": "Reise durch einzigartige Inselflora",
+    "worldOfCacti": "Welt der Kakteen",
+    "cactiDesc": "Entdecken Sie vielfältige Wüstenkakteen",
+    "desertBloom": "Wüstenblüte",
+    "bloomDesc": "Erleben Sie saisonale Wüstenblumen",
+    "canaryIsland": "Kanarische Inseln Sammlung",
+    "canaryDesc": "Entdecken Sie atlantische Inselpflanzen"
+  },
+  "madagascarTour": {
+    "title": "Madagaskar-Sammlung",
+    "featuredPlantStory": "Vorgestellte Pflanzengeschichte",
+    "generating": "Ihre personalisierte Pflanzengeschichte wird erstellt...",
+    "audioLoading": "Audio wird vorbereitet...",
+    "audioReady": "Audio bereit! Drücken Sie Play zum Starten.",
+    "errorLoading": "Fehler beim Laden der Geschichte. Bitte versuchen Sie es erneut.",
+    "playButton": "▶",
+    "pauseButton": "⏸"
+  },
+  "sipAndSeek": {
+    "title": "Nippen und suchen",
+    "description": "Kaufen Sie Essen oder ein Getränk in unserem Café, um ein individuelles Getränkeabenteuer freizuschalten. Scannen Sie den Barcode, um Ihre Tour zu beginnen!",
+    "featuredBeverages": "Ausgewählte Getränke",
+    "scanButton": "Scannen",
+    "scannerTitle": "Barcode scannen",
+    "scanInstruction": "Kamera auf den Barcode richten, um zu scannen",
+    "cameraPermission": "Kamera-Erlaubnis",
+    "cameraPermissionMessage": "Kamerazugriff ist zum Scannen von Barcodes erforderlich.",
+    "barcodeScanned": "Barcode gescannt!",
+    "codeLabel": "Code:",
+    "drinks": {
+      "pricklyPear": "Kaktusfeigen-Kühler",
+      "pricklyPearDesc": "Lebendiges magentafarbenes Getränk aus Wüstenkaktusfrucht",
+      "hibiscus": "Hibiskus-Paradies",
+      "hibiscusDesc": "Tiefroter tropischer Blütentee mit säuerlichem Touch",
+      "lavender": "Lavendel-Gelassenheit",
+      "lavenderDesc": "Beruhigender lila Blumenlatte mit Honignoten",
+      "vanilla": "Vanille-Milchshake",
+      "vanillaDesc": "Cremiger Shake mit Madagaskar-Vanilleschoten"
+    }
+  },
+  "voiceChat": {
+    "speaking": "🔊 Spricht (Tippen zum Stoppen)",
+    "listening": "🔴 Hört zu...",
+    "thinking": "✨ Denkt nach...",
+    "tapToChat": "Tippen zum Chatten",
+    "tapToSend": "Tippen zum Senden",
+    "tapToInterrupt": "Tippen zum Unterbrechen",
+    "tapToSpeak": "Tippen zum Sprechen"
+  },
+  "domeDetective": {
+    "title": "Kuppel-Detektiv",
+    "description": "Identifizieren Sie Pflanzen anhand von Hinweisen und Ihren Detektivfähigkeiten... Sind Sie bereit, ein Detektiv zu sein?",
+    "letsGo": "Los geht's!",
+    "loading": {
+      "consulting": "Konsultiere botanische Geister...",
+      "whispering": "Flüstere zu den Blättern...",
+      "checking": "Überprüfe deine Vermutung..."
+    },
+    "huntComplete": "Suche abgeschlossen!",
+    "congratulations": "Glückwunsch! Sie haben alle Pflanzen bei dieser Suche gefunden.",
+    "totalFound": "Gefundene Pflanzen insgesamt:",
+    "playAgain": "Erneut spielen",
+    "exit": "Beenden",
+    "correct": "Richtig!",
+    "itWasThe": "Es war",
+    "learnMore": "Mehr erfahren",
+    "hideStory": "Geschichte verbergen",
+    "nextPlant": "Nächste Pflanze",
+    "getAnotherHint": "Einen weiteren Hinweis erhalten",
+    "foundIt": "Ich glaube, ich habe es gefunden!",
+    "notQuite": "Nicht ganz...",
+    "tryAgain": "Erneut versuchen",
+    "startActivity": "Aktivität starten",
+    "startMessage": "Das Starten von Kuppel-Detektiv verwendet Ihr Ticket. Nach Abschluss dieser Aktivität können Sie ein neues Ticket scannen, um eine weitere zu starten. Fortfahren?",
+    "cancel": "Abbrechen",
+    "start": "Starten"
+  },
+  "settings": {
+    "title": "Barrierefreiheitseinstellungen",
+    "textSize": "Textgröße",
+    "highContrast": "Hochkontrastmodus",
+    "screenReader": "Screenreader-Unterstützung"
+  },
+  "login": {
+    "welcome": "Willkommen in den Mitchell Park Kuppeln",
+    "subtitle": "Geben Sie Ihr Alter und den Ticket-Barcode ein, um zu beginnen",
+    "age": "Alter",
+    "agePlaceholder": "Geben Sie Ihr Alter ein",
+    "done": "Fertig",
+    "barcode": "Ticket-Barcode (Optional)",
+    "barcodeManualPlaceholder": "Barcode manuell eingeben",
+    "scan": "Scannen",
+    "scanBarcode": "Barcode scannen",
+    "orEnterManually": "Oder manuell eingeben",
+    "loginButton": "Anmelden",
+    "close": "Schließen",
+    "scanInstructions": "Positionieren Sie den Barcode im Rahmen"
+  }
+}
+

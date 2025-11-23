@@ -1,0 +1,144 @@
+{
+  "common": {
+    "loading": "読み込み中...",
+    "comingSoon": "近日公開"
+  },
+  "navigation": {
+    "voiceChat": "ボイスチャット",
+    "botanicalTales": "植物の物語",
+    "domeDetective": "ドーム探偵",
+    "sipAndSeek": "すすりながら探索"
+  },
+  "menu": {
+    "accessibility": "アクセシビリティ",
+    "language": "言語",
+    "becomeMember": "会員になる",
+    "makeDonation": "寄付する",
+    "viewCalendar": "カレンダーを見る",
+    "visitWebsite": "ウェブサイトを訪問"
+  },
+  "languages": {
+    "en": "英語 (English)",
+    "es": "スペイン語 (Español)",
+    "zh": "中国語 (中文)",
+    "hi": "ヒンディー語 (हिन्दी)",
+    "ar": "アラビア語 (العربية)",
+    "fr": "フランス語 (Français)",
+    "de": "ドイツ語 (Deutsch)",
+    "ja": "日本語",
+    "pt": "ポルトガル語 (Português)",
+    "ru": "ロシア語 (Русский)"
+  },
+  "botanicalTales": {
+    "title": "植物の物語",
+    "welcome": "ドームへようこそ！",
+    "selectDome": "どの環境を探索したいですか？",
+    "desertDome": "乾燥ドーム",
+    "kidsDome": "キッズドーム",
+    "tropicalDome": "熱帯ドーム",
+    "showDome": "花のドーム"
+  },
+  "aridDome": {
+    "title": "乾燥ドームツアー",
+    "availableTours": "利用可能なオーディオツアー",
+    "madagascarCollection": "マダガスカルコレクション",
+    "madagascarDesc": "ユニークな島の植物群を巡る旅",
+    "worldOfCacti": "サボテンの世界",
+    "cactiDesc": "多様な砂漠のサボテンを探索",
+    "desertBloom": "砂漠の花",
+    "bloomDesc": "季節の砂漠の花を目撃",
+    "canaryIsland": "カナリア諸島コレクション",
+    "canaryDesc": "大西洋の島の植物を発見"
+  },
+  "madagascarTour": {
+    "title": "マダガスカルコレクション",
+    "featuredPlantStory": "注目の植物物語",
+    "generating": "あなたのパーソナライズされた植物の物語を生成中...",
+    "audioLoading": "オーディオを準備中...",
+    "audioReady": "オーディオ準備完了！再生ボタンを押して開始してください。",
+    "errorLoading": "ストーリーの読み込みエラー。もう一度お試しください。",
+    "playButton": "▶",
+    "pauseButton": "⏸"
+  },
+  "sipAndSeek": {
+    "title": "すすりながら探索",
+    "description": "カフェで食べ物や飲み物を購入して、カスタムドリンクアドベンチャーを解除してください。バーコードをスキャンしてツアーを開始しましょう！",
+    "featuredBeverages": "注目の飲み物",
+    "scanButton": "スキャン",
+    "scannerTitle": "バーコードスキャン",
+    "scanInstruction": "スキャンするにはカメラをバーコードに向けてください",
+    "cameraPermission": "カメラ許可",
+    "cameraPermissionMessage": "バーコードをスキャンするにはカメラアクセスが必要です。",
+    "barcodeScanned": "バーコードがスキャンされました！",
+    "codeLabel": "コード：",
+    "drinks": {
+      "pricklyPear": "ウチワサボテンクーラー",
+      "pricklyPearDesc": "砂漠のサボテンの果実から作られた鮮やかなマゼンタドリンク",
+      "hibiscus": "ハイビスカスパラダイス",
+      "hibiscusDesc": "酸味のある深い赤色の熱帯花茶",
+      "lavender": "ラベンダーセレニティ",
+      "lavenderDesc": "蜂蜜の香りがする癒しの紫色の花のラテ",
+      "vanilla": "バニラビーンミルクシェイク",
+      "vanillaDesc": "マダガスカル産バニラビーンズ入りクリーミーシェイク"
+    }
+  },
+  "voiceChat": {
+    "speaking": "🔊 話しています（タップして停止）",
+    "listening": "🔴 聞いています...",
+    "thinking": "✨ 考えています...",
+    "tapToChat": "タップしてチャット",
+    "tapToSend": "タップして送信",
+    "tapToInterrupt": "タップして中断",
+    "tapToSpeak": "タップして話す"
+  },
+  "domeDetective": {
+    "title": "ドーム探偵",
+    "description": "手がかりと探偵スキルを使って植物を特定しましょう...探偵になる準備はできていますか？",
+    "letsGo": "さあ行こう！",
+    "loading": {
+      "consulting": "植物の精霊に相談中...",
+      "whispering": "葉にささやいています...",
+      "checking": "あなたの推測を確認中..."
+    },
+    "huntComplete": "探索完了！",
+    "congratulations": "おめでとうございます！この探索のすべての植物を見つけました。",
+    "totalFound": "見つけた植物の合計：",
+    "playAgain": "もう一度プレイ",
+    "exit": "終了",
+    "correct": "正解！",
+    "itWasThe": "それは",
+    "learnMore": "もっと学ぶ",
+    "hideStory": "ストーリーを隠す",
+    "nextPlant": "次の植物",
+    "getAnotherHint": "別のヒントを取得",
+    "foundIt": "見つけたと思います！",
+    "notQuite": "もう少し...",
+    "tryAgain": "もう一度試す",
+    "startActivity": "アクティビティを開始",
+    "startMessage": "ドーム探偵を開始するとチケットを使用します。このアクティビティを完了した後、新しいチケットをスキャンして別のアクティビティを開始できます。続けますか？",
+    "cancel": "キャンセル",
+    "start": "開始"
+  },
+  "settings": {
+    "title": "アクセシビリティ設定",
+    "textSize": "テキストサイズ",
+    "highContrast": "ハイコントラストモード",
+    "screenReader": "スクリーンリーダーサポート"
+  },
+  "login": {
+    "welcome": "ミッチェルパークドームへようこそ",
+    "subtitle": "年齢とチケットのバーコードを入力して開始してください",
+    "age": "年齢",
+    "agePlaceholder": "年齢を入力してください",
+    "done": "完了",
+    "barcode": "チケットバーコード（オプション）",
+    "barcodeManualPlaceholder": "バーコードを手動で入力",
+    "scan": "スキャン",
+    "scanBarcode": "バーコードスキャン",
+    "orEnterManually": "または手動で入力",
+    "loginButton": "ログイン",
+    "close": "閉じる",
+    "scanInstructions": "バーコードをフレーム内に配置してください"
+  }
+}
+
