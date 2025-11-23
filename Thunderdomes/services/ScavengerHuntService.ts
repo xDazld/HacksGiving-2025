@@ -16,16 +16,26 @@ export class ScavengerHuntService {
    * @returns The selected Plant object or null if all plants found
    */
   startGame(foundPlantIds: string[]): PlantRecord | null {
+    console.log('🎮 startGame called');
+    console.log('Total plants in service:', this.plants.length);
+    console.log('Found plant IDs:', foundPlantIds);
+    
     const foundSet = new Set(foundPlantIds);
     // Use Scientific Name as ID
     const availablePlants = this.plants.filter(
       p => !foundSet.has(p['Scientific Name'] || ''),
     );
+    
+    console.log('Available plants after filtering:', availablePlants.length);
+    
     if (availablePlants.length === 0) {
+      console.log('❌ No available plants - hunt complete');
       return null;
     }
     const randomIndex = Math.floor(Math.random() * availablePlants.length);
-    return availablePlants[randomIndex];
+    const selectedPlant = availablePlants[randomIndex];
+    console.log('✅ Selected plant:', selectedPlant['Common Name'], '/', selectedPlant['Scientific Name']);
+    return selectedPlant;
   }
 
   /**
