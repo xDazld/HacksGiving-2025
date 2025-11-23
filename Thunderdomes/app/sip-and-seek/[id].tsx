@@ -5,15 +5,9 @@ import {
   View,
   TouchableOpacity,
   Image,
-  Alert,
   Platform,
-  Modal,
-  Text,
-  Linking,
   ActivityIndicator,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CameraView, useCameraPermissions } from 'expo-camera';
 import { router, useLocalSearchParams, Stack } from 'expo-router';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
@@ -21,6 +15,20 @@ import { useLocalization } from '@/contexts/LocalizationContext';
 import { OpenAIClient } from '@/services/OpenAIClient';
 import { DrinkStoryService, Beverage } from '@/services/DrinkStoryService';
 import { TextToSpeechService } from '@/services/TextToSpeechService';
+import { useUserPosition } from '@/hooks/useUserPosition';
+import {
+  initializeBLE,
+  startScanning,
+  stopScanning,
+  getLocationContextBeacons,
+  isBLEAvailable,
+} from '@/services/bleService';
+import {
+  calibrate,
+  calculatePosition,
+  isPositionSystemCalibrated,
+} from '@/services/positionService';
+import { BeaconData } from '@/types';
 
 // Featured beverages with plant-themed names (duplicated here for now, ideally shared)
 const featuredBeverages: Beverage[] = [
@@ -109,10 +117,7 @@ function splitStoryIntoThreeParts(story: string): string[] {
 
 export default function DrinkStoryScreen() {
   const { id } = useLocalSearchParams();
-  const [showCamera, setShowCamera] = useState(false);
-  const [permission, requestPermission] = useCameraPermissions();
   const { t, locale } = useLocalization();
-  const insets = useSafeAreaInsets();
 
   // Find the drink
   const drink = featuredBeverages.find(b => b.id === id);
@@ -128,6 +133,15 @@ export default function DrinkStoryScreen() {
   const [storyParts, setStoryParts] = useState<string[]>([]);
   const [unlockedParts, setUnlockedParts] = useState<number>(1); // Starts with part 1 unlocked
   const [currentPlayingPart, setCurrentPlayingPart] = useState<number>(-1);
+  const [waitingForThreshold, setWaitingForThreshold] = useState<{ part: number; threshold: number } | null>(null);
+
+  // BLE scanning state
+  const [beacons, setBeacons] = useState<BeaconData[]>([]);
+  const [isScanning, setIsScanning] = useState(false);
+  const [autoCalibrationAttempted, setAutoCalibrationAttempted] = useState(false);
+
+  // Get user position for progressive unlock
+  const { progress, isCalibrated } = useUserPosition(500);
 
   useEffect(() => {
     if (!drink) return;
@@ -138,11 +152,144 @@ export default function DrinkStoryScreen() {
     // Generate a drink story when the screen loads or when language changes
     generateDrinkStory();
 
-    // Cleanup TTS service when component unmounts
+    // Start BLE scanning for position tracking
+    initializeBLEAndStartScanning();
+
+    // Cleanup TTS service and BLE scanning when component unmounts
     return () => {
       ttsService.current.cleanup();
+      stopScanning();
     };
   }, [locale, drink]);
+
+  // Auto-calibrate after beacons are detected
+  useEffect(() => {
+    const calibrationStatus = isPositionSystemCalibrated();
+    
+    console.log('🔄 Auto-calibration check:', {
+      autoCalibrationAttempted,
+      beaconsCount: beacons.length,
+      isCalibrated: calibrationStatus,
+    });
+    
+    if (!autoCalibrationAttempted && beacons.length > 0 && !calibrationStatus) {
+      console.log('⏱️ Scheduling auto-calibration in 500ms...');
+      // Wait 500ms to ensure all beacons are detected
+      const timer = setTimeout(() => {
+        performAutoCalibration();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [beacons, autoCalibrationAttempted]);
+
+  // Update position when beacons change (if calibrated)
+  useEffect(() => {
+    const calibrationStatus = isPositionSystemCalibrated();
+    console.log('📍 Position update check:', {
+      isCalibrated: calibrationStatus,
+      beaconsCount: beacons.length,
+      currentProgress: progress,
+    });
+    if (calibrationStatus && beacons.length > 0) {
+      console.log('📍 Calculating position...');
+      calculatePosition(beacons, 'rssi-to-meters', true);
+    }
+  }, [beacons]);
+
+  // Monitor progress to unlock parts
+  useEffect(() => {
+    console.log('🔓 Unlock check:', {
+      isCalibrated,
+      progress: progress.toFixed(1),
+      unlockedParts,
+    });
+    
+    if (isCalibrated && progress >= 33 && unlockedParts === 1) {
+      console.log('🔓 Unlocking part 2!');
+      setUnlockedParts(2);
+    }
+    if (isCalibrated && progress >= 66 && unlockedParts === 2) {
+      console.log('🔓 Unlocking part 3!');
+      setUnlockedParts(3);
+    }
+  }, [progress, isCalibrated, unlockedParts]);
+
+  // Auto-continue when threshold is reached
+  useEffect(() => {
+    if (waitingForThreshold && isCalibrated && progress >= waitingForThreshold.threshold) {
+      const nextPart = waitingForThreshold.part;
+      setWaitingForThreshold(null);
+      continueWithUnlockedPart(nextPart);
+    }
+  }, [waitingForThreshold, progress, isCalibrated]);
+
+  /**
+   * Initialize BLE and start scanning for beacons
+   */
+  async function initializeBLEAndStartScanning() {
+    if (!isBLEAvailable()) {
+      console.warn('⚠️ BLE is not available on this platform');
+      return;
+    }
+
+    try {
+      console.log('🔵 Initializing BLE...');
+      const initialized = await initializeBLE();
+      if (!initialized) {
+        console.warn('⚠️ Failed to initialize BLE');
+        return;
+      }
+
+      console.log('🔵 Starting BLE scanning...');
+      await startScanning((detectedBeacons: BeaconData[]) => {
+        const filteredBeacons = getLocationContextBeacons(detectedBeacons);
+        console.log(`📡 Beacons detected: ${detectedBeacons.length} total, ${filteredBeacons.length} LocationContext beacons`);
+        setBeacons(filteredBeacons);
+      });
+
+      setIsScanning(true);
+      console.log('✅ BLE scanning started');
+    } catch (err: any) {
+      console.error('❌ Failed to start BLE scanning:', err);
+    }
+  }
+
+  /**
+   * Auto-calibrate position system (assumes user is at LocationContext_0)
+   */
+  function performAutoCalibration() {
+    console.log('🔧 Attempting auto-calibration with', beacons.length, 'beacons');
+    
+    if (beacons.length === 0) {
+      console.log('⚠️ No beacons detected, skipping calibration');
+      setAutoCalibrationAttempted(true);
+      return;
+    }
+
+    // Log all beacon names
+    console.log('📡 Detected beacons:', beacons.map(b => b.name).join(', '));
+
+    // Check if LocationContext_0 is present
+    const lc0 = beacons.find((b) => b.name === 'LocationContext_0');
+    if (!lc0) {
+      console.log('⚠️ LocationContext_0 not found, skipping calibration');
+      setAutoCalibrationAttempted(true);
+      return;
+    }
+    
+    console.log('✅ LocationContext_0 found, calibrating...');
+    const success = calibrate(beacons);
+    
+    if (success) {
+      console.log('✅ Calibration successful, calculating initial position');
+      // Trigger an immediate position calculation
+      calculatePosition(beacons, 'rssi-to-meters', true);
+    } else {
+      console.log('❌ Calibration failed');
+    }
+    
+    setAutoCalibrationAttempted(true);
+  }
 
   async function generateDrinkStory() {
     if (!drink) return;
@@ -180,48 +327,6 @@ export default function DrinkStoryScreen() {
       setIsStoryLoading(false);
     }
   }
-
-  const handleScanPress = async () => {
-    if (!permission?.granted) {
-      const result = await requestPermission();
-      if (!result.granted) {
-        Alert.alert(
-          t('sipAndSeek.cameraPermission'),
-          t('sipAndSeek.cameraPermissionMessage'),
-        );
-        return;
-      }
-    }
-    setShowCamera(true);
-  };
-
-  const handleBarcodeScanned = ({ data }: { data: string }) => {
-    setShowCamera(false);
-    Alert.alert(
-      t('sipAndSeek.barcodeScanned'),
-      `${t('sipAndSeek.codeLabel')} ${data}`,
-      [
-        {
-          text: 'OK',
-          onPress: () => {
-            // Unlock next part on scan
-            if (unlockedParts < 3) {
-              setUnlockedParts(prev => prev + 1);
-              Alert.alert(
-                'Success!',
-                'You found a new clue! Next part of the story unlocked.',
-              );
-            } else {
-              Alert.alert(
-                'Great job!',
-                'You have already unlocked all parts of the story.',
-              );
-            }
-          },
-        },
-      ],
-    );
-  };
 
   /**
    * Play a specific unlocked part
@@ -262,11 +367,11 @@ export default function DrinkStoryScreen() {
   };
 
   /**
-   * Called when a part finishes playing
+   * Called when a part finishes playing - check if next part is unlocked
    */
   const playNextPartOrWait = async (justFinishedPartIndex: number) => {
     const nextPartIndex = justFinishedPartIndex + 1;
-
+    
     // Check if we've finished all parts
     if (nextPartIndex >= storyParts.length) {
       setCurrentPlayingPart(-1);
@@ -274,17 +379,34 @@ export default function DrinkStoryScreen() {
     }
 
     // Check if next part is unlocked
-    const nextPartNumber = nextPartIndex + 1;
+    const nextPartNumber = nextPartIndex + 1; // Convert 0-indexed to 1-indexed
     if (nextPartNumber <= unlockedParts) {
       // Next part is unlocked, play it immediately
       await continueWithUnlockedPart(nextPartIndex);
     } else {
-      // Next part is locked
+      // Next part is locked, play "continue exploring" message
+      const threshold = nextPartNumber === 2 ? 33 : 66;
+      setWaitingForThreshold({ part: nextPartIndex, threshold });
       setCurrentPlayingPart(-1);
-      Alert.alert(
-        'Continue Exploring',
-        'Scan a barcode to unlock the next part of the story!',
-      );
+      
+      try {
+        const message = "Please continue exploring to learn more.";
+        await ttsService.current.stop();
+        await ttsService.current.preloadAudio(message);
+        await ttsService.current.speak(message);
+        setIsPlaying(true);
+        
+        // Monitor when message finishes
+        const checkPlayback = setInterval(() => {
+          if (!ttsService.current.isPlaying()) {
+            setIsPlaying(false);
+            clearInterval(checkPlayback);
+          }
+        }, 500);
+      } catch (error) {
+        console.error('❌ Error playing continue message:', error);
+        setIsPlaying(false);
+      }
     }
   };
 
@@ -324,53 +446,6 @@ export default function DrinkStoryScreen() {
     }
   };
 
-  const renderCameraModal = () => (
-    <Modal
-      visible={showCamera}
-      animationType="slide"
-      onRequestClose={() => setShowCamera(false)}
-    >
-      <View style={styles.fullScreenContainer}>
-        {/* Header with Back Button */}
-        <View style={[styles.cameraHeaderSafeArea, { paddingTop: insets.top }]}>
-          <View style={styles.cameraHeader}>
-            {/* Back Button */}
-            <TouchableOpacity
-              style={styles.cameraBackButton}
-              onPress={() => setShowCamera(false)}
-            >
-              <ThemedText style={styles.cameraBackArrow}>←</ThemedText>
-            </TouchableOpacity>
-
-            {/* Center Logo */}
-            <View style={styles.cameraLogoContainer}>
-              <Image
-                source={require('@/assets/images/DomesLogo.png')}
-                style={styles.cameraLogo}
-                resizeMode="contain"
-              />
-            </View>
-
-            <View style={{ width: 40 }} />
-          </View>
-        </View>
-
-        <CameraView
-          style={styles.camera}
-          facing="back"
-          onBarcodeScanned={handleBarcodeScanned}
-        >
-          <View style={styles.cameraOverlay}>
-            <View style={styles.scanFrame} />
-            <ThemedText style={styles.scanInstruction}>
-              {t('sipAndSeek.scanInstruction')}
-            </ThemedText>
-          </View>
-        </CameraView>
-      </View>
-    </Modal>
-  );
-
   if (!drink) {
     return (
       <View style={styles.container}>
@@ -382,7 +457,6 @@ export default function DrinkStoryScreen() {
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
-      {renderCameraModal()}
       <ScrollView style={styles.scrollView}>
         <ThemedView style={styles.content}>
           {/* Header with Back Button */}
@@ -440,6 +514,24 @@ export default function DrinkStoryScreen() {
               </View>
             )}
 
+            {/* Position Status */}
+            {isCalibrated && (
+              <ThemedText style={styles.progressText}>
+                {progress.toFixed(0)}%
+                {waitingForThreshold && ` • Explore to ${waitingForThreshold.threshold}% to unlock next part`}
+              </ThemedText>
+            )}
+            {!isCalibrated && isScanning && (
+              <ThemedText style={styles.infoText}>
+                🔍 Scanning for beacons... {beacons.length} detected
+              </ThemedText>
+            )}
+            {!isCalibrated && autoCalibrationAttempted && (
+              <ThemedText style={styles.warningText}>
+                ⚠️ Position tracking not available. Make sure you're at the starting point and Bluetooth is enabled.
+              </ThemedText>
+            )}
+
             {isStoryLoading ? (
               <ActivityIndicator size="small" color="#68A4D2" />
             ) : storyParts.length > 0 ? (
@@ -466,7 +558,7 @@ export default function DrinkStoryScreen() {
                       >
                         {isUnlocked
                           ? part
-                          : '🔒 Scan a barcode to unlock this part...'}
+                          : '🔒 Explore the area to unlock this part...'}
                       </ThemedText>
                     </View>
                   );
@@ -503,20 +595,6 @@ export default function DrinkStoryScreen() {
           )}
         </TouchableOpacity>
       </View>
-
-      {/* Floating Scan Button */}
-      <View style={styles.floatingScanContainer}>
-        <TouchableOpacity
-          style={styles.scanButton}
-          onPress={handleScanPress}
-          activeOpacity={0.8}
-        >
-          <ThemedText style={styles.scanButtonText}>
-            {t('sipAndSeek.scanButton')}
-          </ThemedText>
-          <ThemedText style={styles.cameraIcon}>📷</ThemedText>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 }
@@ -526,17 +604,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  fullScreenContainer: {
-    flex: 1,
-    backgroundColor: '#000',
-  },
   scrollView: {
     flex: 1,
   },
   content: {
     padding: 20,
     paddingTop: 24,
-    paddingBottom: 120,
+    paddingBottom: 150,
   },
   header: {
     marginBottom: 20,
@@ -640,21 +714,41 @@ const styles = StyleSheet.create({
   partIndicatorTextPlaying: {
     color: '#FFFFFF',
   },
-  floatingScanContainer: {
+  progressText: {
+    fontSize: 11,
+    textAlign: 'center',
+    marginBottom: 12,
+    color: '#999',
+    opacity: 0.7,
+  },
+  warningText: {
+    fontSize: 13,
+    textAlign: 'center',
+    marginBottom: 12,
+    color: '#f59e0b',
+    fontStyle: 'italic',
+  },
+  infoText: {
+    fontSize: 13,
+    textAlign: 'center',
+    marginBottom: 12,
+    color: '#68A4D2',
+    fontStyle: 'italic',
+  },
+  fixedButtonContainer: {
     position: 'absolute',
-    bottom: 20,
+    bottom: Platform.OS === 'ios' ? 40 : 30,
     left: 0,
     right: 0,
     alignItems: 'center',
     backgroundColor: 'transparent',
     pointerEvents: 'box-none',
   },
-  scanButton: {
-    backgroundColor: '#458E5E',
-    paddingHorizontal: 40,
-    paddingVertical: 15,
-    borderRadius: 30,
-    flexDirection: 'row',
+  playButton: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: '#68A4D2',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -664,98 +758,14 @@ const styles = StyleSheet.create({
     elevation: 8,
     pointerEvents: 'auto',
   },
-  scanButtonText: {
-    color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: '700',
-    marginRight: 8,
-    lineHeight: 24,
-  },
-  cameraIcon: {
-    fontSize: 24,
-    lineHeight: 24,
-  },
-  fixedButtonContainer: {
-    position: 'absolute',
-    bottom: 100,
-    right: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    pointerEvents: 'box-none',
-  },
-  playButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#68A4D2',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
-    pointerEvents: 'auto',
-  },
   playButtonDisabled: {
-    backgroundColor: '#BDC3C7',
+    backgroundColor: '#B0B0B0',
+    opacity: 0.6,
   },
   playIcon: {
-    fontSize: 30,
-    color: '#FFFFFF',
-    marginLeft: 4,
-  },
-  cameraHeaderSafeArea: {
-    backgroundColor: '#68A4D2',
-  },
-  cameraHeader: {
-    height: 60,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    backgroundColor: '#68A4D2',
-  },
-  cameraBackButton: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cameraBackArrow: {
     fontSize: 28,
     color: '#FFFFFF',
-    fontWeight: 'bold',
-  },
-  cameraLogoContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cameraLogo: {
-    width: 100,
-    height: 40,
-  },
-  cameraOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  scanFrame: {
-    width: 250,
-    height: 250,
-    borderWidth: 3,
-    borderColor: '#FFFFFF',
-    borderRadius: 12,
-  },
-  scanInstruction: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    marginTop: 30,
     textAlign: 'center',
-  },
-  camera: {
-    flex: 1,
+    lineHeight: 70,
   },
 });
