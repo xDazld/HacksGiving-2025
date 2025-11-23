@@ -20,8 +20,8 @@ export function CustomBottomNav() {
       label: 'Voice Chat',
     },
     {
-      name: 'audio-tour',
-      path: '/(tabs)/audio-tour',
+      name: 'botanical-tales',
+      path: '/(tabs)/botanical-tales',
       icon: BotanicalTalesIcon,
       label: 'Botanical Tales',
     },
