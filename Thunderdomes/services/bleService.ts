@@ -319,3 +319,14 @@ export function getScanningStatus(): boolean {
 export function getInitializationStatus(): boolean {
   return isInitialized;
 }
+
+/**
+ * Get a specific beacon by its LocationContext index
+ * @param beacons Array of beacons to search
+ * @param index LocationContext index (0, 1, 2, etc.)
+ * @returns Beacon with the specified index or null if not found
+ */
+export function getBeaconByIndex(beacons: BeaconData[], index: number): BeaconData | null {
+  const targetName = `LocationContext_${index}`;
+  return beacons.find((beacon) => beacon.name === targetName) || null;
+}

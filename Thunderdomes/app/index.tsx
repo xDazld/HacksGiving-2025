@@ -14,7 +14,7 @@ export default function Index() {
 
     if (user) {
       // User is authenticated, redirect to tabs
-      router.replace('/(tabs)/audio-tour');
+      router.replace('/(tabs)/botanical-tales');
     } else {
       // User is not authenticated, redirect to login
       router.replace('/login');

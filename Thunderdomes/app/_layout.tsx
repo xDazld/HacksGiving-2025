@@ -6,6 +6,7 @@ import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { PositionProvider } from '@/contexts/PositionContext';
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
@@ -31,7 +32,7 @@ function RootLayoutNav() {
       router.replace('/login');
     } else if (user && onLoginPage) {
       // Redirect to tabs if authenticated and on login page
-      router.replace('/(tabs)/audio-tour');
+      router.replace('/(tabs)/botanical-tales');
     }
   }, [user, segments, isLoading, router]);
 
@@ -41,6 +42,7 @@ function RootLayoutNav() {
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="botanical-tales" options={{ headerShown: false }} />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>
@@ -50,7 +52,9 @@ function RootLayoutNav() {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <RootLayoutNav />
+      <PositionProvider>
+        <RootLayoutNav />
+      </PositionProvider>
     </AuthProvider>
   );
 }
