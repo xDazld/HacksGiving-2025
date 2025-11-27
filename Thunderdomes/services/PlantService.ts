@@ -52,7 +52,7 @@ export class PlantService {
 
     const { databaseId, collections } = appwriteConfig;
     const result = await databases.listDocuments(databaseId, collections.plants, []);
-    const records = result.documents.map(docToRecord);
+    const records = result.documents.map((doc) => docToRecord(doc as unknown as PlantDoc));
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(records));
     return records;
   }
@@ -61,7 +61,7 @@ export class PlantService {
     const { databaseId, collections } = appwriteConfig;
     try {
       const doc = await databases.getDocument(databaseId, collections.plants, id);
-      return docToRecord(doc as PlantDoc);
+      return docToRecord(doc as unknown as PlantDoc);
     } catch (e) {
       return null;
     }
