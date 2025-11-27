@@ -5,6 +5,7 @@ import Constants from 'expo-constants';
 const APPWRITE_ENDPOINT = Constants.expoConfig?.extra?.appwriteEndpoint || 'https://cloud.appwrite.io/v1';
 const APPWRITE_PROJECT_ID = Constants.expoConfig?.extra?.appwriteProjectId || '';
 const APPWRITE_DATABASE_ID = Constants.expoConfig?.extra?.appwriteDatabaseId || 'milwaukee-domes';
+const APPWRITE_PLANTS_COLLECTION_ID = Constants.expoConfig?.extra?.appwritePlantsCollectionId || 'plants';
 
 // Initialize Appwrite client
 const client = new Client()
@@ -27,7 +28,7 @@ export const appwriteConfig = {
     tours: 'tours',
     scavengerHunts: 'scavenger-hunts',
     cafeTours: 'cafe-tours',
-    plants: 'plants',
+    plants: APPWRITE_PLANTS_COLLECTION_ID,
     progress: 'progress',
     tickets: 'tickets',
   },
